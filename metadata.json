@@ -1,0 +1,8 @@
+{
+  "name": "APP_NAME",
+  "description": "A comprehensive trading education platform with AI-powered trade validation, LMS, and student management.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

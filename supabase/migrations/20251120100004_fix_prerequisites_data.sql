@@ -1,0 +1,23 @@
+-- Sample data operations commented out to prevent data seeding
+-- First, let's delete the existing incorrect data
+-- delete from module_prerequisites where module_id::text in ('cm002', 'cm003');
+
+-- Since the course_modules table uses auto-generated UUIDs, we need to insert the prerequisites using a different approach
+-- We'll use a more robust method that looks up the actual UUIDs
+
+-- Insert sample prerequisites by looking up the actual UUIDs
+-- insert into module_prerequisites (module_id, prerequisite_id)
+-- select 
+--   cm2.id as module_id,
+--   cm1.id as prerequisite_id
+-- from course_modules cm1
+-- join course_modules cm2 on cm2.title = 'Supply and Demand Zones'
+-- where cm1.title = 'Introduction to Market Structure'
+-- union
+-- select 
+--   cm3.id as module_id,
+--   cm2.id as prerequisite_id
+-- from course_modules cm2
+-- join course_modules cm3 on cm3.title = 'Market Structure Quiz'
+-- where cm2.title = 'Supply and Demand Zones'
+-- on conflict do nothing;
