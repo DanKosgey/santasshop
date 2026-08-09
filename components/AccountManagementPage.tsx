@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  User, Mail, Phone, ShieldCheck, ShieldAlert, Edit3, KeyRound, 
-  MessageSquare, Send, Lock, Unlock, LogOut, Trash2, Clock, CheckCircle2, X
+import {
+  User, Mail, Phone, ShieldCheck, ShieldAlert, Edit3, KeyRound,
+  Send, Lock, LogOut, CheckCircle2, X, MessageCircle,
+  TrendingUp, DollarSign, Activity, Eye, EyeOff, Trash2, AlertTriangle
 } from 'lucide-react';
 import { ADMIN_WHATSAPP, ADMIN_TELEGRAM_URL, ADMIN_TELEGRAM_USERNAME } from '../lib/constants';
 
@@ -21,552 +22,414 @@ export interface UserProfile {
   last_login: string;
 }
 
+const fmt = (n: number) =>
+  n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function getInitials(name: string) {
+  return name
+    .split(' ')
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+}
+
+/* ─── Reusable Modal Wrapper ─────────────────────────────────────────────── */
+function Modal({ open, onClose, title, children }: {
+  open: boolean; onClose: () => void; title: string; children: React.ReactNode;
+}) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md"
+        style={{ animation: 'modalIn 0.18s ease' }}
+      >
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100">
+          <h2 className="text-base font-bold text-slate-900">{title}</h2>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="px-6 py-5">{children}</div>
+      </div>
+      <style>{`
+        @keyframes modalIn { from { opacity:0; transform:scale(0.95) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } }
+      `}</style>
+    </div>
+  );
+}
+
+/* ─── Toast ──────────────────────────────────────────────────────────────── */
+function Toast({ msg, type = 'success' }: { msg: string; type?: 'success' | 'error' }) {
+  return (
+    <div className={`fixed top-5 right-5 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl text-sm font-semibold text-white ${type === 'success' ? 'bg-emerald-600' : 'bg-red-500'}`}
+      style={{ animation: 'slideIn 0.2s ease' }}>
+      {type === 'success' ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertTriangle className="w-4 h-4 flex-shrink-0" />}
+      {msg}
+      <style>{`@keyframes slideIn { from { opacity:0; transform:translateX(24px); } to { opacity:1; transform:translateX(0); } }`}</style>
+    </div>
+  );
+}
+
+/* ─── Stat Card ──────────────────────────────────────────────────────────── */
+function StatCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: any; color: string }) {
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+      <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
+        <Icon className="w-5 h-5" />
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
+        <p className="text-lg font-bold text-slate-900 tabular-nums">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MAIN COMPONENT
+═══════════════════════════════════════════════════════════════════════════ */
 export function AccountManagementPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   // Modals
-  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
-  const [editAvatar, setEditAvatar] = useState('');
 
-  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isPwOpen, setIsPwOpen] = useState(false);
+  const [currentPw, setCurrentPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [showPw, setShowPw] = useState(false);
 
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [deleteConfirmationInput, setDeleteConfirmationInput] = useState('');
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteInput, setDeleteInput] = useState('');
 
-  // Toast / Status messages
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ msg: string; type?: 'success' | 'error' } | null>(null);
   const [vipRequested, setVipRequested] = useState(false);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 4000);
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
   };
 
   useEffect(() => {
-    async function loadProfile() {
-      try {
-        setLoading(true);
-        const mockUser: UserProfile = {
-          id: 'usr_78912',
-          name: 'Alex Vance',
-          email: 'alex.vance@forexelites.com',
-          phone: '+255712345678',
-          avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
-          email_verified: true,
-          vip_status: 'none',
-          vip_group_url: 'https://t.me/SIRLEONARD1',
-          active_pool_trades_count: 3,
-          total_invested: 2450.00,
-          total_withdrawn: 890.50,
-          account_tier: 'Standard Member',
-          last_login: new Date().toLocaleString(),
-        };
-        setProfile(mockUser);
-        setEditName(mockUser.name);
-        setEditPhone(mockUser.phone);
-        setEditAvatar(mockUser.avatar_url || '');
-      } catch (err) {
-        showToast('Failed to load user profile.');
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadProfile();
+    setTimeout(() => {
+      const mock: UserProfile = {
+        id: 'usr_78912',
+        name: 'Francesco Battista',
+        email: 'francesco.battista@forexelites.com',
+        phone: '+1 (208) 969-5688',
+        email_verified: true,
+        vip_status: 'none',
+        vip_group_url: 'https://t.me/SIRLEONARD1',
+        active_pool_trades_count: 3,
+        total_invested: 5250.00,
+        total_withdrawn: 1890.50,
+        account_tier: 'Professional Member',
+        last_login: new Date().toLocaleString(),
+      };
+      setProfile(mock);
+      setEditName(mock.name);
+      setEditPhone(mock.phone);
+      setLoading(false);
+    }, 600);
   }, []);
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
-    setProfile({
-      ...profile,
-      name: editName,
-      phone: editPhone,
-      avatar_url: editAvatar
-    });
-    setIsEditProfileOpen(false);
+    setProfile({ ...profile, name: editName, phone: editPhone });
+    setIsEditOpen(false);
     showToast('Profile updated successfully!');
   };
 
   const handleChangePassword = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      showToast('New passwords do not match!');
-      return;
-    }
-    setIsChangePasswordOpen(false);
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    if (newPw !== confirmPw) { showToast('New passwords do not match!', 'error'); return; }
+    if (newPw.length < 8) { showToast('Password must be at least 8 characters.', 'error'); return; }
+    setIsPwOpen(false);
+    setCurrentPw(''); setNewPw(''); setConfirmPw('');
     showToast('Password changed successfully!');
   };
 
-  const handleVipRequest = () => {
-    if (!profile) return;
-    setVipRequested(true);
-    setProfile({ ...profile, vip_status: 'pending' });
-    showToast('Request submitted. Admin will review shortly.');
-  };
-
-  const handleResendVerification = () => {
-    showToast('Verification email has been sent!');
-  };
-
-  const handleDeleteAccount = () => {
-    if (deleteConfirmationInput !== 'DELETE') {
-      showToast('Please type DELETE exactly to confirm account deletion.');
-      return;
-    }
-    setIsDeleteModalOpen(false);
+  const handleDeleteAccount = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (deleteInput !== 'DELETE') { showToast('Type DELETE exactly to confirm.', 'error'); return; }
+    setIsDeleteOpen(false);
     showToast('Account scheduled for deletion. Logging out...');
   };
 
   if (loading || !profile) {
     return (
-      <div className="min-h-screen bg-[#F5F7FA] text-slate-600 flex items-center justify-center p-6 font-sans">
-        <div className="flex items-center space-x-3 text-blue-600 font-semibold">
-          <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <span>Loading Account Details...</span>
+      <div className="min-h-[60vh] bg-[#F5F7FA] flex items-center justify-center font-sans">
+        <div className="flex items-center gap-3 text-blue-600 font-semibold">
+          <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          Loading Account Details...
         </div>
       </div>
     );
   }
 
-  const adminWhatsappNumber = ADMIN_WHATSAPP;
-  const whatsappUrl = `https://wa.me/${adminWhatsappNumber}?text=${encodeURIComponent(
-    `Hi, I'm ${profile.name} from Forex Elites. My email is ${profile.email}. I need help with account management.`
+  const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(
+    `Hi, I'm ${profile.name} (${profile.email}). I need help with my Forex Royal account.`
   )}`;
-  const telegramUsername = ADMIN_TELEGRAM_USERNAME;
   const telegramUrl = ADMIN_TELEGRAM_URL;
 
   return (
-    <div className="text-slate-700 space-y-0 md:space-y-6 md:p-0 font-sans pb-6">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 bg-blue-600 text-white font-semibold px-4 py-3 rounded-xl shadow-xl flex items-center space-x-2 animate-bounce text-sm">
-          <CheckCircle2 className="w-5 h-5" />
-          <span>{toastMessage}</span>
+    <div className="min-h-screen bg-[#F5F7FA] font-sans pb-16">
+      {/* Global CSS */}
+      <style>{`
+        .shadow-card { box-shadow: 0 4px 6px -1px rgba(15,23,42,0.06), 0 2px 4px -2px rgba(15,23,42,0.04); }
+        .shadow-card-hover:hover { box-shadow: 0 10px 15px -3px rgba(15,23,42,0.07), 0 4px 6px -4px rgba(15,23,42,0.05); }
+        .contact-card:hover { box-shadow: 0 10px 15px -3px rgba(15,23,42,0.09); transform: translateY(-2px); }
+        .contact-card { transition: all 0.2s ease; }
+        .tabular-nums { font-variant-numeric: tabular-nums; }
+        input, textarea, select { outline: none; }
+        input:focus, textarea:focus, select:focus { ring: none; }
+      `}</style>
+
+      {toast && <Toast msg={toast.msg} type={toast.type} />}
+
+      <div className="max-w-3xl mx-auto px-4 pt-6 space-y-5">
+
+        {/* ── PAGE HEADER ──────────────────────────────────────────────── */}
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Account Management</h1>
+          <p className="text-sm text-slate-500 mt-0.5">Manage your profile, security, and support access.</p>
         </div>
-      )}
 
-      {/* ── PAGE HEADER ─────────────────────────────── */}
-      <div className="px-4 pt-4 pb-2">
-        <h1 className="text-xl md:text-3xl font-bold text-slate-900 tracking-tight">Account Management</h1>
-        <p className="text-slate-500 text-xs md:text-sm mt-0.5">Manage your profile and settings</p>
-      </div>
-
-      {/* 1.1 PROFILE SECTION */}
-      <section className="bg-white border-t border-b border-slate-200 md:border md:rounded-2xl p-4 md:p-8 shadow-card relative overflow-hidden md:mx-0">
-        <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
-            <div className="relative group">
-              <img
-                src={profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200'}
-                alt={profile.name}
-                className="w-24 h-24 rounded-full object-cover border-2 border-blue-500/20 p-1 shadow-sm"
-              />
-              <button 
-                onClick={() => setIsEditProfileOpen(true)}
-                className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full shadow-md hover:bg-blue-700 transition"
-                title="Edit Photo"
-              >
-                <Edit3 className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-center sm:justify-start space-x-3">
-                <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">{profile.name}</h1>
-                {profile.email_verified ? (
-                  <span className="inline-flex items-center space-x-1 text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Verified</span>
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center space-x-1 text-xs font-semibold bg-red-50 text-red-700 border border-red-200 px-2.5 py-0.5 rounded-full">
-                    <ShieldAlert className="w-3.5 h-3.5" />
-                    <span>Unverified</span>
-                  </span>
-                )}
-              </div>
-
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-sm text-slate-500 font-medium">
-                <div className="flex items-center space-x-1.5">
-                  <Mail className="w-4 h-4 text-blue-500" />
-                  <span>{profile.email}</span>
+        {/* ── PROFILE HERO CARD ─────────────────────────────────────────── */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-card p-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+            {/* Avatar */}
+            <div className="relative flex-shrink-0">
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt={profile.name}
+                  className="w-16 h-16 rounded-full object-cover border-2 border-blue-100" />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xl select-none">
+                  {getInitials(profile.name)}
                 </div>
-                <div className="flex items-center space-x-1.5">
-                  <Phone className="w-4 h-4 text-blue-500" />
-                  <span className="tabular-nums">{profile.phone}</span>
-                </div>
-              </div>
-
-              {!profile.email_verified && (
-                <button
-                  onClick={handleResendVerification}
-                  className="mt-2 text-xs text-blue-600 underline hover:text-blue-700 font-semibold inline-block"
-                >
-                  Resend Verification Email
-                </button>
               )}
             </div>
-          </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            <button
-              onClick={() => setIsEditProfileOpen(true)}
-              className="flex items-center justify-center space-x-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-4 py-2.5 rounded-xl font-bold transition text-sm"
-            >
-              <Edit3 className="w-4 h-4" />
-              <span>Edit Profile</span>
-            </button>
-
-            <button
-              onClick={() => setIsChangePasswordOpen(true)}
-              className="flex items-center justify-center space-x-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-4 py-2.5 rounded-xl font-bold transition text-sm"
-            >
-              <KeyRound className="w-4 h-4 text-blue-600" />
-              <span>Change Password</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* 1.2 ACCOUNT MANAGEMENT CONTACT CARDS */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-6 border-t border-slate-200 md:border-none">
-        {/* WhatsApp Card */}
-        <div className="bg-white border-b border-slate-200 md:border md:rounded-2xl p-4 md:p-6 relative overflow-hidden transition-all duration-200 md:shadow-card hover:border-emerald-300 group">
-          <div className="flex items-start justify-between">
-            <div className="space-y-2">
-              <div className="w-12 h-12 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-center text-emerald-600 group-hover:scale-105 transition-transform">
-                <MessageSquare className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900">WhatsApp Support</h3>
-              <p className="text-sm text-slate-500">Direct 24/7 priority messaging with our account manager.</p>
-              <p className="text-xs font-mono text-emerald-600 font-semibold pt-1 tabular-nums">+{adminWhatsappNumber}</p>
-            </div>
-          </div>
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-6 inline-flex items-center justify-center space-x-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-sm transition duration-200 text-sm"
-          >
-            <span>Contact on WhatsApp</span>
-            <Send className="w-4 h-4" />
-          </a>
-        </div>
-
-        {/* Telegram Card */}
-        <div className="bg-white border-b border-slate-200 md:border md:rounded-2xl p-4 md:p-6 relative overflow-hidden transition-all duration-200 md:shadow-card hover:border-sky-300 group">
-          <div className="flex items-start justify-between">
-            <div className="space-y-2">
-              <div className="w-12 h-12 bg-sky-50 border border-sky-200 rounded-xl flex items-center justify-center text-sky-600 group-hover:scale-105 transition-transform">
-                <Send className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900">Telegram Channel</h3>
-              <p className="text-sm text-slate-500">Connect with Forex Elites official admin profile.</p>
-              <p className="text-xs font-mono text-sky-600 font-semibold pt-1">@{telegramUsername}</p>
-            </div>
-          </div>
-          <a
-            href={telegramUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-6 inline-flex items-center justify-center space-x-2 w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-xl shadow-sm transition duration-200 text-sm"
-          >
-            <span>Contact on Telegram</span>
-            <Send className="w-4 h-4" />
-          </a>
-        </div>
-      </section>
-
-      {/* 1.3 VIP COMMUNITY ACCESS SECTION */}
-      <section className="bg-white border-t border-b border-slate-200 md:border md:rounded-2xl p-4 md:p-8 relative overflow-hidden md:shadow-card">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center space-x-5 text-center md:text-left">
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border ${
-              profile.vip_status === 'active' 
-                ? 'bg-blue-50 border-blue-200 text-blue-600' 
-                : 'bg-slate-50 border-slate-200 text-slate-400'
-            }`}>
-              {profile.vip_status === 'active' ? <Unlock className="w-7 h-7" /> : <Lock className="w-7 h-7" />}
-            </div>
-            <div>
-              <div className="flex items-center justify-center md:justify-start space-x-2">
-                <h3 className="text-xl font-bold text-slate-900">VIP Trading Community</h3>
-                {profile.vip_status === 'active' ? (
-                  <span className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold">Active</span>
+            {/* Info */}
+            <div className="flex-1 text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-center sm:justify-start">
+                <h2 className="text-xl font-bold text-slate-900">{profile.name}</h2>
+                {profile.email_verified ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                    <ShieldCheck className="w-3.5 h-3.5" /> Verified
+                  </span>
                 ) : (
-                  <span className="text-xs bg-slate-100 text-slate-500 border border-slate-200 px-2.5 py-0.5 rounded-full font-semibold">Locked</span>
+                  <button onClick={() => showToast('Verification email sent!')}
+                    className="inline-flex items-center gap-1 text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full hover:bg-amber-100 transition-all">
+                    <ShieldAlert className="w-3.5 h-3.5" /> Unverified — Verify Now
+                  </button>
                 )}
               </div>
-              <p className="text-sm text-slate-500 mt-1 max-w-xl">
-                Get high-probability trade setups, institutional market analyses, and direct private signals from master traders.
-              </p>
+              <div className="mt-2 flex flex-wrap justify-center sm:justify-start gap-3 text-sm text-slate-500">
+                <span className="flex items-center gap-1.5"><Mail className="w-4 h-4 text-blue-400" />{profile.email}</span>
+                <span className="flex items-center gap-1.5"><Phone className="w-4 h-4 text-blue-400" />{profile.phone}</span>
+              </div>
+              <p className="mt-1.5 text-xs text-slate-400">{profile.account_tier} · Last login: {profile.last_login}</p>
             </div>
-          </div>
 
-          <div className="w-full md:w-auto">
-            {profile.vip_status === 'active' ? (
-              <a
-                href={profile.vip_group_url || 'https://t.me'}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full md:w-auto inline-flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3.5 rounded-xl shadow-blue-glow transition text-sm"
-              >
-                <span>Enter VIP Community</span>
-                <Send className="w-4 h-4" />
-              </a>
-            ) : (
-              <button
-                onClick={handleVipRequest}
-                disabled={vipRequested || profile.vip_status === 'pending'}
-                className={`w-full md:w-auto inline-flex items-center justify-center space-x-2 font-bold px-6 py-3.5 rounded-xl transition text-sm ${
-                  vipRequested || profile.vip_status === 'pending'
-                    ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-glow'
-                }`}
-              >
-                <span>{vipRequested || profile.vip_status === 'pending' ? 'Request Submitted' : 'Request VIP Access'}</span>
-              </button>
-            )}
+            {/* Edit button */}
+            <button onClick={() => setIsEditOpen(true)}
+              className="self-start flex items-center gap-2 text-sm font-semibold text-blue-600 border border-blue-200 px-4 py-2 rounded-lg hover:bg-blue-50 transition-all flex-shrink-0">
+              <Edit3 className="w-4 h-4" /> Edit Profile
+            </button>
           </div>
         </div>
-      </section>
 
-      {/* 1.4 ACCOUNT STATUS OVERVIEW */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-0 md:gap-6 border-t border-slate-200 md:border-none">
-        <div className="bg-white border-b border-r border-slate-200 md:border md:rounded-2xl p-4 md:p-5 md:shadow-card space-y-1">
-          <p className="text-[10px] md:text-xs text-slate-400 uppercase tracking-wider font-bold">Pool Trades</p>
-          <p className="text-2xl md:text-3xl font-extrabold text-slate-900 tabular-nums">{profile.active_pool_trades_count}</p>
+        {/* ── STATS STRIP ───────────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <StatCard label="Active Trades" value={`${profile.active_pool_trades_count}`}
+            icon={Activity} color="bg-blue-50 text-blue-600" />
+          <StatCard label="Total Invested" value={`$${fmt(profile.total_invested)}`}
+            icon={TrendingUp} color="bg-emerald-50 text-emerald-600" />
+          <StatCard label="Total Withdrawn" value={`$${fmt(profile.total_withdrawn)}`}
+            icon={DollarSign} color="bg-purple-50 text-purple-600" />
         </div>
 
-        <div className="bg-white border-b border-slate-200 md:border md:rounded-2xl p-4 md:p-5 md:shadow-card space-y-1">
-          <p className="text-[10px] md:text-xs text-slate-400 uppercase tracking-wider font-bold">Total Invested</p>
-          <p className="text-2xl md:text-3xl font-extrabold text-blue-600 tabular-nums">${profile.total_invested.toFixed(2)}</p>
-        </div>
-
-        <div className="bg-white border-b border-r border-slate-200 md:border md:rounded-2xl p-4 md:p-5 md:shadow-card space-y-1">
-          <p className="text-[10px] md:text-xs text-slate-400 uppercase tracking-wider font-bold">Withdrawn</p>
-          <p className="text-2xl md:text-3xl font-extrabold text-emerald-600 tabular-nums">${profile.total_withdrawn.toFixed(2)}</p>
-        </div>
-
-        <div className="bg-white border-b border-slate-200 md:border md:rounded-2xl p-4 md:p-5 md:shadow-card space-y-1">
-          <p className="text-[10px] md:text-xs text-slate-400 uppercase tracking-wider font-bold">Account Status</p>
-          <span className="inline-block mt-1 bg-blue-50 border border-blue-200 text-blue-700 font-bold px-3 py-1 rounded-xl text-xs">
-            {profile.account_tier}
-          </span>
-        </div>
-      </section>
-
-      {/* 1.5 SESSION & SECURITY */}
-      <section className="bg-white border-t border-b border-slate-200 md:border md:rounded-2xl p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 md:shadow-card">
-        <div className="flex items-center space-x-2 text-xs md:text-sm text-slate-500">
-          <Clock className="w-4 h-4 text-blue-600" />
-          <span>Last Login: <strong className="text-slate-800 tabular-nums">{profile.last_login}</strong></span>
-        </div>
-
-        <div className="flex items-center space-x-3 w-full md:w-auto">
-          <button
-            onClick={() => showToast('Logged out successfully.')}
-            className="flex-1 md:flex-none inline-flex items-center justify-center space-x-2 bg-slate-50 hover:bg-slate-100 text-slate-700 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-bold transition"
-          >
-            <LogOut className="w-4 h-4 text-slate-500" />
-            <span>Log Out</span>
-          </button>
-
-          <button
-            onClick={() => setIsDeleteModalOpen(true)}
-            className="flex-1 md:flex-none inline-flex items-center justify-center space-x-2 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2.5 rounded-xl border border-red-200 text-sm font-bold transition"
-          >
-            <Trash2 className="w-4 h-4 text-red-500" />
-            <span>Delete Account</span>
-          </button>
-        </div>
-      </section>
-
-      {/* EDIT PROFILE MODAL */}
-      {isEditProfileOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-xl relative">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-lg font-bold text-slate-900">Edit Profile</h3>
-              <button onClick={() => setIsEditProfileOpen(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
+        {/* ── SECURITY & SESSION ────────────────────────────────────────── */}
+        <div>
+          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Security & Session</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Password Card */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-card p-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
+                  <KeyRound className="w-5 h-5 text-slate-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">Password</p>
+                  <p className="text-xs text-slate-400">••••••••••••</p>
+                </div>
+              </div>
+              <button onClick={() => setIsPwOpen(true)}
+                className="text-xs font-bold text-blue-600 hover:text-blue-800 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-all">
+                Change
               </button>
             </div>
 
-            <form onSubmit={handleSaveProfile} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Full Name</label>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 text-sm font-medium focus:outline-none focus:border-blue-500 focus:bg-white"
-                  required
-                />
+            {/* Session Card */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-card p-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
+                  <LogOut className="w-5 h-5 text-slate-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">Active Session</p>
+                  <p className="text-xs text-slate-400 truncate max-w-[140px]" title={profile.last_login}>{profile.last_login}</p>
+                </div>
               </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Phone Number</label>
-                <input
-                  type="text"
-                  value={editPhone}
-                  onChange={(e) => setEditPhone(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 text-sm font-medium focus:outline-none focus:border-blue-500 focus:bg-white tabular-nums"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Avatar Image URL</label>
-                <input
-                  type="text"
-                  value={editAvatar}
-                  onChange={(e) => setEditAvatar(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 text-sm font-medium focus:outline-none focus:border-blue-500 focus:bg-white"
-                  placeholder="https://..."
-                />
-              </div>
-
-              <div className="pt-2 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setIsEditProfileOpen(false)}
-                  className="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white font-bold rounded-xl text-sm hover:bg-blue-700 shadow-blue-glow"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* CHANGE PASSWORD MODAL */}
-      {isChangePasswordOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-xl relative">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-lg font-bold text-slate-900">Change Password</h3>
-              <button onClick={() => setIsChangePasswordOpen(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
+              <button onClick={() => showToast('Logged out from all sessions.')}
+                className="text-xs font-bold text-red-500 hover:text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-all">
+                Log Out
               </button>
             </div>
+          </div>
+        </div>
 
-            <form onSubmit={handleChangePassword} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Current Password</label>
-                <input
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 text-sm font-medium focus:outline-none focus:border-blue-500 focus:bg-white"
-                  required
-                />
+        {/* ── SUPPORT CONTACT ───────────────────────────────────────────── */}
+        <div>
+          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Need Help?</h3>
+          <p className="text-sm text-slate-500 mb-3">Contact your dedicated account manager directly.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* WhatsApp */}
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer"
+              className="contact-card bg-white rounded-xl border border-slate-200 shadow-card p-5 flex items-center gap-4 no-underline group"
+              style={{ borderLeft: '4px solid #25D366' }}>
+              <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                <MessageCircle className="w-6 h-6 text-emerald-600" />
               </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">New Password</label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 text-sm font-medium focus:outline-none focus:border-blue-500 focus:bg-white"
-                  required
-                />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-slate-900">Chat on WhatsApp</p>
+                <p className="text-xs text-slate-500 mt-0.5">Instant replies, usually within minutes.</p>
+                <p className="text-xs font-semibold text-emerald-600 mt-1">+1 (208) 969-5688</p>
               </div>
+              <svg className="w-4 h-4 text-slate-300 group-hover:text-emerald-500 transition-all flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Confirm New Password</label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 text-sm font-medium focus:outline-none focus:border-blue-500 focus:bg-white"
-                  required
-                />
+            {/* Telegram */}
+            <a href={telegramUrl} target="_blank" rel="noopener noreferrer"
+              className="contact-card bg-white rounded-xl border border-slate-200 shadow-card p-5 flex items-center gap-4 no-underline group"
+              style={{ borderLeft: '4px solid #0088CC' }}>
+              <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                <Send className="w-6 h-6 text-blue-500" />
               </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-slate-900">Message on Telegram</p>
+                <p className="text-xs text-slate-500 mt-0.5">Join our private VIP community channel.</p>
+                <p className="text-xs font-semibold text-blue-600 mt-1">@{ADMIN_TELEGRAM_USERNAME}</p>
+              </div>
+              <svg className="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-all flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+          </div>
+        </div>
 
-              <div className="pt-2 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setIsChangePasswordOpen(false)}
-                  className="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white font-bold rounded-xl text-sm hover:bg-blue-700 shadow-blue-glow"
-                >
-                  Update Password
+        {/* ── DANGER ZONE ───────────────────────────────────────────────── */}
+        <div className="bg-red-50 rounded-xl border border-red-200 p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-bold text-red-800">Delete Account</p>
+              <p className="text-xs text-red-600 mt-0.5">Permanently remove your account and all trading data. This action cannot be undone.</p>
+            </div>
+            <button onClick={() => setIsDeleteOpen(true)}
+              className="flex items-center gap-1.5 text-xs font-bold text-red-600 border border-red-300 px-3 py-2 rounded-lg hover:bg-red-100 transition-all flex-shrink-0">
+              <Trash2 className="w-3.5 h-3.5" /> Delete
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ MODALS ═══════════════════════════════════════════════════════ */}
+
+      {/* Edit Profile Modal */}
+      <Modal open={isEditOpen} onClose={() => setIsEditOpen(false)} title="Edit Profile">
+        <form onSubmit={handleSaveProfile} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Full Name</label>
+            <input type="text" value={editName} onChange={e => setEditName(e.target.value)}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-900 bg-slate-50 focus:bg-white focus:border-blue-400 transition-all" required />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Phone Number</label>
+            <input type="tel" value={editPhone} onChange={e => setEditPhone(e.target.value)}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-900 bg-slate-50 focus:bg-white focus:border-blue-400 transition-all" />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={() => setIsEditOpen(false)}
+              className="flex-1 py-2.5 text-sm font-semibold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all">Cancel</button>
+            <button type="submit"
+              className="flex-1 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all">Save Changes</button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Change Password Modal */}
+      <Modal open={isPwOpen} onClose={() => setIsPwOpen(false)} title="Change Password">
+        <form onSubmit={handleChangePassword} className="space-y-4">
+          {[
+            { label: 'Current Password', val: currentPw, set: setCurrentPw },
+            { label: 'New Password', val: newPw, set: setNewPw },
+            { label: 'Confirm New Password', val: confirmPw, set: setConfirmPw },
+          ].map(({ label, val, set }) => (
+            <div key={label}>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">{label}</label>
+              <div className="relative">
+                <input type={showPw ? 'text' : 'password'} value={val} onChange={e => set(e.target.value)}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2.5 pr-10 text-sm text-slate-900 bg-slate-50 focus:bg-white focus:border-blue-400 transition-all" required />
+                <button type="button" onClick={() => setShowPw(p => !p)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-            </form>
+            </div>
+          ))}
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={() => setIsPwOpen(false)}
+              className="flex-1 py-2.5 text-sm font-semibold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all">Cancel</button>
+            <button type="submit"
+              className="flex-1 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all">Update Password</button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
 
-      {/* DELETE ACCOUNT MODAL */}
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl relative">
-            <div className="flex items-center space-x-3 text-red-600">
-              <ShieldAlert className="w-6 h-6" />
-              <h3 className="text-lg font-bold">Delete Account Permanently</h3>
-            </div>
-
-            <p className="text-xs text-slate-600 leading-relaxed font-medium">
-              This action cannot be undone. All your investment history, active trade logs, and wallet balances will be permanently removed.
-            </p>
-
-            <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-700">
-              Please type <strong className="font-mono text-red-900">DELETE</strong> below to confirm.
-            </div>
-
-            <input
-              type="text"
-              value={deleteConfirmationInput}
-              onChange={(e) => setDeleteConfirmationInput(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 text-sm font-mono focus:outline-none focus:border-red-500 focus:bg-white"
-              placeholder="Type DELETE"
-            />
-
-            <div className="flex justify-end space-x-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-200"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteAccount}
-                disabled={deleteConfirmationInput !== 'DELETE'}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold rounded-xl text-sm transition"
-              >
-                Confirm Deletion
-              </button>
-            </div>
+      {/* Delete Account Modal */}
+      <Modal open={isDeleteOpen} onClose={() => setIsDeleteOpen(false)} title="Delete Account">
+        <form onSubmit={handleDeleteAccount} className="space-y-4">
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            <p className="font-bold mb-1">⚠️ This is irreversible</p>
+            <p className="text-xs">All your trading data, investments, and profile will be permanently deleted.</p>
           </div>
-        </div>
-      )}
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+              Type <span className="text-red-600 font-mono">DELETE</span> to confirm
+            </label>
+            <input type="text" value={deleteInput} onChange={e => setDeleteInput(e.target.value)}
+              placeholder="DELETE" className="w-full border border-red-200 rounded-lg px-3 py-2.5 text-sm font-mono text-red-900 bg-red-50 focus:bg-white focus:border-red-400 transition-all" />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={() => { setIsDeleteOpen(false); setDeleteInput(''); }}
+              className="flex-1 py-2.5 text-sm font-semibold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all">Cancel</button>
+            <button type="submit" disabled={deleteInput !== 'DELETE'}
+              className="flex-1 py-2.5 text-sm font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all">
+              Delete Account
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
-

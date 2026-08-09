@@ -235,32 +235,34 @@ const App: React.FC = () => {
 
   // --- SUPABASE AUTH ---
   React.useEffect(() => {
-    // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        fetchProfile(session.user.id, session.user.email!);
-        setViewState('portal');
+    // Check active session on mount
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error) {
+        console.warn('Session restore error (invalid token or expired):', error.message);
+        // Clear invalid auth tokens gracefully
+        supabase.auth.signOut().catch(() => {});
+        return;
       }
+      if (data?.session?.user) {
+        fetchProfile(data.session.user.id, data.session.user.email!);
+        setViewState(prev => (prev === 'landing' ? 'portal' : prev));
+      }
+    }).catch(err => {
+      console.warn('Unexpected auth restore error:', err);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('Auth state changed:', _event, session);
-      if (session?.user) {
-        fetchProfile(session.user.id, session.user.email!);
-        // Only set view state to portal if we're not already in the middle of signup
-        if (viewState !== 'signup') {
-          setViewState('portal');
-        }
-      } else {
+      if (_event === 'SIGNED_OUT' || !session) {
         setUser(null);
-        if (viewState !== 'signup' && viewState !== 'login') {
-          setViewState('landing');
-        }
+        setViewState(prev => (prev === 'portal' ? 'landing' : prev));
+      } else if (session?.user) {
+        fetchProfile(session.user.id, session.user.email!);
+        setViewState(prev => (prev === 'signup' || prev === 'login' || prev === 'gateway' ? prev : 'portal'));
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [viewState]);
+  }, []);
 
   // Real-time profile sync: re-fetch user profile whenever it changes in DB
   // This ensures bot access, tier changes, etc. reflect immediately without re-login

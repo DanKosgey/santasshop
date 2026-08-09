@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 
 // Set document title from environment variable
-const appName = import.meta.env.VITE_APP_NAME || 'Maichez Trades';
+const appName = import.meta.env.VITE_APP_NAME || 'Forex Royal';
 document.title = appName;
 document.getElementById('appTitle')?.setAttribute('content', appName);
 

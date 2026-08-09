@@ -8,8 +8,8 @@ export const APP_NAME = import.meta.env.VITE_APP_NAME || 'Forex Royal';
 
 // App variations for different contexts
 export const APP_DISPLAY_NAMES = {
-  full: APP_NAME, // 'Maichez Trades'
-  short: APP_NAME.split(' ')[0], // 'Maichez'
+  full: APP_NAME, // 'Forex Royal'
+  short: APP_NAME.split(' ')[0], // 'Forex'
   adminPortal: 'Admin Portal',
 };
 

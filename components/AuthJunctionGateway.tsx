@@ -1,7 +1,7 @@
 import React from 'react';
-import { Send, Users, TrendingUp, ShieldCheck, ArrowRight, ArrowLeft, Sparkles, CheckCircle2, Bot } from 'lucide-react';
+import { Send, TrendingUp, Users, ArrowRight, ArrowLeft, Sparkles, CheckCircle2, ShieldCheck, Lock, UserPlus } from 'lucide-react';
 
-export type GatewayTarget = 'vip-signals' | 'account-management' | 'pool-trading' | 'dashboard' | 'bot-store';
+export type GatewayTarget = 'vip-signals' | 'pool-trading' | 'account-management' | 'dashboard' | 'bot-store';
 
 interface AuthJunctionGatewayProps {
   onSelectOption: (target: GatewayTarget, mode: 'login' | 'signup') => void;
@@ -15,180 +15,194 @@ export const AuthJunctionGateway: React.FC<AuthJunctionGatewayProps> = ({
   const options = [
     {
       id: 'vip-signals' as GatewayTarget,
-      title: 'VIP Signals & Telegram Community',
-      badge: 'Popular',
-      badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+      number: '01',
+      title: 'VIP Signals & Telegram',
+      subtitle: 'Real-time Institutional Trading Signals',
+      badge: 'Most Popular',
+      badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
       icon: Send,
-      color: 'from-emerald-500 to-teal-600',
-      iconBg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-      description: 'Get real-time institutional forex signals, daily chart breakdowns, and direct VIP Telegram group access.',
-      highlights: ['90%+ Signal Accuracy', 'Live Entry/SL/TP Alerts', '1-on-1 Trading Guidance'],
-      ctaText: 'Access VIP Signals'
-    },
-    {
-      id: 'account-management' as GatewayTarget,
-      title: 'Account Management & Prop Firm',
-      badge: 'High Yield',
-      badgeColor: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-      icon: Users,
-      color: 'from-purple-500 to-indigo-600',
-      iconBg: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-      description: 'Let experienced institutional traders manage your account or pass your Prop Firm challenge with strict risk controls.',
-      highlights: ['Strict Capital Preservation', 'Custom Profit Split', 'Real-Time Performance Dashboard'],
-      ctaText: 'Explore Account Management'
+      accentGradient: 'from-emerald-500 to-teal-600',
+      iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+      description: 'Get real-time institutional forex signals, daily chart breakdowns, and direct VIP Telegram channel access.',
+      highlights: ['90%+ Historical Signal Accuracy', 'Instant Telegram & Push Alerts', '1-on-1 Trading Guidance'],
+      ctaText: 'VIP Signals',
+      accentColor: '#10B981'
     },
     {
       id: 'pool-trading' as GatewayTarget,
+      number: '02',
       title: 'Pool Trading Investment',
+      subtitle: 'Automated Managed Yield Pools',
       badge: 'Passive Income',
-      badgeColor: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+      badgeClass: 'bg-blue-50 text-blue-700 border-blue-200',
       icon: TrendingUp,
-      color: 'from-amber-500 to-orange-600',
-      iconBg: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-      description: 'Deposit funds into managed liquidity pools and earn steady compound profits from algorithmic & expert strategy execution.',
-      highlights: ['Transparent Return Tracking', 'Flexible Capital Withdrawal', 'Multi-Tiered Staking Plans'],
-      ctaText: 'Join Pool Trading'
+      accentGradient: 'from-blue-500 to-indigo-600',
+      iconBg: 'bg-blue-50 text-blue-600 border-blue-100',
+      description: 'Deposit funds into expert-managed liquidity pools and earn steady compound yields from algorithmic execution.',
+      highlights: ['Transparent Yield Tracking', 'Flexible Capital Withdrawal', 'Institutional Staking Pools'],
+      ctaText: 'Pool Trading',
+      accentColor: '#3B82F6'
     },
     {
-      id: 'bot-store' as GatewayTarget,
-      title: 'Automated Trading Bots',
-      badge: 'Automated',
-      badgeColor: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-      icon: Bot,
-      color: 'from-cyan-500 to-blue-600',
-      iconBg: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-      description: 'Acquire high-performance automated MT4/MT5 trading bots, backtested strategies, and auto-execution tools.',
-      highlights: ['Instant File Downloads', 'Automated Risk Rules', 'Free Lifetime Updates'],
-      ctaText: 'Get Trading Bots'
-    },
-    {
-      id: 'dashboard' as GatewayTarget,
-      title: 'General Trading Platform Hub',
-      badge: 'All-In-One',
-      badgeColor: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-      icon: ShieldCheck,
-      color: 'from-blue-500 to-cyan-600',
-      iconBg: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-      description: 'Access the main trader portal including AI Trade Assistant, CRT Rule Builder, Trade Journal, and Academy Courses.',
-      highlights: ['AI Trade Assistant', 'CRT Rule Checker', 'Journal & Analytics'],
-      ctaText: 'Enter Main Portal'
+      id: 'account-management' as GatewayTarget,
+      number: '03',
+      title: 'Account Management',
+      subtitle: 'Professional Capital Management',
+      badge: 'High Yield',
+      badgeClass: 'bg-purple-50 text-purple-700 border-purple-200',
+      icon: Users,
+      accentGradient: 'from-purple-500 to-indigo-600',
+      iconBg: 'bg-purple-50 text-purple-600 border-purple-100',
+      description: 'Let experienced institutional traders manage your account or pass your Prop Firm challenge with strict risk controls.',
+      highlights: ['Strict Capital Preservation', 'Custom Profit Split Model', 'Real-Time Performance Dashboard'],
+      ctaText: 'Account Management',
+      accentColor: '#8B5CF6'
     }
   ];
 
   return (
-    <div className="min-h-screen bg-[#0A0D14] text-white flex flex-col justify-between relative overflow-hidden font-sans">
-      {/* Background Glow Elements */}
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[140px] pointer-events-none" />
+    <div className="min-h-screen bg-[#F5F7FA] text-slate-800 flex flex-col justify-between relative font-sans">
+      {/* Soft Background Accent Orbs */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-blue-50/80 via-emerald-50/40 to-transparent pointer-events-none" />
 
       {/* Header Bar */}
-      <header className="px-6 py-6 border-b border-gray-800/80 backdrop-blur-md flex items-center justify-between z-10 max-w-7xl mx-auto w-full">
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 py-3.5 flex items-center justify-between max-w-7xl mx-auto w-full">
         <button
           onClick={onBackToLanding}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-800 hover:border-gray-700 bg-gray-900/50"
+          className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 transition-colors text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 bg-white shadow-sm"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Main Site
+          <span className="hidden sm:inline">Back to Main Site</span>
+          <span className="sm:hidden">Back</span>
         </button>
 
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center font-bold text-black text-lg">
-            M
+          <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center font-black text-white text-base shadow-sm">
+            F
           </div>
-          <span className="font-extrabold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-400">
-            MAICHEZ <span className="text-emerald-400 font-light">FX</span>
+          <span className="font-extrabold text-lg sm:text-xl tracking-tight text-slate-900">
+            FOREX <span className="text-blue-600 font-light">ROYAL</span>
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => onSelectOption('dashboard', 'login')}
-            className="text-sm font-semibold text-gray-300 hover:text-white px-4 py-2 rounded-xl transition-all hover:bg-gray-800/60"
+            className="text-xs sm:text-sm font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3.5 py-1.5 rounded-lg transition-all"
           >
-            Direct Sign In
+            Sign In
           </button>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-6 py-12 flex-1 flex flex-col justify-center z-10 w-full">
+      <main className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-12 flex-1 flex flex-col justify-center z-10 w-full">
         {/* Title Section */}
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-4">
+        <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-600 text-xs font-bold uppercase tracking-wider mb-3">
             <Sparkles className="w-3.5 h-3.5" /> Welcome Gateway
           </div>
-          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-4 text-white">
-            Choose Your <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-300">Destination</span>
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 mb-3">
+            Choose Your <span className="text-blue-600">Destination</span>
           </h1>
-          <p className="text-gray-400 text-base md:text-lg leading-relaxed">
-            Select what you would like to access today. We will guide you straight to your feature after signing in or creating an account.
+          <p className="text-slate-500 text-sm sm:text-base leading-relaxed px-2">
+            Select your path below. You will be seamlessly directed to your chosen feature after a quick sign in or account creation.
           </p>
         </div>
 
-        {/* Destination Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Destination Cards Grid (Order: 1. VIP Signals, 2. Pool Trading, 3. Account Management) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
           {options.map((opt) => {
             const IconComp = opt.icon;
             return (
               <div
                 key={opt.id}
-                className="group relative bg-gray-900/60 border border-gray-800 hover:border-emerald-500/50 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-emerald-500/10 flex flex-col justify-between backdrop-blur-xl"
+                className="group relative bg-white border border-slate-200 hover:border-blue-400 rounded-2xl p-5 sm:p-6 transition-all duration-200 hover:-translate-y-1 shadow-card hover:shadow-xl flex flex-col justify-between overflow-hidden"
               >
+                {/* Top Accent Bar */}
+                <div
+                  className="absolute top-0 left-0 right-0 h-1.5 transition-all duration-300"
+                  style={{ background: opt.accentColor }}
+                />
+
                 <div>
-                  {/* Card Header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`p-3 rounded-xl border ${opt.iconBg}`}>
-                      <IconComp className="w-6 h-6" />
+                  {/* Card Top Header */}
+                  <div className="flex items-center justify-between mb-4 pt-1">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-3 rounded-xl border ${opt.iconBg} shadow-sm`}>
+                        <IconComp className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-mono font-bold text-slate-400">PATH {opt.number}</span>
+                        <p className="text-xs font-semibold text-slate-500">{opt.subtitle}</p>
+                      </div>
                     </div>
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${opt.badgeColor}`}>
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${opt.badgeClass}`}>
                       {opt.badge}
                     </span>
                   </div>
 
-                  <h3 className="text-xl font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors">
+                  {/* Title & Description */}
+                  <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
                     {opt.title}
-                  </h3>
-                  <p className="text-gray-400 text-sm mb-5 leading-relaxed">
+                  </h2>
+                  <p className="text-slate-500 text-xs sm:text-sm mb-4 leading-relaxed">
                     {opt.description}
                   </p>
 
                   {/* Highlights list */}
-                  <ul className="space-y-2 mb-6 border-t border-gray-800/80 pt-4">
-                    {opt.highlights.map((h, i) => (
-                      <li key={i} className="flex items-center gap-2 text-xs text-gray-300 font-medium">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        <span>{h}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="bg-slate-50 rounded-xl p-3 sm:p-4 mb-5 border border-slate-100">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Key Features</p>
+                    <ul className="space-y-2">
+                      {opt.highlights.map((h, i) => (
+                        <li key={i} className="flex items-center gap-2 text-xs text-slate-700 font-medium">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          <span>{h}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
 
-                {/* Actions */}
-                <div className="space-y-2 pt-2">
+                {/* Dual Action Buttons (Login / Signup) */}
+                <div className="space-y-2 pt-2 border-t border-slate-100">
                   <button
                     onClick={() => onSelectOption(opt.id, 'login')}
-                    className="w-full py-3 px-4 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all active:scale-[0.98]"
+                    className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-slate-900 hover:bg-blue-600 active:scale-[0.99] flex items-center justify-center gap-2 shadow-sm transition-all"
                   >
-                    <span>Sign In & {opt.ctaText}</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <Lock className="w-3.5 h-3.5 opacity-70" />
+                    <span>Login to Access {opt.ctaText}</span>
+                    <ArrowRight className="w-4 h-4 ml-auto" />
                   </button>
 
                   <button
                     onClick={() => onSelectOption(opt.id, 'signup')}
-                    className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-gray-300 hover:text-white bg-gray-800/40 hover:bg-gray-800/80 border border-gray-700/50 transition-colors text-center"
+                    className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-slate-700 hover:text-blue-600 bg-slate-100 hover:bg-blue-50 border border-slate-200 transition-all flex items-center justify-center gap-1.5"
                   >
-                    Don't have an account? <span className="text-emerald-400 underline">Sign Up</span>
+                    <UserPlus className="w-3.5 h-3.5 text-slate-400" />
+                    <span>New User? Create Account</span>
                   </button>
                 </div>
               </div>
             );
           })}
         </div>
+
+        {/* Security / Trust Banner */}
+        <div className="mt-8 sm:mt-12 text-center flex items-center justify-center gap-6 text-xs text-slate-400">
+          <span className="flex items-center gap-1.5 font-medium">
+            <ShieldCheck className="w-4 h-4 text-emerald-500" /> 256-Bit SSL Encrypted
+          </span>
+          <span className="hidden sm:inline">•</span>
+          <span className="hidden sm:flex items-center gap-1.5 font-medium">
+            <Sparkles className="w-4 h-4 text-blue-500" /> Instant Intent Navigation
+          </span>
+        </div>
       </main>
 
       {/* Footer info */}
-      <footer className="px-6 py-6 border-t border-gray-800/80 text-center text-xs text-gray-500 z-10">
-        © {new Date().getFullYear()} MAICHEZ FX. Institutional Grade Trading Solutions & Managed Portfolios.
+      <footer className="px-4 py-4 border-t border-slate-200 bg-white text-center text-xs text-slate-400">
+        © {new Date().getFullYear()} FOREX ROYAL. Institutional Grade Trading Solutions & Managed Portfolios.
       </footer>
     </div>
   );
