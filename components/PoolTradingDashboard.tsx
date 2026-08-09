@@ -71,7 +71,7 @@ const riskCfg = {
   high: { label: 'High Risk', color: '#F59E0B', textColor: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', accent: '#F59E0B' },
 };
 
-/* ─── Global CSS ─────────────────────────────────────────────────────────── */
+/* ─── Global CSS ────────────────────────────────────────────────────────────────────── */
 const globalCSS = `
   .shadow-card { box-shadow: 0 4px 6px -1px rgba(15,23,42,0.06), 0 2px 4px -2px rgba(15,23,42,0.04); }
   .shadow-card-hover { transition: all 0.2s ease; }
@@ -85,6 +85,24 @@ const globalCSS = `
   .scroll-snap-x { scroll-snap-type: x mandatory; overflow-x: auto; display: flex; gap: 20px; padding: 4px 16px 12px; -webkit-overflow-scrolling: touch; }
   .scroll-snap-x::-webkit-scrollbar { display: none; }
   .snap-card { scroll-snap-align: start; flex-shrink: 0; }
+  /* Swipe hint animations */
+  @keyframes swipe-nudge {
+    0%   { transform: translateX(0); opacity: 1; }
+    30%  { transform: translateX(18px); opacity: 1; }
+    60%  { transform: translateX(4px); opacity: 0.7; }
+    80%  { transform: translateX(22px); opacity: 1; }
+    100% { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes hint-fade-in  { from { opacity:0; } to { opacity:1; } }
+  @keyframes hint-fade-out { from { opacity:1; } to { opacity:0; pointer-events:none; } }
+  .swipe-hint { animation: hint-fade-in 0.5s ease forwards; }
+  .swipe-hint.hiding { animation: hint-fade-out 0.4s ease forwards; }
+  .swipe-hand { animation: swipe-nudge 1.4s ease-in-out infinite; }
+  @keyframes arrow-slide {
+    0%,100% { transform: translateX(0); opacity: 0.5; }
+    50%      { transform: translateX(10px); opacity: 1; }
+  }
+  .swipe-arrow { animation: arrow-slide 1.4s ease-in-out infinite; }
 `;
 
 /* ─── Modal Wrapper ──────────────────────────────────────────────────────── */
@@ -603,6 +621,50 @@ export function PoolTradingDashboard() {
     { id: 'history', label: 'History' },
   ] as const;
 
+  type PkgFilter = 'all' | '24h' | '2day' | 'weekly';
+  const [pkgFilter, setPkgFilter] = React.useState<PkgFilter>('all');
+  const [showSwipeHint, setShowSwipeHint] = React.useState(true);
+  const [swipeHintHiding, setSwipeHintHiding] = React.useState(false);
+  const mobileScrollRef = React.useRef<HTMLDivElement>(null);
+
+  const PKG_FILTERS: { id: PkgFilter; label: string; emoji: string }[] = [
+    { id: 'all',    label: 'All Plans',  emoji: '✨' },
+    { id: '24h',   label: '24 Hours',   emoji: '⚡' },
+    { id: '2day',  label: '2 Days',     emoji: '📅' },
+    { id: 'weekly',label: 'Weekly',     emoji: '🗓️' },
+  ];
+
+  const filteredPackages = React.useMemo(() => {
+    if (pkgFilter === 'all') return PACKAGES;
+    if (pkgFilter === '24h')   return PACKAGES.filter(p => p.duration_unit === 'hours' && p.duration_value === 24);
+    if (pkgFilter === '2day')  return PACKAGES.filter(p => p.duration_unit === 'days'  && p.duration_value === 2);
+    if (pkgFilter === 'weekly')return PACKAGES.filter(p => p.duration_unit === 'days'  && p.duration_value === 7);
+    return PACKAGES;
+  }, [pkgFilter]);
+
+  const dismissSwipeHint = React.useCallback(() => {
+    if (!showSwipeHint || swipeHintHiding) return;
+    setSwipeHintHiding(true);
+    setTimeout(() => setShowSwipeHint(false), 400);
+  }, [showSwipeHint, swipeHintHiding]);
+
+  // Auto-dismiss hint when user scrolls
+  React.useEffect(() => {
+    const el = mobileScrollRef.current;
+    if (!el) return;
+    const onScroll = () => dismissSwipeHint();
+    el.addEventListener('scroll', onScroll, { passive: true, once: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [dismissSwipeHint]);
+
+  // Auto-dismiss after 4s
+  React.useEffect(() => {
+    if (!showSwipeHint) return;
+    const t = setTimeout(() => dismissSwipeHint(), 4000);
+    return () => clearTimeout(t);
+  }, [showSwipeHint, dismissSwipeHint]);
+
+
   const statusColor: Record<string, string> = {
     pending: 'bg-amber-50 text-amber-700 border-amber-200',
     approved: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -643,17 +705,70 @@ export function PoolTradingDashboard() {
             <SuccessState sub={submissionSuccess} onDismiss={() => setSubmissionSuccess(null)} whatsappUrl={whatsappUrl} />
           ) : (
             <>
+              {/* ── Duration Filter Tabs ─────────────────────────────────── */}
+              <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-none flex-nowrap -mx-3.5 px-3.5 sm:mx-0 sm:px-0 pb-1">
+                {PKG_FILTERS.map(f => (
+                  <button
+                    key={f.id}
+                    onClick={() => { setPkgFilter(f.id); setShowSwipeHint(true); setSwipeHintHiding(false); }}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap flex-shrink-0 transition-all border ${
+                      pkgFilter === f.id
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-md scale-105'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-600'
+                    }`}
+                  >
+                    <span>{f.emoji}</span> {f.label}
+                    {pkgFilter === f.id && (
+                      <span className="ml-1 bg-white/20 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                        {filteredPackages.length}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
               {/* Desktop grid */}
               <div className="hidden sm:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-                {PACKAGES.map(p => <PackageCard key={p.id} pkg={p} onSelect={handleSelectPackage} />)}
+                {filteredPackages.map(p => <PackageCard key={p.id} pkg={p} onSelect={handleSelectPackage} />)}
               </div>
-              {/* Mobile horizontal scroll */}
-              <div className="sm:hidden scroll-snap-x -mx-3.5">
-                {PACKAGES.map(p => (
-                  <div key={p.id} className="snap-card" style={{ width: '88vw' }}>
-                    <PackageCard pkg={p} onSelect={handleSelectPackage} />
+
+              {/* Mobile horizontal scroll + swipe hint */}
+              <div className="sm:hidden relative">
+                {/* Swipe hint overlay */}
+                {showSwipeHint && filteredPackages.length > 1 && (
+                  <div
+                    className={`swipe-hint${swipeHintHiding ? ' hiding' : ''} pointer-events-none absolute bottom-6 right-4 z-20 flex items-center gap-1.5 bg-slate-900/75 backdrop-blur-sm text-white text-xs font-bold px-3 py-2 rounded-full shadow-lg`}
+                    style={{ animation: swipeHintHiding ? 'hint-fade-out 0.4s ease forwards' : 'hint-fade-in 0.5s ease forwards' }}
+                  >
+                    <span className="swipe-hand text-base">👆</span>
+                    <span>Swipe to see more</span>
+                    <svg className="swipe-arrow w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
                   </div>
-                ))}
+                )}
+                {/* Right-side gradient fade hinting more content */}
+                {showSwipeHint && filteredPackages.length > 1 && (
+                  <div className="pointer-events-none absolute top-0 right-0 h-full w-16 z-10"
+                    style={{ background: 'linear-gradient(to left, rgba(245,247,250,0.9) 0%, transparent 100%)' }} />
+                )}
+                <div ref={mobileScrollRef} className="scroll-snap-x -mx-3.5">
+                  {filteredPackages.map(p => (
+                    <div key={p.id} className="snap-card" style={{ width: '88vw' }}>
+                      <PackageCard pkg={p} onSelect={handleSelectPackage} />
+                    </div>
+                  ))}
+                </div>
+                {/* Dot indicators */}
+                {filteredPackages.length > 1 && (
+                  <div className="flex justify-center gap-1.5 mt-3">
+                    {filteredPackages.map((p, i) => (
+                      <div key={p.id} className={`rounded-full transition-all ${
+                        i === 0 ? 'w-5 h-1.5 bg-blue-600' : 'w-1.5 h-1.5 bg-slate-300'
+                      }`} />
+                    ))}
+                  </div>
+                )}
               </div>
             </>
           )
