@@ -82,7 +82,7 @@ const globalCSS = `
 
 /* ─── Reusable Modal ─────────────────────────────────────────────────────── */
 function Modal({ open, onClose, title, children, maxW = 'max-w-lg' }: {
-  open: boolean; onClose: () => void; title: string; children: React.ReactNode; maxW?: string;
+  open: boolean; onClose: () => void; title: string; children?: React.ReactNode; maxW?: string;
 }) {
   if (!open) return null;
   return (

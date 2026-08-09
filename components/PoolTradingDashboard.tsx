@@ -89,7 +89,7 @@ const globalCSS = `
 
 /* ─── Modal Wrapper ──────────────────────────────────────────────────────── */
 function Modal({ open, onClose, title, children, maxW = 'max-w-md' }: {
-  open: boolean; onClose: () => void; title: string; children: React.ReactNode; maxW?: string;
+  open: boolean; onClose: () => void; title: string; children?: React.ReactNode; maxW?: string;
 }) {
   if (!open) return null;
   return (
@@ -111,7 +111,7 @@ function Modal({ open, onClose, title, children, maxW = 'max-w-md' }: {
 /* ═══════════════════════════════════════════════════════════════════════════
    PACKAGE CARD
 ═══════════════════════════════════════════════════════════════════════════ */
-function PackageCard({ pkg, onSelect }: { pkg: PoolPackage; onSelect: (p: PoolPackage) => void }) {
+function PackageCard({ pkg, onSelect }: { key?: string; pkg: PoolPackage; onSelect: (p: PoolPackage) => void }) {
   const [calcAmt, setCalcAmt] = useState(pkg.min_amount);
   const r = riskCfg[pkg.risk_level];
   const est = (calcAmt * pkg.roi_percentage) / 100;
@@ -213,7 +213,7 @@ function PackageCard({ pkg, onSelect }: { pkg: PoolPackage; onSelect: (p: PoolPa
    INVESTMENT VAULT CARD
 ═══════════════════════════════════════════════════════════════════════════ */
 function InvestmentCard({ inv, now, onWithdraw }: {
-  inv: Investment; now: number; onWithdraw: (i: Investment) => void;
+  key?: string; inv: Investment; now: number; onWithdraw: (i: Investment) => void;
 }) {
   const maturityMs = new Date(inv.maturity_date).getTime();
   const remaining = maturityMs - now;
