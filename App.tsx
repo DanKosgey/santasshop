@@ -257,7 +257,16 @@ const App: React.FC = () => {
         setViewState(prev => (prev === 'portal' ? 'landing' : prev));
       } else if (session?.user) {
         fetchProfile(session.user.id, session.user.email!);
-        setViewState(prev => (prev === 'signup' || prev === 'login' || prev === 'gateway' ? prev : 'portal'));
+        // Always transition to portal on successful sign-in.
+        // Previously this kept the user on 'login'/'signup'/'gateway' which caused
+        // the redirect-after-login failure.
+        setViewState('portal');
+        // Restore any deep-link intent the user had before being sent to login
+        const savedIntent = sessionStorage.getItem('maichez_target_intent');
+        if (savedIntent) {
+          sessionStorage.removeItem('maichez_target_intent');
+          setPortalView(savedIntent);
+        }
       }
     });
 
