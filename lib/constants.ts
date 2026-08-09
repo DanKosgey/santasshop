@@ -20,3 +20,8 @@ export const APP_MESSAGES = {
   liveRoom: `${APP_NAME} Live Room`,
   copyright: `© 2025 ${APP_NAME}. All rights reserved. Trading involves substantial risk.`,
 };
+
+// Admin contact details
+export const ADMIN_WHATSAPP = '12089695688';   // +1 (208) 969-5688
+export const ADMIN_TELEGRAM_URL = 'https://t.me/SIRLEONARD1';
+export const ADMIN_TELEGRAM_USERNAME = 'SIRLEONARD1';

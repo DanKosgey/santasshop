@@ -3,6 +3,7 @@ import {
   TrendingUp, Clock, ShieldCheck, Lock, Unlock, AlertCircle, 
   CheckCircle2, Send, X, Copy, ChevronRight, RefreshCw, AlertTriangle
 } from 'lucide-react';
+import { ADMIN_WHATSAPP, ADMIN_TELEGRAM_URL } from '../lib/constants';
 
 export interface PoolPackage {
   id: string;
@@ -240,11 +241,11 @@ export function PoolTradingDashboard() {
     alert('Withdrawal request submitted successfully. You will receive funds within 24 hours.');
   };
 
-  const adminWhatsappNumber = '255700000000';
+  const adminWhatsappNumber = ADMIN_WHATSAPP;
   const whatsappUrl = `https://wa.me/${adminWhatsappNumber}?text=${encodeURIComponent(
     `Hi, I'm ${userName} (${userEmail}). I just submitted an application for ${submissionSuccess?.package_name} ($${submissionSuccess?.amount}).`
   )}`;
-  const telegramUrl = `https://t.me/ForexElitesAdmin`;
+  const telegramUrl = ADMIN_TELEGRAM_URL;
 
   return (
     <div className="text-slate-700 font-sans pb-6">

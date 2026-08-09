@@ -3,6 +3,7 @@ import {
   User, Mail, Phone, ShieldCheck, ShieldAlert, Edit3, KeyRound, 
   MessageSquare, Send, Lock, Unlock, LogOut, Trash2, Clock, CheckCircle2, X
 } from 'lucide-react';
+import { ADMIN_WHATSAPP, ADMIN_TELEGRAM_URL, ADMIN_TELEGRAM_USERNAME } from '../lib/constants';
 
 export interface UserProfile {
   id: string;
@@ -59,7 +60,7 @@ export function AccountManagementPage() {
           avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
           email_verified: true,
           vip_status: 'none',
-          vip_group_url: 'https://t.me/+ForexElitesVIPCommunity',
+          vip_group_url: 'https://t.me/SIRLEONARD1',
           active_pool_trades_count: 3,
           total_invested: 2450.00,
           total_withdrawn: 890.50,
@@ -136,12 +137,12 @@ export function AccountManagementPage() {
     );
   }
 
-  const adminWhatsappNumber = '255700000000';
+  const adminWhatsappNumber = ADMIN_WHATSAPP;
   const whatsappUrl = `https://wa.me/${adminWhatsappNumber}?text=${encodeURIComponent(
     `Hi, I'm ${profile.name} from Forex Elites. My email is ${profile.email}. I need help with account management.`
   )}`;
-  const telegramUsername = 'ForexElitesAdmin';
-  const telegramUrl = `https://t.me/${telegramUsername}`;
+  const telegramUsername = ADMIN_TELEGRAM_USERNAME;
+  const telegramUrl = ADMIN_TELEGRAM_URL;
 
   return (
     <div className="text-slate-700 space-y-0 md:space-y-6 md:p-0 font-sans pb-6">
