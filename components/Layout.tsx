@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, GraduationCap, Cpu as Bot, BookOpen, Users, LogOut, Settings, ShieldAlert, Layers, PieChart as PieIcon, CheckSquare, X, Menu, Zap } from 'lucide-react';
+import { LayoutDashboard, GraduationCap, Cpu as Bot, BookOpen, Users, LogOut, Settings, ShieldAlert, Layers, PieChart as PieIcon, CheckSquare, X, Menu, Zap, ChevronRight } from 'lucide-react';
 import { User } from '../types';
 import NavigationButtons from './NavigationButtons';
 import { APP_DISPLAY_NAMES } from '../lib/constants';
@@ -21,132 +21,149 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
     setIsMobileMenuOpen(false);
   };
 
-  const handleRefresh = () => {
-    window.location.reload();
-  };
+  const handleRefresh = () => window.location.reload();
 
-  // Strict separation of portals
   let menuItems: { id: string; label: string; icon: React.ElementType; premium?: boolean }[] = [];
 
   if (user.role === 'admin') {
     menuItems = [
-      { id: 'overview', label: 'Command', icon: ShieldAlert },
-      { id: 'directory', label: 'Directory', icon: Users },
-      { id: 'trades', label: 'Trades', icon: Layers },
-      { id: 'analytics', label: 'Analytics', icon: PieIcon },
-      { id: 'content', label: 'Courses', icon: GraduationCap },
-      { id: 'rules', label: 'Rules', icon: Settings },
-      { id: 'bot-inquiries', label: 'Bot Inquiries', icon: Zap },
+      { id: 'directory',          label: 'Directory',    icon: Users },
+      { id: 'student-management', label: 'Students',     icon: Settings },
+      { id: 'trades',             label: 'Trade Audit',  icon: Layers },
+      { id: 'analytics',          label: 'Analytics',    icon: PieIcon },
+      { id: 'admin-pool-trading', label: 'Pool Trading', icon: Zap },
+      { id: 'content',            label: 'Courses',      icon: GraduationCap },
+      { id: 'rules',              label: 'Rules',        icon: Settings },
+      { id: 'bot-inquiries',      label: 'Bot Orders',   icon: Bot },
     ];
   } else {
     menuItems = [
-      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { id: 'courses', label: 'Courses', icon: GraduationCap },
-      { id: 'journal', label: 'Journal', icon: BookOpen },
-      { id: 'todos', label: 'Tasks', icon: CheckSquare },
-      { id: 'community', label: 'Community', icon: Users },
+      { id: 'dashboard',   label: 'Home',               icon: LayoutDashboard },
+      { id: 'account',     label: 'Account Management', icon: Settings },
+      { id: 'pool-trading',label: 'Pool Trading',       icon: Zap },
+      { id: 'courses',     label: 'Courses',            icon: GraduationCap },
+      { id: 'journal',     label: 'Journal',            icon: BookOpen },
+      { id: 'todos',       label: 'Tasks',              icon: CheckSquare },
+      { id: 'community',   label: 'Community',          icon: Users },
     ];
   }
 
-  // Bottom nav items (mobile) — max 5 for clean look
   const bottomNavItems = menuItems.slice(0, 5);
+  const overflowItems = menuItems.slice(5);
 
   const isAdmin = user.role === 'admin';
-  const accentColor = isAdmin ? 'purple' : 'trade-neon';
-  const accentClassBg = isAdmin ? 'bg-purple-500' : 'bg-trade-neon';
-  const accentClassText = isAdmin ? 'text-purple-400' : 'text-trade-neon';
-  const accentClassBorder = isAdmin ? 'border-purple-500/20' : 'border-trade-accent/20';
-  const accentClassBgLight = isAdmin ? 'bg-purple-500/10' : 'bg-trade-accent/10';
+  const accentBg      = isAdmin ? 'bg-purple-600'  : 'bg-blue-600';
+  const accentText    = isAdmin ? 'text-purple-600' : 'text-blue-600';
+  const accentBorder  = isAdmin ? 'border-purple-200' : 'border-blue-200';
+  const accentBgLight = isAdmin ? 'bg-purple-50'   : 'bg-blue-50';
+  const accentRing    = isAdmin ? 'ring-purple-200' : 'ring-blue-200';
+
+  // Find current page label for mobile header
+  const currentPage = menuItems.find(m => m.id === currentView);
+  const pageLabel   = currentPage?.label ?? APP_DISPLAY_NAMES.short;
 
   return (
-    <div className="flex min-h-screen bg-trade-black relative">
+    <div className="flex min-h-screen bg-[#F0F2F7] text-slate-700 relative font-sans">
 
-      {/* ─── Mobile Top Header ─────────────────────────── */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-trade-dark/95 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-4 z-50 shadow-lg">
-        <div className="flex items-center gap-2">
-          <div className={`w-1.5 h-7 rounded-full ${accentClassBg}`} style={{ boxShadow: isAdmin ? '0 0 8px rgba(168,85,247,0.6)' : '0 0 8px rgba(0,255,148,0.6)' }} />
-          <span className="text-white font-black text-lg tracking-tight">
-            {APP_DISPLAY_NAMES.short}
-            <span className={accentClassText}>{APP_DISPLAY_NAMES.full.split(' ')[1]}</span>
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* User avatar */}
-          <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${isAdmin ? 'bg-purple-600' : 'bg-gray-700'}`}>
-            {user.name.charAt(0).toUpperCase()}
+      {/* â”€â”€â”€ Mobile Top Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <header className="md:hidden fixed top-0 left-0 right-0 z-50"
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+        <div className="h-14 bg-white/97 backdrop-blur-xl border-b border-slate-200/80 shadow-sm flex items-center justify-between px-4">
+          {/* Left: Brand */}
+          <div className="flex items-center gap-2.5">
+            <div className={`w-1.5 h-6 rounded-full ${accentBg}`} />
+            <div>
+              <span className="text-slate-900 font-bold text-base tracking-tight leading-none">
+                {APP_DISPLAY_NAMES.short}
+              </span>
+              {currentPage && (
+                <div className={`text-[10px] font-semibold tracking-wide uppercase ${accentText} leading-none mt-0.5`}>
+                  {pageLabel}
+                </div>
+              )}
+            </div>
           </div>
-          {/* Overflow menu toggle (for items beyond bottom nav) */}
-          {menuItems.length > 5 && (
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 text-gray-400 hover:text-white transition rounded-lg hover:bg-gray-800"
-            >
-              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
-          )}
-        </div>
-      </div>
 
-      {/* ─── Mobile Overlay Menu (extra items) ──────────── */}
+          {/* Right: Avatar + overflow */}
+          <div className="flex items-center gap-2">
+            <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${accentBg} ring-2 ${accentRing}`}>
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            {overflowItems.length > 0 && (
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 transition"
+              >
+                {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* â”€â”€â”€ Mobile Overflow Menu â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               key="backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 md:hidden"
+              transition={{ duration: 0.18 }}
+              className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-40 md:hidden"
               onClick={() => setIsMobileMenuOpen(false)}
             />
-            {/* Slide-down menu with remaining items */}
             <motion.div
               key="menu"
-              initial={{ opacity: 0, y: -20, scale: 0.95 }}
+              initial={{ opacity: 0, y: -12, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.95 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="fixed top-14 right-2 z-50 bg-trade-dark border border-gray-700 rounded-2xl p-3 shadow-2xl min-w-[200px] md:hidden"
+              exit={{ opacity: 0, y: -12, scale: 0.97 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              className="fixed top-[60px] right-3 z-50 bg-white border border-slate-200/80 rounded-2xl shadow-xl overflow-hidden w-56 md:hidden"
             >
-              {menuItems.slice(5).map((item) => {
-                const Icon = item.icon;
-                const isActive = currentView === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleNavClick(item.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition text-sm font-medium mb-1 last:mb-0 ${isActive
-                      ? `${accentClassBgLight} ${accentClassText} border ${accentClassBorder}`
-                      : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                      }`}
-                  >
-                    <Icon className="h-4 w-4 flex-shrink-0" />
-                    {item.label}
-                    {item.premium && (
-                      <span className="ml-auto text-[10px] bg-gradient-to-r from-purple-500 to-pink-500 text-white px-1.5 py-0.5 rounded font-bold">
-                        PRO
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-              <div className="border-t border-gray-700 mt-2 pt-2">
-                <div className="flex items-center gap-2 px-4 py-2 mb-1">
-                  <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 ${isAdmin ? 'bg-purple-600' : 'bg-gray-600'}`}>
-                    {user.name.charAt(0)}
-                  </div>
-                  <div className="overflow-hidden">
-                    <p className="text-xs font-medium text-white truncate">{user.name}</p>
-                    <p className="text-[10px] text-gray-500 capitalize">{user.role}</p>
-                  </div>
+              {/* User info */}
+              <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border-b border-slate-100">
+                <div className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0 ${accentBg}`}>
+                  {user.name.charAt(0).toUpperCase()}
                 </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-800 truncate">{user.name}</p>
+                  <p className="text-[11px] text-slate-400 capitalize">{user.role}</p>
+                </div>
+              </div>
+
+              {/* Extra nav items */}
+              <div className="py-1.5">
+                {overflowItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = currentView === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleNavClick(item.id)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition ${
+                        isActive
+                          ? `${accentBgLight} ${accentText} font-semibold`
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4 flex-shrink-0" />
+                      <span className="flex-1 text-left">{item.label}</span>
+                      {isActive && <ChevronRight className={`h-3.5 w-3.5 ${accentText}`} />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Sign out */}
+              <div className="border-t border-slate-100 py-1.5">
                 <button
                   onClick={onLogout}
-                  className="w-full flex items-center gap-2 text-gray-400 hover:text-red-400 text-sm px-4 py-2 transition rounded-lg hover:bg-red-500/10"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition"
                 >
-                  <LogOut className="h-4 w-4" /> Sign Out
+                  <LogOut className="h-4 w-4" />
+                  Sign Out
                 </button>
               </div>
             </motion.div>
@@ -154,93 +171,105 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
         )}
       </AnimatePresence>
 
-      {/* ─── Desktop Sidebar ─────────────────────────────── */}
-      <aside className="hidden md:flex fixed inset-y-0 left-0 z-40 w-64 bg-trade-dark border-r border-gray-800/60 flex-shrink-0 flex-col shadow-2xl">
+      {/* â”€â”€â”€ Desktop Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <aside className="hidden md:flex fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-slate-200 flex-shrink-0 flex-col shadow-sm">
         {/* Logo */}
-        <div className="p-5 border-b border-gray-800/60">
+        <div className="p-5 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className={`w-2 h-8 rounded-full ${accentClassBg}`} style={{ boxShadow: isAdmin ? '0 0 10px rgba(168,85,247,0.5)' : '0 0 10px rgba(0,255,148,0.5)' }} />
+            <div className={`w-2 h-8 rounded-full ${accentBg}`} />
             <div>
-              <h1 className="text-lg font-black text-white tracking-tight leading-none">
+              <h1 className="text-lg font-bold text-slate-900 tracking-tight leading-none">
                 {isAdmin ? APP_DISPLAY_NAMES.adminPortal : APP_DISPLAY_NAMES.full}
               </h1>
-              <p className="text-[10px] text-gray-500 mt-0.5 tracking-wider uppercase">{isAdmin ? 'Admin Portal' : 'Trading Platform'}</p>
+              <p className="text-[11px] font-semibold text-slate-400 mt-1 tracking-wider uppercase">
+                {isAdmin ? 'Admin Portal' : 'Trading Platform'}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Nav Items */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        {/* Nav */}
+        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
           {menuItems.map((item, i) => {
             const Icon = item.icon;
             const isActive = currentView === item.id;
             return (
               <motion.button
                 key={item.id}
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.04, duration: 0.3 }}
+                transition={{ delay: i * 0.03, duration: 0.2 }}
                 onClick={() => handleNavClick(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium relative group ${isActive
-                  ? `${accentClassBgLight} ${accentClassText} border ${accentClassBorder}`
-                  : 'text-gray-400 hover:bg-gray-800/60 hover:text-white'
-                  }`}
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-sm font-medium relative group ${
+                  isActive
+                    ? `${accentBgLight} ${accentText} font-semibold border ${accentBorder}`
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
               >
                 {isActive && (
                   <motion.div
                     layoutId="activeIndicator"
-                    className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full ${accentClassBg}`}
+                    className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full ${accentBg}`}
                   />
                 )}
-                <Icon className="h-4 w-4 flex-shrink-0" />
+                <Icon className={`h-4 w-4 flex-shrink-0 ${isActive ? accentText : 'text-slate-400 group-hover:text-slate-600'}`} />
                 {item.label}
                 {item.premium && (
-                  <span className="ml-auto text-[10px] bg-gradient-to-r from-purple-500 to-pink-500 text-white px-1.5 py-0.5 rounded font-bold">
-                    PRO
-                  </span>
+                  <span className="ml-auto text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded font-bold">PRO</span>
                 )}
               </motion.button>
             );
           })}
         </nav>
 
-        {/* User Section */}
-        <div className="p-3 border-t border-gray-800/60">
-          <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-gray-800/40 mb-2">
-            <div className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0 ${isAdmin ? 'bg-gradient-to-br from-purple-600 to-purple-800' : 'bg-gradient-to-br from-gray-600 to-gray-800'}`}>
+        {/* User section */}
+        <div className="p-3 border-t border-slate-100">
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-50 mb-1.5 border border-slate-100">
+            <div className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0 ${accentBg}`}>
               {user.name.charAt(0).toUpperCase()}
             </div>
             <div className="overflow-hidden flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{user.name}</p>
-              <p className="text-[11px] text-gray-500 truncate capitalize">{user.role} Account</p>
+              <p className="text-sm font-semibold text-slate-800 truncate">{user.name}</p>
+              <p className="text-[11px] text-slate-400 truncate capitalize">{user.role} Account</p>
             </div>
           </div>
           <button
             onClick={onLogout}
-            className="w-full flex items-center gap-2 text-gray-500 hover:text-red-400 text-sm px-3 py-2 transition rounded-xl hover:bg-red-500/10 group"
+            className="w-full flex items-center gap-2 text-slate-500 hover:text-red-600 text-sm px-3 py-2 transition rounded-xl hover:bg-red-50 group font-medium"
           >
-            <LogOut className="h-4 w-4 group-hover:scale-110 transition-transform" />
+            <LogOut className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
             <span>Sign Out</span>
           </button>
         </div>
       </aside>
 
-      {/* ─── Main Content ─────────────────────────────────── */}
-      <main className="flex-1 md:ml-64 overflow-y-auto min-h-screen pt-14 md:pt-0 pb-24 md:pb-0 w-full">
-        <div className="p-4 md:p-8 max-w-7xl mx-auto">
-          <NavigationButtons onRefresh={handleRefresh} />
+      {/* â”€â”€â”€ Main Content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <main
+        className="flex-1 md:ml-64 overflow-y-auto w-full"
+        style={{
+          paddingTop: 'var(--header-height, 56px)',
+          paddingBottom: 'calc(var(--nav-height, 64px) + env(safe-area-inset-bottom, 0px))',
+        }}
+      >
+        {/* Desktop wrapper: centered + padded */}
+        {/* Mobile: zero padding â€” children control their own px */}
+        <div className="md:p-8 md:max-w-7xl md:mx-auto min-h-full">
+          <div className="hidden md:block mb-6">
+            <NavigationButtons onRefresh={handleRefresh} />
+          </div>
           {children}
         </div>
       </main>
 
-      {/* ─── Mobile Bottom Navigation Bar ────────────────── */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
-        {/* Glassmorphism background */}
-        <div className="absolute inset-0 bg-trade-dark/90 backdrop-blur-xl border-t border-white/5" />
-        {/* Safe area gradient fade */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+      {/* â”€â”€â”€ Mobile Bottom Navigation Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <div
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
+        {/* Frosted glass background */}
+        <div className="absolute inset-0 bg-white/97 backdrop-blur-2xl border-t border-slate-200/60 shadow-[0_-2px_20px_rgba(15,23,42,0.08)]" />
 
-        <nav className="relative flex items-center justify-around px-2 pt-2 pb-safe" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
+        <nav className="relative flex items-stretch h-[60px]">
           {bottomNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentView === item.id;
@@ -248,59 +277,52 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
-                className="flex flex-col items-center justify-center gap-0.5 flex-1 py-1 px-1 min-w-0 relative"
+                className="flex flex-col items-center justify-center flex-1 min-w-0 relative px-0.5 gap-0.5"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {/* Active background pill */}
                 {isActive && (
                   <motion.div
-                    layoutId="bottomNavPill"
-                    className={`absolute inset-x-1 top-0.5 bottom-0.5 rounded-2xl ${accentClassBgLight}`}
-                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                    layoutId="bottomNavActive"
+                    className={`absolute inset-x-1.5 top-1 bottom-1 rounded-2xl ${accentBgLight}`}
+                    transition={{ type: 'spring', stiffness: 420, damping: 32 }}
                   />
                 )}
 
-                {/* Icon with glow when active */}
+                {/* Icon */}
                 <motion.div
                   className="relative z-10"
-                  animate={{ scale: isActive ? 1.15 : 1 }}
-                  transition={{ type: 'spring', stiffness: 600, damping: 30 }}
+                  animate={{ scale: isActive ? 1.12 : 1, y: isActive ? -1 : 0 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 28 }}
                 >
                   <Icon
-                    className={`h-5 w-5 transition-colors duration-200 ${isActive ? accentClassText : 'text-gray-500'
-                      }`}
+                    strokeWidth={isActive ? 2.2 : 1.7}
+                    className={`h-[22px] w-[22px] transition-colors duration-150 ${isActive ? accentText : 'text-slate-400'}`}
                   />
-                  {/* Glow effect */}
-                  {isActive && (
-                    <div
-                      className={`absolute inset-0 blur-md opacity-50 ${accentClassText}`}
-                      style={{ filter: 'blur(4px)' }}
-                    />
-                  )}
                 </motion.div>
 
-                <span
-                  className={`relative z-10 text-[10px] font-semibold leading-none transition-colors duration-200 ${isActive ? accentClassText : 'text-gray-600'
-                    }`}
-                >
+                {/* Label */}
+                <span className={`relative z-10 text-[9.5px] font-semibold tracking-wide truncate w-full text-center px-0.5 transition-colors duration-150 ${isActive ? accentText : 'text-slate-400'}`}>
                   {item.label}
                 </span>
 
-                {/* PRO badge */}
+                {/* Premium dot */}
                 {item.premium && !isActive && (
-                  <span className="absolute top-0.5 right-1.5 w-1.5 h-1.5 bg-purple-500 rounded-full" />
+                  <span className="absolute top-1.5 right-2.5 w-1.5 h-1.5 bg-amber-500 rounded-full" />
                 )}
               </button>
             );
           })}
 
-          {/* Logout button at end on mobile if no overflow menu */}
+          {/* Logout button when 5 or fewer items */}
           {menuItems.length <= 5 && (
             <button
               onClick={onLogout}
-              className="flex flex-col items-center justify-center gap-0.5 flex-1 py-1 px-1 min-w-0"
+              className="flex flex-col items-center justify-center flex-1 min-w-0 gap-0.5 px-0.5"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
             >
-              <LogOut className="h-5 w-5 text-gray-500" />
-              <span className="text-[10px] font-semibold text-gray-600">Logout</span>
+              <LogOut strokeWidth={1.7} className="h-[22px] w-[22px] text-slate-400" />
+              <span className="text-[9.5px] font-semibold text-slate-400 tracking-wide">Logout</span>
             </button>
           )}
         </nav>

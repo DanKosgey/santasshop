@@ -33,11 +33,9 @@ const BotStore: React.FC<BotStoreProps> = ({ user, onUpdateUser, onNavigateToPur
             setLoading(true);
             setError(null);
 
-            // Navigate to the purchase page
             if (onNavigateToPurchase) {
                 onNavigateToPurchase();
             } else {
-                // Fallback: update database status if no navigation handler provided
                 const { error: updateError } = await supabase
                     .from('profiles')
                     .update({ bot_purchase_status: 'pending' })
@@ -62,95 +60,92 @@ const BotStore: React.FC<BotStoreProps> = ({ user, onUpdateUser, onNavigateToPur
     const hasAccess = user.botAccess || user.botPurchaseStatus === 'completed';
 
     return (
-        <div className="max-w-7xl mx-auto space-y-12 pb-24 px-4 animate-in fade-in ease-in-out duration-1000">
-            {/* Dark Hero Header - Institutional Aesthetic */}
-            <div className="relative overflow-hidden rounded-[3rem] bg-slate-900 border border-white/5 p-10 md:p-20 shadow-2xl">
-                {/* Enhanced background glows */}
-                <div className="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-brand-primary/10 blur-[120px]" />
-                <div className="absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-blue-600/5 blur-[120px]" />
+        <div className="space-y-0 md:space-y-10 pb-24 font-sans text-slate-700">
 
-                <div className="relative z-10 flex flex-col md:flex-row items-center gap-16">
-                    <div className="flex-1 space-y-8">
+            {/* Hero Header Light Aesthetic */}
+            <div className="relative overflow-hidden rounded-3xl bg-white border border-slate-200 p-8 md:p-14 shadow-card">
+                <div className="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-blue-50/80 blur-[100px]" />
+                <div className="absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-indigo-50/80 blur-[100px]" />
+
+                <div className="relative z-10 flex flex-col md:flex-row items-center gap-12">
+                    <div className="flex-1 space-y-6">
                         <motion.div
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className="inline-flex items-center gap-3 rounded-full bg-brand-primary/5 px-5 py-2 text-sm font-black text-brand-primary border border-brand-primary/20 tracking-widest shadow-inner uppercase"
+                            className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-xs font-bold text-blue-600 border border-blue-200 tracking-wider uppercase"
                         >
                             <Zap className="h-4 w-4" />
                             Algorithmic Supremacy
                         </motion.div>
 
                         <motion.h1
-                            initial={{ opacity: 0, y: 30 }}
+                            initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 }}
-                            className="text-5xl md:text-8xl font-black tracking-tighter leading-none text-white"
+                            className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight text-slate-900"
                         >
                             Maichez <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary via-emerald-400 to-teal-400">
+                            <span className="text-blue-600">
                                 Alpha-V5
                             </span>
                         </motion.h1>
 
                         <motion.p
-                            initial={{ opacity: 0, y: 30 }}
+                            initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
-                            className="text-xl text-slate-400 max-w-xl leading-relaxed font-medium"
+                            className="text-lg text-slate-600 max-w-xl leading-relaxed font-normal"
                         >
                             The world's first CRT-integrated MQL5 algorithm. Master the institutional flow with surgical precision and smart risk management.
                         </motion.p>
 
                         <motion.div
-                            initial={{ opacity: 0, y: 30 }}
+                            initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.3 }}
-                            className="flex flex-wrap gap-6 pt-4"
+                            className="flex flex-wrap gap-4 pt-2"
                         >
-                            <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-xl border border-white/5 backdrop-blur-sm">
-                                <CheckCircle2 className="h-5 w-5 text-brand-primary" />
-                                <span className="text-white font-bold text-sm tracking-tight">Institutional Proofed</span>
+                            <div className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 rounded-lg border border-slate-200">
+                                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                <span className="text-slate-800 font-semibold text-sm">Institutional Proofed</span>
                             </div>
-                            <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-xl border border-white/5 backdrop-blur-sm">
-                                <CheckCircle2 className="h-5 w-5 text-brand-primary" />
-                                <span className="text-white font-bold text-sm tracking-tight">Zero Martingale</span>
+                            <div className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 rounded-lg border border-slate-200">
+                                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                <span className="text-slate-800 font-semibold text-sm">Zero Martingale</span>
                             </div>
                         </motion.div>
                     </div>
 
                     <div className="md:w-1/3 flex justify-center relative group">
-                        <div className="absolute inset-0 bg-brand-primary/20 blur-[80px] rounded-full group-hover:bg-brand-primary/30 transition-all duration-700" />
+                        <div className="absolute inset-0 bg-blue-100/50 blur-3xl rounded-full" />
                         <motion.div
                             animate={{
-                                y: [0, -20, 0],
-                                rotate: [0, 2, 0]
+                                y: [0, -12, 0],
                             }}
-                            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                            className="relative bg-slate-800/80 backdrop-blur-2xl p-12 rounded-[4rem] border border-white/10 shadow-huge"
+                            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                            className="relative bg-white p-10 rounded-3xl border border-slate-200 shadow-xl"
                         >
-                            <Bot className="h-40 w-40 text-brand-primary drop-shadow-[0_0_15px_rgba(0,255,148,0.3)]" />
-                            <div className="absolute -bottom-4 -right-4 h-14 w-14 bg-brand-primary rounded-full flex items-center justify-center border-8 border-slate-900 shadow-xl shadow-brand-primary/20">
-                                <Cpu className="h-7 w-7 text-slate-900" />
+                            <Bot className="h-32 w-32 text-blue-600" />
+                            <div className="absolute -bottom-3 -right-3 h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
+                                <Cpu className="h-6 w-6 text-white" />
                             </div>
                         </motion.div>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                {/* Stats & Features - Glassmorphism */}
-                <div className="lg:col-span-2 space-y-10">
-                    <div className="bg-slate-900/40 backdrop-blur-md rounded-[2.5rem] border border-white/5 p-10 md:p-14 shadow-xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-brand-primary/5 blur-[100px] rounded-full" />
-
-                        <h2 className="text-3xl font-black text-white mb-10 flex items-center gap-4">
-                            <div className="h-12 w-12 rounded-2xl bg-brand-primary/10 flex items-center justify-center border border-brand-primary/20 shadow-inner">
-                                <Terminal className="h-7 w-7 text-brand-primary" />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Specifications Column */}
+                <div className="lg:col-span-2 space-y-8">
+                    <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-card relative overflow-hidden">
+                        <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-200">
+                                <Terminal className="h-5 w-5 text-blue-600" />
                             </div>
                             Technical Specifications
                         </h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             {[
                                 { title: "Execution Logic", value: "3ms Latency", icon: Zap, desc: "High-frequency DMA execution" },
                                 { title: "Asset Focus", value: "NAS100 / Gold", icon: Target, desc: "Liquid market specialization" },
@@ -158,48 +153,45 @@ const BotStore: React.FC<BotStoreProps> = ({ user, onUpdateUser, onNavigateToPur
                                 { title: "Synchronization", value: "CTR Full-Link", icon: Cpu, desc: "Real-time portal metadata sync" }
                             ].map((spec, i) => (
                                 <motion.div
-                                    whileHover={{ y: -5 }}
+                                    whileHover={{ y: -2 }}
                                     key={i}
-                                    className="flex items-start gap-5 p-6 rounded-3xl bg-white/[0.03] border border-white/5 hover:border-brand-primary/30 transition-all duration-300 group/item"
+                                    className="flex items-start gap-4 p-5 rounded-xl bg-slate-50 border border-slate-100 hover:border-slate-300 transition-all duration-200"
                                 >
-                                    <div className="h-12 w-12 rounded-2xl bg-slate-950/80 border border-white/10 flex items-center justify-center shadow-lg group-hover/item:border-brand-primary/20 transition-colors">
-                                        <spec.icon className="h-6 w-6 text-brand-primary" />
+                                    <div className="h-10 w-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center shadow-xs flex-shrink-0">
+                                        <spec.icon className="h-5 w-5 text-blue-600" />
                                     </div>
-                                    <div className="space-y-1">
-                                        <div className="text-xs text-slate-500 font-black uppercase tracking-widest">{spec.title}</div>
-                                        <div className="text-xl font-black text-white">{spec.value}</div>
-                                        <div className="text-[10px] text-slate-600 font-bold uppercase">{spec.desc}</div>
+                                    <div className="space-y-0.5">
+                                        <div className="text-xs text-slate-400 font-semibold uppercase tracking-wider">{spec.title}</div>
+                                        <div className="text-lg font-bold text-slate-900">{spec.value}</div>
+                                        <div className="text-[11px] text-slate-500 font-medium">{spec.desc}</div>
                                     </div>
                                 </motion.div>
                             ))}
                         </div>
 
-                        <div className="mt-12 p-8 rounded-3xl bg-gradient-to-r from-brand-primary/10 via-brand-primary/5 to-transparent border border-brand-primary/10 group-hover:border-brand-primary/20 transition-all duration-500">
-                            <p className="text-slate-300 leading-relaxed italic text-lg font-medium">
+                        <div className="mt-8 p-6 rounded-xl bg-blue-50/60 border border-blue-100">
+                            <p className="text-slate-700 italic text-base leading-relaxed font-medium">
                                 "Alpha-V5 doesn't just chase price; it anticipates institutional displacement. By analyzing the CRT data stream, it waits for the high-probability 'sweet spot' before executing."
                             </p>
                         </div>
                     </div>
                 </div>
 
-                {/* Ultimate Pricing Card - Premium Holographic UI */}
+                {/* Pricing Card */}
                 <div className="lg:col-span-1">
-                    <div className="sticky top-24 bg-slate-900 border-2 border-brand-primary/30 rounded-[3rem] p-10 shadow-[0_0_50px_rgba(0,255,148,0.1)] relative overflow-hidden group">
-                        {/* Animated gradient border glow */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/5 via-transparent to-purple-500/5 pointer-events-none" />
-
+                    <div className="sticky top-24 bg-white border border-slate-200 rounded-2xl p-8 shadow-card relative overflow-hidden">
                         <div className="relative z-10">
-                            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-brand-primary/10 rounded-full border border-brand-primary/30 mb-6">
-                                <div className="h-1.5 w-1.5 rounded-full bg-brand-primary animate-pulse" />
-                                <span className="text-[10px] font-black text-brand-primary uppercase tracking-[0.2em]">Institutional License</span>
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-full border border-blue-200 mb-6">
+                                <div className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse-dot" />
+                                <span className="text-[11px] font-semibold text-blue-700 uppercase tracking-wider">Institutional License</span>
                             </div>
 
-                            <div className="space-y-1 mb-8">
-                                <div className="text-6xl font-black text-white tracking-tighter">$299</div>
-                                <div className="text-slate-500 font-black text-sm uppercase tracking-widest">Lifetime Access Bundle</div>
+                            <div className="space-y-1 mb-6">
+                                <div className="text-5xl font-extrabold text-slate-900 tracking-tight tabular-nums">$299</div>
+                                <div className="text-slate-400 font-semibold text-xs uppercase tracking-wider">Lifetime Access Bundle</div>
                             </div>
 
-                            <div className="space-y-4 mb-10">
+                            <div className="space-y-3 mb-8">
                                 {[
                                     "100% Unlimited Usage",
                                     "MT5 Alpha-V5 Logic Engine",
@@ -207,11 +199,9 @@ const BotStore: React.FC<BotStoreProps> = ({ user, onUpdateUser, onNavigateToPur
                                     "Institutional Set Files",
                                     "Private Alpha-Chat Access"
                                 ].map((f, i) => (
-                                    <div key={i} className="flex items-center gap-4 text-slate-300 font-bold text-sm group/feature">
-                                        <div className="h-6 w-6 rounded-lg bg-brand-primary/10 border border-brand-primary/20 flex items-center justify-center group-hover/feature:bg-brand-primary/20 transition-colors">
-                                            <CheckCircle2 className="h-4 w-4 text-brand-primary" />
-                                        </div>
-                                        {f}
+                                    <div key={i} className="flex items-center gap-3 text-slate-700 font-medium text-sm">
+                                        <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                                        <span>{f}</span>
                                     </div>
                                 ))}
                             </div>
@@ -219,93 +209,77 @@ const BotStore: React.FC<BotStoreProps> = ({ user, onUpdateUser, onNavigateToPur
                             {hasAccess ? (
                                 <button
                                     disabled
-                                    className="w-full py-6 bg-white/5 text-slate-500 font-black rounded-2xl border border-white/5 flex items-center justify-center gap-3 backdrop-blur-sm cursor-not-allowed uppercase tracking-widest"
+                                    className="w-full py-3.5 bg-slate-100 text-slate-500 font-semibold rounded-lg border border-slate-200 flex items-center justify-center gap-2 cursor-not-allowed uppercase tracking-wider text-sm"
                                 >
-                                    <ShieldCheck className="h-6 w-6" />
+                                    <ShieldCheck className="h-5 w-5" />
                                     Account Authorized
                                 </button>
                             ) : isPending ? (
-                                <div className="space-y-4">
-                                    <div className="w-full py-6 bg-amber-500/10 text-amber-500 font-black rounded-2xl flex items-center justify-center gap-3 border border-amber-500/20 backdrop-blur-sm uppercase tracking-widest">
-                                        <Clock className="h-6 w-6" />
+                                <div className="space-y-3">
+                                    <div className="w-full py-3 bg-amber-50 text-amber-700 font-semibold rounded-lg flex items-center justify-center gap-2 border border-amber-200 uppercase tracking-wider text-xs">
+                                        <Clock className="h-4 w-4" />
                                         Ready to Purchase
                                     </div>
                                     <motion.button
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
+                                        whileHover={{ scale: 1.01 }}
+                                        whileTap={{ scale: 0.99 }}
                                         onClick={() => onNavigateToPurchase?.()}
                                         disabled={loading}
-                                        className="w-full py-6 bg-brand-primary text-white font-black rounded-2xl shadow-[0_10px_30px_rgba(0,255,148,0.2)] hover:shadow-[0_15px_40px_rgba(0,255,148,0.4)] transition-all flex items-center justify-center gap-3 group/btn relative overflow-hidden"
+                                        className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-blue-glow transition-all flex items-center justify-center gap-2 text-sm"
                                     >
-                                        <div className="absolute inset-x-0 top-0 h-px bg-white/20" />
                                         {loading ? (
-                                            <div className="flex items-center gap-3">
-                                                <Activity className="h-6 w-6 animate-spin" />
+                                            <div className="flex items-center gap-2">
+                                                <Activity className="h-5 w-5 animate-spin" />
                                                 <span>Processing...</span>
                                             </div>
                                         ) : (
                                             <>
-                                                <span className="text-lg">💳 Make Purchase</span>
-                                                <ArrowRight className="h-6 w-6 group-hover/btn:translate-x-1 transition-transform" />
+                                                <span>💳 Make Purchase</span>
+                                                <ArrowRight className="h-4 w-4" />
                                             </>
                                         )}
                                     </motion.button>
-                                    <p className="text-center text-[10px] text-slate-500 leading-relaxed font-bold uppercase tracking-wider bg-white/5 py-3 rounded-xl border border-white/5">
-                                        Click to enter your payment details <br />
-                                        and complete your purchase securely.
-                                    </p>
                                 </div>
                             ) : (
                                 <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
+                                    whileHover={{ scale: 1.01 }}
+                                    whileTap={{ scale: 0.99 }}
                                     onClick={handlePurchase}
                                     disabled={loading}
-                                    className="w-full py-6 bg-brand-primary text-slate-900 font-black rounded-2xl shadow-[0_10px_30px_rgba(0,255,148,0.2)] hover:shadow-[0_15px_40px_rgba(0,255,148,0.4)] transition-all flex items-center justify-center gap-3 group/btn relative overflow-hidden"
+                                    className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-blue-glow transition-all flex items-center justify-center gap-2 text-sm"
                                 >
-                                    <div className="absolute inset-x-0 top-0 h-px bg-white/20" />
                                     {loading ? (
-                                        <div className="flex items-center gap-3">
-                                            <Activity className="h-6 w-6 animate-spin" />
+                                        <div className="flex items-center gap-2">
+                                            <Activity className="h-5 w-5 animate-spin" />
                                             <span>Engaging...</span>
                                         </div>
                                     ) : (
                                         <>
-                                            <span className="text-2xl font-black text-white drop-shadow-lg">💳 Make Purchase</span>
-                                            <ArrowRight className="h-6 w-6 group-hover/btn:translate-x-1 transition-transform text-white" />
+                                            <span className="font-bold">💳 Make Purchase</span>
+                                            <ArrowRight className="h-4 w-4" />
                                         </>
                                     )}
                                 </motion.button>
                             )}
 
                             {error && (
-                                <p className="mt-6 p-4 bg-red-500/10 border border-red-500/20 text-[10px] text-red-500 text-center font-black uppercase tracking-widest rounded-xl animate-shake">
-                                    <AlertCircle className="h-4 w-4 inline-block mr-2 -mt-0.5" />
+                                <p className="mt-4 p-3 bg-red-50 border border-red-200 text-xs text-red-600 text-center font-medium rounded-lg">
+                                    <AlertCircle className="h-4 w-4 inline-block mr-1.5 -mt-0.5" />
                                     {error}
                                 </p>
                             )}
-
-                            {/* Secure Payments Indicators */}
-                            <div className="mt-10 pt-8 border-t border-white/5 flex items-center justify-center gap-8 opacity-40 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700">
-                                <div className="h-1 shadow-inner" />
-                                <div className="flex items-center gap-6 saturate-0 group-hover:saturate-100 transition-all duration-700 brightness-75 group-hover:brightness-100">
-                                    <img src="https://img.icons8.com/color/48/visa.png" alt="Visa" className="h-6 group-hover:scale-110 transition-transform" />
-                                    <img src="https://img.icons8.com/color/48/mastercard.png" alt="Mastercard" className="h-6 group-hover:scale-110 transition-transform" />
-                                    <img src="https://img.icons8.com/color/48/bitcoin.png" alt="Cardano" className="h-6 group-hover:scale-110 transition-transform invert group-hover:invert-0" />
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Visual reassurance footer */}
-            <div className="flex flex-col items-center justify-center pt-10 pb-4 text-center space-y-4 opacity-40 hover:opacity-100 transition-opacity">
-                <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/5 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                    <ShieldCheck className="h-3 w-3 text-brand-primary" /> Institutional Grade Encryption
+            {/* Reassurance Footer */}
+            <div className="flex flex-col items-center justify-center pt-6 pb-4 text-center space-y-2">
+                <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold">
+                    <ShieldCheck className="h-4 w-4 text-blue-600" /> Institutional Grade Encryption
                 </div>
-                <p className="text-[10px] text-slate-600 font-bold max-w-xs uppercase tracking-widest">
-                    © 2026 Maichez Algorithmic Solutions. <br /> All institutional logic protected by CRT licensing.
+                <p className="text-xs text-slate-400">
+                    © 2026 Maichez Algorithmic Solutions. All institutional logic protected.
                 </p>
             </div>
         </div>

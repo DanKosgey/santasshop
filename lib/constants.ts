@@ -4,7 +4,7 @@
  */
 
 // App name - easily configurable from .env
-export const APP_NAME = import.meta.env.VITE_APP_NAME || 'Maichez Trades';
+export const APP_NAME = import.meta.env.VITE_APP_NAME || 'Forex Royal';
 
 // App variations for different contexts
 export const APP_DISPLAY_NAMES = {

@@ -21,7 +21,6 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
   const [userId, setUserId] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
 
-  // Handle resend cooldown timer
   React.useEffect(() => {
     let timer: NodeJS.Timeout;
     if (resendCooldown > 0) {
@@ -37,7 +36,6 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
     setSuccessMessage('');
 
     try {
-      // Sign up the user with email confirmation disabled initially
       const { data, error: signupError } = await supabase.auth.signUp({
         email,
         password,
@@ -46,7 +44,7 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
             full_name: fullName,
             subscription_tier: subscriptionTier
           },
-          emailRedirectTo: undefined // Don't use redirect links
+          emailRedirectTo: undefined
         }
       });
 
@@ -56,7 +54,7 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
         setUserId(data.user.id);
         setShowVerification(true);
         setSuccessMessage('Account created! Please check your email for the verification code.');
-        setResendCooldown(30); // 30-second cooldown for resend
+        setResendCooldown(30);
       }
     } catch (err: any) {
       console.error('Signup error:', err);
@@ -73,7 +71,6 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
     setSuccessMessage('');
 
     try {
-      // Verify the OTP code
       const { data, error: verifyError } = await supabase.auth.verifyOtp({
         email,
         token: verificationCode,
@@ -84,7 +81,6 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
 
       if (data.user) {
         setSuccessMessage('Email verified successfully! Redirecting to your dashboard...');
-        // Call the success callback after a short delay
         setTimeout(() => {
           onSignupSuccess();
         }, 2000);
@@ -105,7 +101,6 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
     setSuccessMessage('');
 
     try {
-      // Resend the OTP code
       const { error: resendError } = await supabase.auth.resend({
         type: 'signup',
         email: email,
@@ -117,7 +112,7 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
       if (resendError) throw resendError;
 
       setSuccessMessage('Verification code resent! Please check your email.');
-      setResendCooldown(30); // Reset cooldown
+      setResendCooldown(30);
     } catch (err: any) {
       console.error('Resend error:', err);
       setError(err.message || 'Failed to resend verification code. Please try again.');
@@ -128,33 +123,31 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
 
   if (showVerification) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden font-sans">
-        {/* Ambient Background */}
+      <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center p-4 relative overflow-hidden font-sans">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-trade-neon/5 rounded-full blur-[150px]" />
-          <div className="absolute top-1/2 left-1/2 w-full h-full bg-blue-900/10 rounded-full blur-[150px]" />
+          <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-blue-100/50 rounded-full blur-[140px]" />
         </div>
 
-        <div className="w-full max-w-md bg-trade-dark border border-gray-800 rounded-3xl p-8 relative z-10 shadow-2xl shadow-black/50">
+        <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 relative z-10 shadow-card">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gray-800 mb-6 border border-gray-700">
-              <CheckCircle className="h-8 w-8 text-trade-neon" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-50 mb-4 border border-emerald-200">
+              <CheckCircle className="h-8 w-8 text-emerald-600" />
             </div>
-            <h1 className="text-3xl font-black text-white tracking-tight mb-2">
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">
               Verify Your Email
             </h1>
-            <p className="text-gray-400">Enter the 6-digit code sent to {email}</p>
+            <p className="text-slate-500 text-sm">Enter the 6-digit code sent to {email}</p>
           </div>
 
           <form onSubmit={handleVerifyCode} className="space-y-5">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Verification Code</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Verification Code</label>
               <div className="relative">
                 <input
                   type="text"
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  className="w-full bg-black/50 border border-gray-700 rounded-xl py-4 px-4 text-white focus:border-trade-neon focus:ring-1 focus:ring-trade-neon outline-none transition text-center text-2xl tracking-widest"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-900 focus:border-blue-500 focus:bg-white outline-none transition text-center text-xl font-bold tracking-widest tabular-nums"
                   placeholder="0 0 0 0 0 0"
                   required
                   maxLength={6}
@@ -164,14 +157,14 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
             </div>
 
             {error && (
-              <div className="text-red-500 text-sm font-medium text-center bg-red-500/10 py-3 rounded-lg border border-red-500/20 flex items-center justify-center gap-2">
+              <div className="text-red-600 text-xs font-semibold text-center bg-red-50 py-3 rounded-lg border border-red-200 flex items-center justify-center gap-2">
                 <AlertCircle className="h-4 w-4" />
                 {error}
               </div>
             )}
 
             {successMessage && (
-              <div className="text-green-500 text-sm font-medium text-center bg-green-500/10 py-3 rounded-lg border border-green-500/20">
+              <div className="text-emerald-700 text-xs font-semibold text-center bg-emerald-50 py-3 rounded-lg border border-emerald-200">
                 {successMessage}
               </div>
             )}
@@ -179,7 +172,7 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
             <button
               type="submit"
               disabled={isLoading || verificationCode.length !== 6}
-              className="w-full bg-trade-neon hover:bg-green-400 text-black font-black py-4 rounded-xl text-lg transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg shadow-trade-neon/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-base transition flex items-center justify-center gap-2 shadow-blue-glow disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <span className="animate-pulse">Verifying...</span>
@@ -196,17 +189,17 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
             <button
               onClick={handleResendCode}
               disabled={isLoading || resendCooldown > 0}
-              className="text-sm text-gray-400 hover:text-white transition flex items-center justify-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <RotateCcw className={`h-4 w-4 ${resendCooldown > 0 ? 'animate-spin' : ''}`} />
+              <RotateCcw className={`h-3.5 w-3.5 ${resendCooldown > 0 ? 'animate-spin' : ''}`} />
               {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
             </button>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-gray-800">
+          <div className="mt-8 pt-6 border-t border-slate-100">
             <button
               onClick={onBack}
-              className="w-full text-gray-500 text-sm hover:text-white transition"
+              className="w-full text-slate-400 text-xs font-semibold hover:text-slate-700 transition"
               disabled={isLoading}
             >
               &larr; Back to Website
@@ -218,34 +211,32 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
   }
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden font-sans">
-      {/* Ambient Background */}
+    <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center p-4 relative overflow-hidden font-sans">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-trade-neon/5 rounded-full blur-[150px]" />
-        <div className="absolute top-1/2 left-1/2 w-full h-full bg-blue-900/10 rounded-full blur-[150px]" />
+        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-blue-100/50 rounded-full blur-[140px]" />
       </div>
 
-      <div className="w-full max-w-md bg-trade-dark border border-gray-800 rounded-3xl p-8 relative z-10 shadow-2xl shadow-black/50">
+      <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 relative z-10 shadow-card">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gray-800 mb-6 border border-gray-700">
-            <TrendingUp className="h-8 w-8 text-trade-neon" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-50 mb-4 border border-blue-100">
+            <TrendingUp className="h-8 w-8 text-blue-600" />
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tight mb-2">
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">
             Create Account
           </h1>
-          <p className="text-gray-400">{APP_MESSAGES.signupCommunity}</p>
+          <p className="text-slate-500 text-sm">{APP_MESSAGES.signupCommunity}</p>
         </div>
 
         <form onSubmit={handleSignup} className="space-y-5">
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Full Name</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Full Name</label>
             <div className="relative">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full bg-black/50 border border-gray-700 rounded-xl py-4 pl-12 pr-4 text-white focus:border-trade-neon focus:ring-1 focus:ring-trade-neon outline-none transition"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:bg-white outline-none transition text-sm font-medium"
                 placeholder="John Doe"
                 required
                 disabled={isLoading}
@@ -254,14 +245,14 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Email Address</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Email Address</label>
             <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-black/50 border border-gray-700 rounded-xl py-4 pl-12 pr-4 text-white focus:border-trade-neon focus:ring-1 focus:ring-trade-neon outline-none transition"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:bg-white outline-none transition text-sm font-medium"
                 placeholder="name@example.com"
                 required
                 disabled={isLoading}
@@ -270,14 +261,14 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Password</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Password</label>
             <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-black/50 border border-gray-700 rounded-xl py-4 pl-12 pr-4 text-white focus:border-trade-neon focus:ring-1 focus:ring-trade-neon outline-none transition"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:bg-white outline-none transition text-sm font-medium"
                 placeholder="••••••••"
                 required
                 minLength={6}
@@ -287,8 +278,8 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Subscription Tier</label>
-            <div className="grid grid-cols-2 gap-3">
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Subscription Tier</label>
+            <div className="grid grid-cols-2 gap-2.5">
               {[
                 { value: 'free', label: 'Free' },
                 { value: 'foundation', label: 'Foundation' },
@@ -299,27 +290,27 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
                   key={tier.value}
                   type="button"
                   onClick={() => setSubscriptionTier(tier.value)}
-                  className={`py-4 rounded-xl font-bold transition-all ${subscriptionTier === tier.value
-                      ? 'bg-trade-neon text-black shadow-lg shadow-trade-neon/30'
-                      : 'bg-gray-800 text-white border border-gray-700 hover:border-trade-neon'
+                  className={`py-3 rounded-xl font-bold transition-all text-xs ${subscriptionTier === tier.value
+                      ? 'bg-blue-600 text-white shadow-blue-glow'
+                      : 'bg-slate-50 text-slate-700 border border-slate-200 hover:border-slate-300'
                     }`}
                   disabled={isLoading}
                 >
-                  <div className="text-sm">{tier.label}</div>
+                  {tier.label}
                 </button>
               ))}
             </div>
           </div>
 
           {error && (
-            <div className="text-red-500 text-sm font-medium text-center bg-red-500/10 py-3 rounded-lg border border-red-500/20 flex items-center justify-center gap-2">
+            <div className="text-red-600 text-xs font-semibold text-center bg-red-50 py-3 rounded-lg border border-red-200 flex items-center justify-center gap-2">
               <AlertCircle className="h-4 w-4" />
               {error}
             </div>
           )}
 
           {successMessage && (
-            <div className="text-green-500 text-sm font-medium text-center bg-green-500/10 py-3 rounded-lg border border-green-500/20">
+            <div className="text-emerald-700 text-xs font-semibold text-center bg-emerald-50 py-3 rounded-lg border border-emerald-200">
               {successMessage}
             </div>
           )}
@@ -327,7 +318,7 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-trade-neon hover:bg-green-400 text-black font-black py-4 rounded-xl text-lg transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg shadow-trade-neon/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-base transition flex items-center justify-center gap-2 shadow-blue-glow disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <span className="animate-pulse">Processing...</span>
@@ -340,10 +331,10 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-gray-800">
+        <div className="mt-8 pt-6 border-t border-slate-100">
           <button
             onClick={onBack}
-            className="w-full text-gray-500 text-sm hover:text-white transition"
+            className="w-full text-slate-400 text-xs font-semibold hover:text-slate-700 transition"
             disabled={isLoading}
           >
             &larr; Back to Website

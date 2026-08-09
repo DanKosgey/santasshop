@@ -11,6 +11,9 @@ import EliteApplicationForm from './components/EliteApplicationForm';
 import RuleBuilder from './components/RuleBuilder';
 import CourseManagementSystem from './components/enhanced/CourseManagementSystem';
 import { ShieldAlert, Settings, Cpu as Bot, BarChart, CheckSquare, PlayCircle, ArrowRight, Lock } from 'lucide-react';
+import { AccountManagementPage } from './components/AccountManagementPage';
+import { PoolTradingDashboard } from './components/PoolTradingDashboard';
+import { AdminPoolTrading } from './components/AdminPoolTrading';
 import TradeJournal from './components/TradeJournal';
 import CommunityHub from './components/CommunityHub';
 import QuizPlayer from './components/QuizPlayer';
@@ -105,6 +108,24 @@ const MOCK_USER_ELITE_PENDING: User = {
   botPurchaseStatus: 'none'
 };
 
+// Helper to get saved route from URL query params, hash, or localStorage
+const getSavedView = (): string | null => {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const pageParam = params.get('page') || params.get('tab') || params.get('view');
+    if (pageParam) return pageParam;
+
+    const hash = window.location.hash.replace('#', '');
+    if (hash) return hash;
+
+    const stored = localStorage.getItem('forex_elites_active_view');
+    if (stored) return stored;
+  } catch (e) {
+    console.error('Error reading saved route:', e);
+  }
+  return null;
+};
+
 // --- APP COMPONENT ---
 
 type AppViewState = 'landing' | 'login' | 'signup' | 'portal' | 'application';
@@ -114,7 +135,7 @@ const App: React.FC = () => {
   const [viewState, setViewState] = useState<AppViewState>('landing');
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [portalView, setPortalView] = useState('dashboard'); // Internal view within layout
+  const [portalView, setPortalView] = useState<string>(() => getSavedView() || 'dashboard');
   const [activeLesson, setActiveLesson] = useState<CourseModule | null>(null);
   const [lessonTab, setLessonTab] = useState<'content' | 'quiz'>('content');
 
@@ -125,12 +146,44 @@ const App: React.FC = () => {
   const [courses, setCourses] = useState<CourseModule[]>([]);
   const [loadingCourses, setLoadingCourses] = useState(true);
 
+  // Central route updater (syncs state, localStorage, and URL search params)
+  const handleViewChange = (newView: string) => {
+    setPortalView(newView);
+    try {
+      localStorage.setItem('forex_elites_active_view', newView);
+      if (['overview', 'directory', 'trades', 'analytics', 'content', 'rules', 'journal', 'admin-analytics', 'settings', 'student-management', 'bot-inquiries'].includes(newView)) {
+        localStorage.setItem('adminPortalActiveTab', newView);
+      }
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('page') !== newView) {
+        url.searchParams.set('page', newView);
+        url.searchParams.set('tab', newView);
+        window.history.replaceState({}, '', url.toString());
+      }
+    } catch (e) {
+      console.error('Error persisting route:', e);
+    }
+  };
+
+  // Add listener for browser Back/Forward navigation (popstate)
+  useEffect(() => {
+    const handlePopState = () => {
+      const saved = getSavedView();
+      if (saved) {
+        setPortalView(saved);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   // Add event listener for custom navigation events
   useEffect(() => {
     const handleNavigate = (event: CustomEvent) => {
       const view = event.detail;
       if (view) {
-        setPortalView(view);
+        handleViewChange(view);
       }
     };
 
@@ -281,7 +334,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleNavigation = (e: any) => {
       if (e.detail) {
-        setPortalView(e.detail);
+        handleViewChange(e.detail);
       }
     };
 
@@ -304,7 +357,7 @@ const App: React.FC = () => {
     } else if (portalView === 'community' && !isPending && !isFree) {
       // Automatically push from community to dashboard upon upgrade
       console.log('Student upgraded! Proactively navigating to Dashboard.');
-      setPortalView('dashboard');
+      handleViewChange('dashboard');
     }
   }, [user?.subscriptionTier, user?.botAccess]);
 
@@ -332,17 +385,20 @@ const App: React.FC = () => {
           botPurchaseStatus: data.bot_purchase_status || 'none'
         });
 
-        // Set default view based on Role and Subscription Tier
-        if (data.role === 'admin') {
-          setPortalView('admin-dashboard');
+        // Preserve current route if present, otherwise set default based on Role
+        const savedView = getSavedView();
+        if (savedView) {
+          handleViewChange(savedView);
+        } else if (data.role === 'admin') {
+          handleViewChange('overview');
         } else {
           // Redirect based on subscription tier
           if (data.subscription_tier.includes('-pending')) {
-            setPortalView('dashboard'); // Will show under review page
+            handleViewChange('dashboard'); // Will show under review page
           } else if (data.subscription_tier === 'free') {
-            setPortalView('community');
+            handleViewChange('community');
           } else {
-            setPortalView('dashboard');
+            handleViewChange('dashboard');
           }
         }
       } else {
@@ -375,7 +431,8 @@ const App: React.FC = () => {
         });
 
         // Set default view for new users
-        setPortalView('community');
+        const savedView = getSavedView();
+        handleViewChange(savedView || 'community');
       }
     } catch (error) {
       console.error('Error fetching/creating profile:', error);
@@ -390,7 +447,8 @@ const App: React.FC = () => {
         botAccess: false,
         botPurchaseStatus: 'none'
       });
-      setPortalView('community');
+      const savedView = getSavedView();
+      handleViewChange(savedView || 'community');
     }
   };
 
@@ -424,16 +482,26 @@ const App: React.FC = () => {
     setUser(loggedInUser);
     setViewState('portal');
 
-    // Set default view based on Role
-    if (loggedInUser.role === 'admin') {
-      setPortalView('admin-dashboard');
+    const saved = getSavedView();
+    if (saved) {
+      handleViewChange(saved);
+    } else if (loggedInUser.role === 'admin') {
+      handleViewChange('overview');
     } else {
-      setPortalView('dashboard');
+      handleViewChange('dashboard');
     }
   };
 
   const handleLogout = async () => {
     try {
+      localStorage.removeItem('forex_elites_active_view');
+      localStorage.removeItem('adminPortalActiveTab');
+      const url = new URL(window.location.href);
+      url.searchParams.delete('page');
+      url.searchParams.delete('tab');
+      url.searchParams.delete('view');
+      window.history.replaceState({}, '', url.toString());
+
       // Check if there's an active session before attempting to sign out
       const { data: { session } } = await supabase.auth.getSession();
 
@@ -442,7 +510,6 @@ const App: React.FC = () => {
         const { error } = await supabase.auth.signOut();
         if (error) {
           console.error('Error during logout:', error);
-          // Even if there's an error, still clear the user state and redirect
         }
       }
 
@@ -452,7 +519,6 @@ const App: React.FC = () => {
       setPortalView('dashboard');
     } catch (error) {
       console.error('Unexpected error during logout:', error);
-      // Still clear the user state and redirect even if there's an unexpected error
       setUser(null);
       setViewState('landing');
       setPortalView('dashboard');
@@ -477,10 +543,10 @@ const App: React.FC = () => {
 
     // If it's a free tier, redirect to community immediately
     if (subscriptionTier === 'free' || subscriptionTier === 'foundation') {
-      setPortalView('community');
+      handleViewChange('community');
     } else {
       // For paid tiers, show under review page
-      setPortalView('dashboard'); // Will show under review page for elite-pending users
+      handleViewChange('dashboard'); // Will show under review page for elite-pending users
     }
   };
 
@@ -491,7 +557,7 @@ const App: React.FC = () => {
 
   const handleLogTradeFromAI = (tradeData: Partial<TradeEntry>) => {
     setDraftJournalEntry(tradeData);
-    setPortalView('journal');
+    handleViewChange('journal');
   };
 
   // Rule Engine Handlers
@@ -622,6 +688,8 @@ const App: React.FC = () => {
                 initialTab={portalView === 'admin-dashboard' || portalView === 'dashboard' ? 'overview' : portalView}
               />
             );
+          case 'admin-pool-trading':
+            return <AdminPoolTrading />;
           case 'rules':
             return (
               <div className="h-full">
@@ -683,6 +751,10 @@ const App: React.FC = () => {
 
       // --- STUDENT VIEWS ---
       switch (portalView) {
+        case 'account':
+          return <AccountManagementPage />;
+        case 'pool-trading':
+          return <PoolTradingDashboard />;
         case 'dashboard':
           // Check if user is under review
           if (user.subscriptionTier.includes('-pending')) {
@@ -986,7 +1058,7 @@ const App: React.FC = () => {
           return (
             <div className="max-w-4xl mx-auto text-white pb-10">
               <button
-                onClick={() => setPortalView('courses')}
+                onClick={() => handleViewChange('courses')}
                 className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition"
               >
                 ← Back to Curriculum
@@ -1155,7 +1227,7 @@ const App: React.FC = () => {
       <Layout
         user={user}
         currentView={portalView}
-        onChangeView={setPortalView}
+        onChangeView={handleViewChange}
         onLogout={handleLogout}
       >
         {user.role === 'admin' ? (

@@ -22,61 +22,54 @@ const AITradeAssistant: React.FC<AITradeAssistantProps> = ({ userId, onLogTrade 
   const [conversationStep, setConversationStep] = useState<'initial' | 'awaiting_direction' | 'awaiting_details' | 'analysis_complete'>('initial');
   const [tradeContext, setTradeContext] = useState<{ direction?: 'buy' | 'sell'; pair?: string; details?: string }>({});
 
-  // State to track the context of the last trade discussed
   const [lastAnalyzedTrade, setLastAnalyzedTrade] = useState<Partial<TradeEntry> | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Helper function to render message content with special formatting for AI responses
   const renderMessageContent = (msg: ChatMessage) => {
-    // Try to parse the message as JSON to see if it's a structured response
     try {
       const parsed = JSON.parse(msg.text);
       if (parsed.verdict && parsed.explanation) {
-        // It's a structured response, render it with special formatting
         return (
           <div className="space-y-4">
-            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold ${parsed.verdict === 'APPROVED' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-              parsed.verdict === 'REJECTED' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+            <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold ${parsed.verdict === 'APPROVED' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+              parsed.verdict === 'REJECTED' ? 'bg-red-50 text-red-700 border border-red-200' :
+                'bg-amber-50 text-amber-700 border border-amber-200'
               }`}>
               {parsed.verdict === 'APPROVED' ? (
                 <>
-                  <CheckCircle className="h-5 w-5" />
+                  <CheckCircle className="h-4 w-4" />
                   Trade Approved
                 </>
               ) : parsed.verdict === 'REJECTED' ? (
                 <>
-                  <XCircle className="h-5 w-5" />
+                  <XCircle className="h-4 w-4" />
                   Trade Rejected
                 </>
               ) : (
                 <>
-                  <AlertTriangle className="h-5 w-5" />
+                  <AlertTriangle className="h-4 w-4" />
                   Trade Warning
                 </>
               )}
             </div>
-            <div className="whitespace-pre-wrap break-words leading-relaxed text-gray-200 overflow-x-auto">
+            <div className="whitespace-pre-wrap break-words leading-relaxed text-slate-700 text-sm overflow-x-auto">
               {parsed.explanation}
             </div>
           </div>
         );
       }
     } catch (e) {
-      // Not JSON, render as plain text
+      // Not JSON
     }
 
-    // Render as plain text
-    return <div className="whitespace-pre-wrap break-words leading-relaxed text-gray-200 overflow-x-auto">{msg.text}</div>;
+    return <div className="whitespace-pre-wrap break-words leading-relaxed text-slate-700 text-sm overflow-x-auto">{msg.text}</div>;
   };
 
-  // Load user rules on component mount
   useEffect(() => {
     loadUserRules();
 
-    // Set up real-time subscription for rule changes
     const channel = supabase
       .channel('user-rule-changes')
       .on(
@@ -86,7 +79,7 @@ const AITradeAssistant: React.FC<AITradeAssistantProps> = ({ userId, onLogTrade 
           schema: 'public',
           table: 'trade_rules',
         },
-        (payload) => {
+        () => {
           loadUserRules();
         }
       )
@@ -97,7 +90,7 @@ const AITradeAssistant: React.FC<AITradeAssistantProps> = ({ userId, onLogTrade 
           schema: 'public',
           table: 'trade_rules',
         },
-        (payload) => {
+        () => {
           loadUserRules();
         }
       )
@@ -108,7 +101,7 @@ const AITradeAssistant: React.FC<AITradeAssistantProps> = ({ userId, onLogTrade 
           schema: 'public',
           table: 'trade_rules',
         },
-        (payload) => {
+        () => {
           loadUserRules();
         }
       )
@@ -169,10 +162,8 @@ const AITradeAssistant: React.FC<AITradeAssistantProps> = ({ userId, onLogTrade 
     const currentInput = inputText;
     setInputText('');
 
-    // Handle conversation flow
     switch (conversationStep) {
       case 'initial':
-        // Determine if user mentioned buy or sell
         const lowerInput = currentInput.toLowerCase();
         if (lowerInput.includes('buy') || lowerInput.includes('long')) {
           setTradeContext({ direction: 'buy' });
@@ -193,7 +184,6 @@ const AITradeAssistant: React.FC<AITradeAssistantProps> = ({ userId, onLogTrade 
           };
           setMessages(prev => [...prev, aiMsg]);
         } else {
-          // Ask again for clarity
           const aiMsg: ChatMessage = {
             role: 'model',
             text: "I didn't catch that. Are you looking to take a Buy or Sell position?",
@@ -204,7 +194,6 @@ const AITradeAssistant: React.FC<AITradeAssistantProps> = ({ userId, onLogTrade 
         return;
 
       case 'awaiting_direction':
-        // Capture the pair
         setTradeContext(prev => ({ ...prev, pair: currentInput.trim() }));
         setConversationStep('awaiting_details');
         const pairMsg: ChatMessage = {
@@ -216,50 +205,41 @@ const AITradeAssistant: React.FC<AITradeAssistantProps> = ({ userId, onLogTrade 
         return;
 
       case 'awaiting_details':
-        // Capture the details and proceed to analysis
         setTradeContext(prev => ({ ...prev, details: currentInput.trim() }));
         setConversationStep('analysis_complete');
-        // Proceed to analysis
         break;
 
       default:
-        // For subsequent messages, just add to context
         break;
     }
 
     setIsAnalyzing(true);
-    setLastAnalyzedTrade(null); // Reset previous analysis context
+    setLastAnalyzedTrade(null);
 
-    // Prepare rules text
     const activeRules = userRules.map(r => r.text);
 
-    // Prepare comprehensive trade details for analysis
     const tradeDetails = `
 Trade Direction: ${tradeContext.direction || 'Not specified'}
 Asset/Pair: ${tradeContext.pair || 'Not specified'}
 User Details: ${tradeContext.details || currentInput}
     `;
 
-    // Call Gemini with image if available
     const aiResponse = await validateTradeWithGemini(
       tradeDetails,
       activeRules,
       selectedImage || undefined
     );
 
-    // Handle the response properly - store as JSON string so it can be parsed by renderMessageContent
     let aiResponseText = '';
     if (typeof aiResponse === 'string') {
       aiResponseText = aiResponse;
     } else if (typeof aiResponse === 'object' && aiResponse !== null) {
       if ('explanation' in aiResponse && 'verdict' in aiResponse) {
-        // It's already in the correct format, stringify it so renderMessageContent can parse it
         aiResponseText = JSON.stringify({
           verdict: aiResponse.verdict,
           explanation: aiResponse.explanation
         });
       } else {
-        // Convert object to string
         aiResponseText = JSON.stringify(aiResponse, null, 2);
       }
     } else {
@@ -275,7 +255,6 @@ User Details: ${tradeContext.details || currentInput}
     setMessages(prev => [...prev, aiMsg]);
     setIsAnalyzing(false);
 
-    // Heuristic parsing to create a draft trade entry
     const lowerResponse = aiResponseText.toLowerCase();
     const validationResult: TradeValidationStatus =
       lowerResponse.includes('approved') ? 'approved' :
@@ -292,34 +271,33 @@ User Details: ${tradeContext.details || currentInput}
       date: new Date().toISOString()
     });
 
-    setSelectedImage(null); // Clear image after send
+    setSelectedImage(null);
   };
 
-  // Render a preview of the uploaded image
   const renderImagePreview = () => {
     if (!selectedImage) return null;
 
     return (
       <div className="mb-4 relative group">
-        <div className="bg-gray-900 border border-gray-700 rounded-xl p-3">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
           <div className="flex items-center gap-2 mb-2">
-            <ImageIcon className="h-4 w-4 text-trade-neon" />
-            <span className="text-xs font-medium text-gray-300">Chart Analysis</span>
+            <ImageIcon className="h-4 w-4 text-blue-600" />
+            <span className="text-xs font-semibold text-slate-700">Chart Analysis</span>
           </div>
           <div className="relative">
             <img
               src={selectedImage}
               alt="Trade chart"
-              className="w-full h-32 object-contain rounded-lg border border-gray-700"
+              className="w-full h-32 object-contain rounded-lg border border-slate-200 bg-white"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent rounded-lg flex items-end p-2">
-              <span className="text-xs text-gray-300">AI will analyze this chart</span>
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent rounded-lg flex items-end p-2">
+              <span className="text-xs text-white font-medium">AI will analyze this chart</span>
             </div>
           </div>
         </div>
         <button
           onClick={() => setSelectedImage(null)}
-          className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 hover:bg-red-600 transition opacity-0 group-hover:opacity-100"
+          className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 hover:bg-red-600 transition shadow-sm"
         >
           <XCircle className="h-4 w-4 text-white" />
         </button>
@@ -327,48 +305,32 @@ User Details: ${tradeContext.details || currentInput}
     );
   };
 
-  // Render conversation progress indicator
   const renderProgressIndicator = () => {
     return (
-      <div className="flex items-center justify-center gap-2 mb-4">
-        <div className={`h-2 w-2 rounded-full ${conversationStep === 'initial' ? 'bg-trade-neon' :
-          conversationStep === 'awaiting_direction' ? 'bg-trade-neon' :
-            conversationStep === 'awaiting_details' ? 'bg-trade-neon' : 'bg-gray-600'
-          }`}></div>
-        <div className={`h-1 w-8 ${conversationStep === 'awaiting_direction' ||
-          conversationStep === 'awaiting_details' ||
-          conversationStep === 'analysis_complete' ? 'bg-trade-neon' : 'bg-gray-700'
-          }`}></div>
-        <div className={`h-2 w-2 rounded-full ${conversationStep === 'awaiting_direction' ||
-          conversationStep === 'awaiting_details' ||
-          conversationStep === 'analysis_complete' ? 'bg-trade-neon' : 'bg-gray-600'
-          }`}></div>
-        <div className={`h-1 w-8 ${conversationStep === 'awaiting_details' ||
-          conversationStep === 'analysis_complete' ? 'bg-trade-neon' : 'bg-gray-700'
-          }`}></div>
-        <div className={`h-2 w-2 rounded-full ${conversationStep === 'awaiting_details' ||
-          conversationStep === 'analysis_complete' ? 'bg-trade-neon' : 'bg-gray-600'
-          }`}></div>
-        <div className={`h-1 w-8 ${conversationStep === 'analysis_complete' ? 'bg-trade-neon' : 'bg-gray-700'
-          }`}></div>
-        <div className={`h-2 w-2 rounded-full ${conversationStep === 'analysis_complete' ? 'bg-trade-neon' : 'bg-gray-600'
-          }`}></div>
+      <div className="flex items-center justify-center gap-2 mt-2">
+        <div className={`h-2 w-2 rounded-full ${conversationStep === 'initial' || conversationStep === 'awaiting_direction' || conversationStep === 'awaiting_details' || conversationStep === 'analysis_complete' ? 'bg-blue-600' : 'bg-slate-300'}`}></div>
+        <div className={`h-1 w-8 ${conversationStep === 'awaiting_direction' || conversationStep === 'awaiting_details' || conversationStep === 'analysis_complete' ? 'bg-blue-600' : 'bg-slate-200'}`}></div>
+        <div className={`h-2 w-2 rounded-full ${conversationStep === 'awaiting_direction' || conversationStep === 'awaiting_details' || conversationStep === 'analysis_complete' ? 'bg-blue-600' : 'bg-slate-300'}`}></div>
+        <div className={`h-1 w-8 ${conversationStep === 'awaiting_details' || conversationStep === 'analysis_complete' ? 'bg-blue-600' : 'bg-slate-200'}`}></div>
+        <div className={`h-2 w-2 rounded-full ${conversationStep === 'awaiting_details' || conversationStep === 'analysis_complete' ? 'bg-blue-600' : 'bg-slate-300'}`}></div>
+        <div className={`h-1 w-8 ${conversationStep === 'analysis_complete' ? 'bg-blue-600' : 'bg-slate-200'}`}></div>
+        <div className={`h-2 w-2 rounded-full ${conversationStep === 'analysis_complete' ? 'bg-blue-600' : 'bg-slate-300'}`}></div>
       </div>
     );
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-160px)] md:h-[calc(100vh-120px)] bg-trade-dark rounded-xl border border-gray-700 overflow-hidden shadow-2xl">
-      {/* Header with enhanced styling */}
-      <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4 border-b border-gray-700">
+    <div className="flex flex-col h-[calc(100vh-160px)] md:h-[calc(100vh-120px)] bg-white rounded-xl border border-slate-200 overflow-hidden shadow-card font-sans">
+      {/* Header */}
+      <div className="bg-white p-4 border-b border-slate-200 shadow-xs">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="h-3 w-3 bg-green-500 rounded-full animate-pulse"></div>
-            <h2 className="font-bold text-xl text-white">AI Trade Validator</h2>
+            <div className="h-3 w-3 bg-emerald-500 rounded-full animate-pulse-dot"></div>
+            <h2 className="font-bold text-xl text-slate-900">AI Trade Validator</h2>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400 uppercase tracking-wider">Powered by</span>
-            <span className="text-xs font-bold bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text">
+            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Powered by</span>
+            <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200">
               Gemini 2.5 Flash
             </span>
           </div>
@@ -376,37 +338,35 @@ User Details: ${tradeContext.details || currentInput}
         {renderProgressIndicator()}
       </div>
 
-      {/* Chat Area with enhanced styling */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-gradient-to-b from-gray-900/50 to-gray-900">
+      {/* Chat Area */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 bg-[#F5F7FA]">
         {messages.map((msg, idx) => (
           <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[90%] md:max-w-[85%] rounded-2xl p-4 ${msg.role === 'user'
-              ? 'bg-gradient-to-br from-trade-accent to-blue-600 text-white rounded-tr-none'
-              : 'bg-gradient-to-br from-gray-800 to-gray-900 text-gray-100 rounded-tl-none border border-gray-700 shadow-lg'
+            <div className={`max-w-[90%] md:max-w-[85%] rounded-2xl p-4 shadow-sm ${msg.role === 'user'
+              ? 'bg-blue-600 text-white rounded-tr-none'
+              : 'bg-white text-slate-700 rounded-tl-none border border-slate-200'
               }`}>
-              {/* User message header */}
               {msg.role === 'user' && (
                 <div className="flex items-center gap-2 mb-2">
                   <div className="h-6 w-6 rounded-full bg-white/20 flex items-center justify-center">
-                    <span className="text-xs font-bold">U</span>
+                    <span className="text-xs font-bold text-white">U</span>
                   </div>
-                  <span className="text-xs font-medium opacity-80">You</span>
+                  <span className="text-xs font-medium opacity-90">You</span>
                 </div>
               )}
 
-              {/* AI message header */}
               {msg.role === 'model' && (
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-                    <span className="text-xs font-bold text-white">AI</span>
+                  <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
+                    <span className="text-xs font-bold text-blue-600">AI</span>
                   </div>
-                  <span className="text-xs font-medium text-gray-400">AI Risk Manager</span>
+                  <span className="text-xs font-bold text-slate-800">AI Risk Manager</span>
                 </div>
               )}
 
               {renderMessageContent(msg)}
 
-              <div className="text-[10px] opacity-50 mt-3 text-right">
+              <div className={`text-[10px] mt-2.5 text-right font-medium ${msg.role === 'user' ? 'opacity-80' : 'text-slate-400'}`}>
                 {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
@@ -415,22 +375,17 @@ User Details: ${tradeContext.details || currentInput}
 
         {isAnalyzing && (
           <div className="flex justify-start">
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-4 border border-gray-700 shadow-lg max-w-[85%]">
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm max-w-[85%]">
               <div className="flex items-center gap-2 mb-3">
-                <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-                  <span className="text-xs font-bold text-white">AI</span>
+                <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
+                  <span className="text-xs font-bold text-blue-600">AI</span>
                 </div>
-                <span className="text-xs font-medium text-gray-400">AI Risk Manager</span>
+                <span className="text-xs font-bold text-slate-800">AI Risk Manager</span>
               </div>
               <div className="flex items-center gap-3">
-                <Loader2 className="h-5 w-5 animate-spin text-trade-neon" />
-                <div className="space-y-2">
-                  <span className="text-sm text-gray-300">Analyzing your trade setup...</span>
-                  <div className="flex gap-1">
-                    <div className="h-1 w-1 bg-trade-neon rounded-full animate-bounce"></div>
-                    <div className="h-1 w-1 bg-trade-neon rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="h-1 w-1 bg-trade-neon rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
-                  </div>
+                <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                <div className="space-y-1">
+                  <span className="text-sm font-medium text-slate-700">Analyzing your trade setup...</span>
                 </div>
               </div>
             </div>
@@ -439,14 +394,14 @@ User Details: ${tradeContext.details || currentInput}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area with enhanced styling */}
-      <div className="p-4 bg-gray-900/80 border-t border-gray-700 backdrop-blur-sm">
+      {/* Input Area */}
+      <div className="p-4 bg-white border-t border-slate-200">
         {renderImagePreview()}
 
         <div className="flex gap-3">
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="p-3 text-gray-400 hover:text-trade-neon hover:bg-gray-800 rounded-lg transition"
+            className="p-3 text-slate-400 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition border border-slate-200"
             title="Upload Chart Screenshot"
           >
             <Upload className="h-5 w-5" />
@@ -471,11 +426,11 @@ User Details: ${tradeContext.details || currentInput}
                     conversationStep === 'awaiting_details' ? "Describe your setup..." :
                       "Continue the conversation..."
               }
-              className="w-full bg-gray-800 text-white border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:border-trade-neon focus:ring-1 focus:ring-trade-neon transition"
+              className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 border border-slate-200 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 focus:bg-white transition"
               disabled={isAnalyzing || loadingRules}
             />
             {conversationStep === 'awaiting_details' && (
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-trade-neon">
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-600">
                 <ImageIcon className="h-5 w-5" />
               </div>
             )}
@@ -484,20 +439,20 @@ User Details: ${tradeContext.details || currentInput}
           <button
             onClick={handleSendMessage}
             disabled={isAnalyzing || (!inputText && !selectedImage) || loadingRules}
-            className="bg-gradient-to-br from-trade-accent to-blue-600 text-white p-3 rounded-lg hover:from-blue-600 hover:to-trade-accent disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center"
+            className="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center shadow-sm"
           >
             <Send className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="mt-3 text-xs text-gray-500 text-center flex flex-wrap justify-center gap-2">
+        <div className="mt-3 text-xs text-slate-500 text-center flex flex-wrap justify-center gap-2 font-medium">
           {loadingRules ? (
             <span>Loading your rules...</span>
           ) : (
             <>
-              <span>Using <span className="text-yellow-500">{userRules.length} rules</span> for validation.</span>
+              <span>Using <span className="text-amber-600 font-bold">{userRules.length} rules</span> for validation.</span>
               {conversationStep === 'awaiting_details' && (
-                <span className="text-trade-neon flex items-center gap-1">
+                <span className="text-blue-600 font-semibold flex items-center gap-1">
                   <ImageIcon className="h-3 w-3" /> Attach screenshots for better analysis!
                 </span>
               )}

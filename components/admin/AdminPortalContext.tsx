@@ -15,7 +15,6 @@ import {
 import { socialMediaService } from '../../services/socialMediaService';
 
 type AdminTab =
-  | 'overview'
   | 'directory'
   | 'trades'
   | 'analytics'
@@ -63,8 +62,15 @@ interface AdminPortalContextType {
 
 const AdminPortalContext = createContext<AdminPortalContextType | undefined>(undefined);
 
+const VALID_ADMIN_TABS = [
+  'directory', 'trades', 'analytics',
+  'content', 'rules', 'journal', 'admin-analytics', 'settings', 'student-management', 'bot-inquiries'
+];
+
+const isValidTab = (tab: string): tab is AdminTab => VALID_ADMIN_TABS.includes(tab);
+
 export const AdminPortalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activeTab, setActiveTab] = useState<AdminTab>('overview');
+  const [activeTab, setActiveTab] = useState<AdminTab>('directory');
   const [isRefreshing, setIsRefreshing] = useState(false);
   // Data states
   const [students, setStudents] = useState<StudentProfile[]>([]);
@@ -83,7 +89,7 @@ export const AdminPortalProvider: React.FC<{ children: React.ReactNode }> = ({ c
   // Load active tab from localStorage on initial render
   useEffect(() => {
     const savedTab = localStorage.getItem('adminPortalActiveTab');
-    if (savedTab && isValidTab(savedTab)) {
+    if (savedTab && savedTab !== 'overview' && isValidTab(savedTab)) {
       setActiveTab(savedTab);
     }
   }, []);
@@ -92,13 +98,6 @@ export const AdminPortalProvider: React.FC<{ children: React.ReactNode }> = ({ c
   useEffect(() => {
     localStorage.setItem('adminPortalActiveTab', activeTab);
   }, [activeTab]);
-
-  const isValidTab = (tab: string): tab is AdminTab => {
-    return [
-      'overview', 'directory', 'trades', 'analytics',
-      'content', 'rules', 'journal', 'admin-analytics', 'settings', 'student-management', 'bot-inquiries'
-    ].includes(tab);
-  };
 
   // Fetch all data
   const fetchData = async () => {

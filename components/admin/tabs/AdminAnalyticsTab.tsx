@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAdminPortal } from '../AdminPortalContext';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
-import { DollarSign, TrendingUp, BarChart2, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid, Cell } from 'recharts';
+import { DollarSign, TrendingUp, BarChart2, ArrowUpRight, ArrowDownRight, Activity } from 'lucide-react';
 import { journalService } from '../../../services/journalService';
 import { supabase } from '../../../supabase/client';
 
@@ -10,11 +10,27 @@ const AdminAnalyticsTab: React.FC = () => {
   const [adminTrades, setAdminTrades] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Calculate admin stats
+  useEffect(() => {
+    const loadTrades = async () => {
+      try {
+        setLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const trades = await journalService.getJournalEntries(user.id);
+          setAdminTrades(trades);
+        }
+      } catch (err) {
+        console.error('Error loading admin trades:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadTrades();
+  }, []);
+
   const adminStats = adminTrades.length > 0 ? (() => {
     const closedTrades = adminTrades.filter(t => t.status !== 'pending');
     const wins = closedTrades.filter(t => t.status === 'win').length;
-    const losses = closedTrades.filter(t => t.status === 'loss').length;
     const winRate = closedTrades.length > 0 ? Math.round((wins / closedTrades.length) * 100) : 0;
     const totalPnL = adminTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
     const largestWin = Math.max(...adminTrades.filter(t => (t.pnl || 0) > 0).map(t => t.pnl || 0), 0);
@@ -36,198 +52,207 @@ const AdminAnalyticsTab: React.FC = () => {
 
     return { totalPnL, winRate, totalTrades: adminTrades.length, bestAsset, largestWin, largestLoss, profitFactor, pairStats };
   })() : {
-    totalPnL: 0,
-    winRate: 0,
-    totalTrades: 0,
-    bestAsset: '-',
-    largestWin: 0,
-    largestLoss: 0,
-    profitFactor: 0,
-    pairStats: {}
+    totalPnL: 0, winRate: 0, totalTrades: 0, bestAsset: '-', largestWin: 0, largestLoss: 0, profitFactor: 0, pairStats: {}
   };
 
-  // P&L over time data
   const pnlOverTimeData = adminTrades.length > 0 ? (() => {
-    const sortedTrades = [...adminTrades].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    const tradesByDate: Record<string, number> = {};
-    sortedTrades.forEach(trade => {
-      const date = new Date(trade.date).toLocaleDateString();
-      tradesByDate[date] = (tradesByDate[date] || 0) + (trade.pnl || 0);
-    });
-
-    const dates = Object.keys(tradesByDate).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
-    let cumulativePnL = 0;
-    return dates.map(date => {
-      cumulativePnL += tradesByDate[date];
-      return { date, dailyPnL: tradesByDate[date], cumulativePnL };
-    });
+    let runningPnL = 0;
+    return [...adminTrades]
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map(t => {
+        runningPnL += t.pnl || 0;
+        return {
+          date: new Date(t.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+          cumulativePnL: runningPnL,
+        };
+      });
   })() : [];
-
-  // Fetch admin trades
-  useEffect(() => {
-    const fetchAdminTrades = async () => {
-      try {
-        setLoading(true);
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const entries = await journalService.getJournalEntries(user.id);
-          setAdminTrades(entries || []);
-        }
-      } catch (err) {
-        console.error('Error fetching admin trades:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAdminTrades();
-  }, []);
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-trade-neon"></div>
+      <div className="flex justify-center items-center py-20">
+        <div className="animate-spin rounded-full h-10 w-10 border-2 border-blue-600 border-t-transparent" />
       </div>
     );
   }
 
+  const tooltipStyle = {
+    backgroundColor: '#FFFFFF',
+    border: '1px solid #E2E8F0',
+    borderRadius: '8px',
+    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+    color: '#0F172A'
+  };
+
   return (
-    <div className="space-y-8 animate-slide-up">
-      <div>
-        <h2 className="text-3xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-trade-neon to-blue-400">Admin Performance Analytics</h2>
-        <p className="text-gray-400">Personal trading performance and analytics</p>
+    <div className="space-y-0 animate-slide-up">
+      {/* Page Header */}
+      <div className="page-header">
+        <h2 className="section-title">Admin Performance Analytics</h2>
+        <p className="section-desc">Personal trading performance and platform-wide class metrics.</p>
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-gray-800/50 p-6 rounded-2xl border border-gray-700/50 backdrop-blur-sm shadow-xl hover:scale-105 transition-transform">
-          <div className="flex items-center gap-3 text-gray-300 mb-3">
-            <DollarSign className="h-5 w-5 text-green-400" />
-            <span className="text-sm font-medium">Total P&L</span>
+      <div className="page-section">
+        <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+          <div className="stat-card">
+            <div className="stat-card-top">
+              <div className={`stat-card-icon ${adminStats.totalPnL >= 0 ? 'icon-green' : 'icon-red'}`}>
+                <DollarSign className="w-5 h-5" />
+              </div>
+              <span className="stat-card-label">Total P&L</span>
+            </div>
+            <div className={`stat-card-value ${adminStats.totalPnL >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+              {adminStats.totalPnL >= 0 ? '+' : ''}${adminStats.totalPnL.toLocaleString()}
+            </div>
           </div>
-          <div className={`text-3xl font-extrabold ${adminStats.totalPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {adminStats.totalPnL >= 0 ? '+' : ''}${adminStats.totalPnL.toLocaleString()}
+
+          <div className="stat-card">
+            <div className="stat-card-top">
+              <div className="stat-card-icon icon-blue">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+              <span className="stat-card-label">Win Rate</span>
+            </div>
+            <div className="stat-card-value text-blue-600">{adminStats.winRate}%</div>
           </div>
-        </div>
-        <div className="bg-gray-800/50 p-6 rounded-2xl border border-gray-700/50 backdrop-blur-sm shadow-xl hover:scale-105 transition-transform">
-          <div className="flex items-center gap-3 text-gray-300 mb-3">
-            <TrendingUp className="h-5 w-5 text-blue-400" />
-            <span className="text-sm font-medium">Win Rate</span>
+
+          <div className="stat-card">
+            <div className="stat-card-top">
+              <div className="stat-card-icon icon-purple">
+                <BarChart2 className="w-5 h-5" />
+              </div>
+              <span className="stat-card-label">Total Trades</span>
+            </div>
+            <div className="stat-card-value text-slate-900">{adminStats.totalTrades}</div>
           </div>
-          <div className="text-3xl font-extrabold text-blue-400">{adminStats.winRate}%</div>
-        </div>
-        <div className="bg-gray-800/50 p-6 rounded-2xl border border-gray-700/50 backdrop-blur-sm shadow-xl hover:scale-105 transition-transform">
-          <div className="flex items-center gap-3 text-gray-300 mb-3">
-            <BarChart2 className="h-5 w-5 text-purple-400" />
-            <span className="text-sm font-medium">Total Trades</span>
+
+          <div className="stat-card">
+            <div className="stat-card-top">
+              <div className="stat-card-icon icon-amber">
+                <ArrowUpRight className="w-5 h-5" />
+              </div>
+              <span className="stat-card-label">Best Asset</span>
+            </div>
+            <div className="stat-card-value text-amber-600">{adminStats.bestAsset}</div>
           </div>
-          <div className="text-3xl font-extrabold text-purple-400">{adminStats.totalTrades}</div>
-        </div>
-        <div className="bg-gray-800/50 p-6 rounded-2xl border border-gray-700/50 backdrop-blur-sm shadow-xl hover:scale-105 transition-transform">
-          <div className="flex items-center gap-3 text-gray-300 mb-3">
-            <ArrowUpRight className="h-5 w-5 text-yellow-400" />
-            <span className="text-sm font-medium">Best Asset</span>
-          </div>
-          <div className="text-3xl font-extrabold text-yellow-400">{adminStats.bestAsset}</div>
         </div>
       </div>
 
       {/* Additional Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gray-800/50 p-6 rounded-2xl border border-gray-700/50 backdrop-blur-sm shadow-xl">
-          <div className="flex items-center gap-3 text-gray-300 mb-3">
-            <ArrowUpRight className="h-5 w-5 text-green-400" />
-            <span className="text-sm font-medium">Largest Win</span>
+      <div className="page-section">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="stat-card">
+            <div className="stat-card-top">
+              <div className="stat-card-icon icon-green">
+                <ArrowUpRight className="w-5 h-5" />
+              </div>
+              <span className="stat-card-label">Largest Win</span>
+            </div>
+            <div className="stat-card-value text-emerald-600">${adminStats.largestWin.toLocaleString()}</div>
           </div>
-          <div className="text-3xl font-extrabold text-green-400">${adminStats.largestWin.toLocaleString()}</div>
-        </div>
-        <div className="bg-gray-800/50 p-6 rounded-2xl border border-gray-700/50 backdrop-blur-sm shadow-xl">
-          <div className="flex items-center gap-3 text-gray-300 mb-3">
-            <ArrowDownRight className="h-5 w-5 text-red-400" />
-            <span className="text-sm font-medium">Largest Loss</span>
+
+          <div className="stat-card">
+            <div className="stat-card-top">
+              <div className="stat-card-icon icon-red">
+                <ArrowDownRight className="w-5 h-5" />
+              </div>
+              <span className="stat-card-label">Largest Loss</span>
+            </div>
+            <div className="stat-card-value text-red-600">${Math.abs(adminStats.largestLoss).toLocaleString()}</div>
           </div>
-          <div className="text-3xl font-extrabold text-red-400">${Math.abs(adminStats.largestLoss).toLocaleString()}</div>
-        </div>
-        <div className="bg-gray-800/50 p-6 rounded-2xl border border-gray-700/50 backdrop-blur-sm shadow-xl">
-          <div className="flex items-center gap-3 text-gray-300 mb-3">
-            <BarChart2 className="h-5 w-5 text-blue-400" />
-            <span className="text-sm font-medium">Profit Factor</span>
+
+          <div className="stat-card">
+            <div className="stat-card-top">
+              <div className="stat-card-icon icon-blue">
+                <Activity className="w-5 h-5" />
+              </div>
+              <span className="stat-card-label">Profit Factor</span>
+            </div>
+            <div className="stat-card-value text-blue-600">{adminStats.profitFactor.toFixed(2)}</div>
           </div>
-          <div className="text-3xl font-extrabold text-blue-400">{adminStats.profitFactor.toFixed(2)}</div>
         </div>
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-gray-800/50 p-6 rounded-2xl border border-gray-700/50 shadow-xl">
-          <h3 className="font-bold text-xl mb-6 text-gray-200">P&L Over Time</h3>
-          <div className="h-64 sm:h-72">
-            {pnlOverTimeData.length > 0 ? (
-              <ResponsiveContainer>
-                <AreaChart data={pnlOverTimeData}>
-                  <defs>
-                    <linearGradient id="pnlGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={adminStats.totalPnL >= 0 ? '#10b981' : '#ef4444'} stopOpacity={0.8} />
-                      <stop offset="95%" stopColor={adminStats.totalPnL >= 0 ? '#10b981' : '#ef4444'} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="date" stroke="#94a3b8" fontSize={10} tickMargin={5} />
-                  <YAxis stroke="#94a3b8" fontSize={10} hide={window.innerWidth < 640} />
-                  <CartesianGrid strokeDasharray="3 3" stroke="#475569" opacity={0.5} />
-                  <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #475569', borderRadius: '8px' }} />
-                  <Area type="monotone" dataKey="cumulativePnL" stroke={adminStats.totalPnL >= 0 ? '#10b981' : '#ef4444'} fill="url(#pnlGradient)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-400">No trade data available</div>
-            )}
+      <div className="page-section">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="content-card p-6">
+            <h3 className="section-title mb-6">P&L Over Time</h3>
+            <div className="h-64 sm:h-72">
+              {pnlOverTimeData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                  <AreaChart data={pnlOverTimeData}>
+                    <defs>
+                      <linearGradient id="pnlGradientLight" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={adminStats.totalPnL >= 0 ? '#10B981' : '#EF4444'} stopOpacity={0.2} />
+                        <stop offset="95%" stopColor={adminStats.totalPnL >= 0 ? '#10B981' : '#EF4444'} stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="date" stroke="#94A3B8" fontSize={12} tickMargin={5} />
+                    <YAxis stroke="#94A3B8" fontSize={12} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Area type="monotone" dataKey="cumulativePnL" stroke={adminStats.totalPnL >= 0 ? '#10B981' : '#EF4444'} strokeWidth={2} fill="url(#pnlGradientLight)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-slate-400 text-sm">No trade data available</div>
+              )}
+            </div>
           </div>
-        </div>
-        <div className="bg-gray-800/50 p-6 rounded-2xl border border-gray-700/50 shadow-xl">
-          <h3 className="font-bold text-xl mb-6 text-gray-200">Asset Performance</h3>
-          <div className="h-64 sm:h-72">
-            {Object.keys(adminStats.pairStats).length > 0 ? (
-              <ResponsiveContainer>
-                <BarChart data={Object.entries(adminStats.pairStats).map(([name, value]) => ({ name, pnl: (value as { pnl: number }).pnl }))}>
-                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickMargin={5} />
-                  <YAxis stroke="#94a3b8" fontSize={10} hide={window.innerWidth < 640} />
-                  <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #475569', borderRadius: '8px' }} />
-                  <Bar dataKey="pnl" radius={[4, 4, 0, 0]}>
-                    {Object.entries(adminStats.pairStats).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={(entry[1] as { pnl: number }).pnl >= 0 ? '#10b981' : '#ef4444'} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-400">No trade data available</div>
-            )}
+
+          <div className="content-card p-6">
+            <h3 className="section-title mb-6">Asset Performance</h3>
+            <div className="h-64 sm:h-72">
+              {Object.keys(adminStats.pairStats).length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                  <BarChart data={Object.entries(adminStats.pairStats).map(([name, value]) => ({ name, pnl: (value as { pnl: number }).pnl }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                    <XAxis dataKey="name" stroke="#94A3B8" fontSize={12} tickMargin={5} />
+                    <YAxis stroke="#94A3B8" fontSize={12} />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Bar dataKey="pnl" radius={[4, 4, 0, 0]}>
+                      {Object.entries(adminStats.pairStats).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={(entry[1] as { pnl: number }).pnl >= 0 ? '#10B981' : '#EF4444'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-slate-400 text-sm">No trade data available</div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Class Analytics */}
-      <div className="bg-gray-800/50 p-6 rounded-2xl border border-gray-700/50 shadow-xl">
-        <h3 className="font-bold text-xl mb-6 text-gray-200">Class Performance Overview</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-gray-900/50 p-6 rounded-xl border border-gray-700/30">
-            <h4 className="font-bold text-lg mb-4 text-gray-200">Total Students</h4>
-            <div className="text-4xl font-bold text-white">{students.length}</div>
-          </div>
-          <div className="bg-gray-900/50 p-6 rounded-xl border border-gray-700/30">
-            <h4 className="font-bold text-lg mb-4 text-gray-200">Active Students</h4>
-            <div className="text-4xl font-bold text-green-400">
-              {students.filter(s => s.status === 'active').length}
+      <div className="page-section">
+        <div className="content-card p-6">
+          <h3 className="section-title mb-6">Class Performance Overview</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-slate-50 p-5 rounded-xl border border-slate-100">
+              <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Total Students</h4>
+              <div className="text-3xl font-extrabold text-slate-900 tabular-nums">{students.length}</div>
             </div>
-          </div>
-          <div className="bg-gray-900/50 p-6 rounded-xl border border-gray-700/30">
-            <h4 className="font-bold text-lg mb-4 text-gray-200">At-Risk Students</h4>
-            <div className="text-4xl font-bold text-red-400">
-              {students.filter(s => s.status === 'at-risk').length}
+            <div className="bg-emerald-50/50 p-5 rounded-xl border border-emerald-100">
+              <h4 className="text-sm font-semibold text-emerald-600 uppercase tracking-wider mb-2">Active Students</h4>
+              <div className="text-3xl font-extrabold text-emerald-600 tabular-nums">
+                {students.filter(s => s.status === 'active').length}
+              </div>
+            </div>
+            <div className="bg-red-50/50 p-5 rounded-xl border border-red-100">
+              <h4 className="text-sm font-semibold text-red-600 uppercase tracking-wider mb-2">At-Risk Students</h4>
+              <div className="text-3xl font-extrabold text-red-600 tabular-nums">
+                {students.filter(s => s.status === 'at-risk').length}
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      <div className="h-10" />
     </div>
   );
 };

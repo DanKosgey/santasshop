@@ -1,10 +1,4 @@
 // Enhanced CommunityHub — Kenyan trader focused, animated, motivational, production-ready React component
-// Features:
-// - Modern, motivating UI for profitable Kenyan traders
-// - Framer Motion animations and micro-interactions
-// - Cleaner TypeScript, improved accessibility and error handling
-// - Sparkline win-rate preview, recent-wins carousel, leaderboard, badges
-// - Optimistic join with confetti animation and small notification
 
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -46,7 +40,6 @@ interface CommunityHubProps {
   onJoinCommunity?: (platform: string) => void;
 }
 
-// small helper to compose classes without adding a dependency
 const cx = (...classes: Array<string | false | undefined | null>) => classes.filter(Boolean).join(" ");
 
 const formatTierName = (tier?: string | null) => {
@@ -55,18 +48,16 @@ const formatTierName = (tier?: string | null) => {
 };
 
 const LoadingCard: React.FC = () => (
-  <div className="animate-pulse bg-gray-800/40 rounded-2xl p-6 h-40" />
+  <div className="animate-pulse bg-slate-100 rounded-2xl p-6 h-40 border border-slate-200" />
 );
 
 const Confetti: React.FC<{ trigger: number }> = ({ trigger }) => {
-  // simple CSS-driven confetti using animated SVG elements
-  // will re-render on `trigger` change to replay
   return (
     <svg className="pointer-events-none fixed inset-0 w-full h-full z-50" aria-hidden>
       <defs>
         <linearGradient id="g1" x1="0" x2="1">
-          <stop offset="0%" stopColor="#FFB86B" />
-          <stop offset="100%" stopColor="#FF5C7C" />
+          <stop offset="0%" stopColor="#3B82F6" />
+          <stop offset="100%" stopColor="#10B981" />
         </linearGradient>
       </defs>
       {Array.from({ length: 18 }).map((_, i) => (
@@ -84,30 +75,6 @@ const Confetti: React.FC<{ trigger: number }> = ({ trigger }) => {
           style={{ transformOrigin: "center" }}
         />
       ))}
-    </svg>
-  );
-};
-
-const Sparkline: React.FC<{ values: number[]; color?: string }> = ({ values, color = "#10B981" }) => {
-  // very small inline svg sparkline animated with stroke-dashoffset
-  const width = 120;
-  const height = 36;
-  const max = Math.max(...values, 1);
-  const min = Math.min(...values, 0);
-  const points = values
-    .map((v, i) => `${(i / (values.length - 1)) * width},${height - ((v - min) / (max - min || 1)) * height}`)
-    .join(" ");
-
-  return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden>
-      <polyline
-        points={points}
-        fill="none"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
     </svg>
   );
 };
@@ -152,13 +119,11 @@ const CommunityHub: React.FC<CommunityHubProps> = ({ subscriptionTier, userId, o
     [communityLinks]
   );
 
-  // Mock stats for Kenyan trader vibes — replace with real telemetry
   const stats = useMemo(
     () => ({
-      members: "200" ,
+      members: "200+",
       funded: "KES 6.8M",
       avgWinRate: 0.72,
-      recentWins: [0.5, 0.6, 0.8, 0.78, 0.85, 0.9],
     }),
     []
   );
@@ -172,19 +137,14 @@ const CommunityHub: React.FC<CommunityHubProps> = ({ subscriptionTier, userId, o
 
     try {
       setJoinLoadingFor(link.platformKey);
-      // optimistic UI: show confetti and toast locally first
       setConfettiTrigger((t) => t + 1);
       setToast(`Welcome to ${link.platformName}! Opening...`);
 
       if (userId) {
-        // best-effort: record that the user clicked this platform
         socialMediaService.updateLastCommunityPlatform(userId, link.platformKey).catch((e) => console.warn(e));
       }
 
-      // call callback so parent can handle navigation/analytics
       onJoinCommunity?.(link.platformKey);
-
-      // open link in new tab
       window.open(link.linkUrl, "_blank", "noopener,noreferrer");
 
       setTimeout(() => setToast(null), 2000);
@@ -197,107 +157,77 @@ const CommunityHub: React.FC<CommunityHubProps> = ({ subscriptionTier, userId, o
     }
   };
 
-  // Get icon component for platform
   const getPlatformIcon = (platformKey: string) => {
     switch (platformKey) {
-      case "telegram": return <Send className="h-5 w-5 sm:h-6 sm:w-6" />;
-      case "whatsapp": return <Phone className="h-5 w-5 sm:h-6 sm:w-6" />;
-      case "youtube": return <Youtube className="h-5 w-5 sm:h-6 sm:w-6" />;
-      case "twitter": return <Twitter className="h-5 w-5 sm:h-6 sm:w-6" />;
-      case "instagram": return <Instagram className="h-5 w-5 sm:h-6 sm:w-6" />;
-      case "tiktok": return <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />;
-      default: return <Globe className="h-5 w-5 sm:h-6 sm:w-6" />;
+      case "telegram": return <Send className="h-5 w-5" />;
+      case "whatsapp": return <Phone className="h-5 w-5" />;
+      case "youtube": return <Youtube className="h-5 w-5" />;
+      case "twitter": return <Twitter className="h-5 w-5" />;
+      case "instagram": return <Instagram className="h-5 w-5" />;
+      case "tiktok": return <MessageCircle className="h-5 w-5" />;
+      default: return <Globe className="h-5 w-5" />;
     }
   };
 
   return (
-    <div className="text-white pb-16 space-y-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-      {/* Hero Section */}
-      <section className="text-center py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-3xl mx-auto"
-        >
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500/20 to-purple-500/20 px-4 py-2 rounded-full border border-amber-500/30 mb-6">
-            <Sparkles className="h-4 w-4 text-amber-400" />
-            <span className="text-sm font-medium text-amber-200">Join Our Trading Community</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-amber-400 via-green-400 to-purple-400 bg-clip-text text-transparent mb-4">
-            Connect with Fellow Traders
-          </h1>
-          <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-            Join our vibrant community of Kenyan and global traders. Get real-time signals, share strategies, and accelerate your trading journey.
-          </p>
-        </motion.div>
-      </section>
+    <div className="text-slate-700 pb-16 space-y-0 md:space-y-8 font-sans">
+      {/* ── PAGE HEADER ─────────────────────────────── */}
+      <div className="px-4 pt-4 pb-3 text-center md:text-left">
+        <div className="inline-flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full border border-blue-200 mb-2">
+          <Sparkles className="h-3.5 w-3.5 text-blue-600" />
+          <span className="text-[10px] font-semibold text-blue-700 uppercase tracking-wider">Trading Community</span>
+        </div>
+        <h1 className="text-xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-1">Connect with Fellow Traders</h1>
+        <p className="text-sm text-slate-500 max-w-xl md:mx-auto">
+          Real-time signals, shared strategies, and direct access to master traders.
+        </p>
+      </div>
 
-      {/* Stats Section */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-4 rounded-xl border border-gray-700 text-center"
-        >
-          <Users className="h-6 w-6 text-amber-400 mx-auto mb-2" />
-          <div className="text-2xl font-bold">{stats.members.toLocaleString()}+</div>
-          <div className="text-sm text-gray-400">Active Members</div>
-        </motion.div>
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-4 rounded-xl border border-gray-700 text-center"
-        >
-          <TrendingUp className="h-6 w-6 text-green-400 mx-auto mb-2" />
-          <div className="text-2xl font-bold">{stats.funded}</div>
-          <div className="text-sm text-gray-400">Funded Traders</div>
-        </motion.div>
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-4 rounded-xl border border-gray-700 text-center"
-        >
-          <Award className="h-6 w-6 text-purple-400 mx-auto mb-2" />
-          <div className="text-2xl font-bold">{(stats.avgWinRate * 100).toFixed(0)}%</div>
-          <div className="text-sm text-gray-400">Avg Win Rate</div>
-        </motion.div>
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-4 rounded-xl border border-gray-700 text-center"
-        >
-          <Heart className="h-6 w-6 text-red-400 mx-auto mb-2" />
-          <div className="text-2xl font-bold">24/7</div>
-          <div className="text-sm text-gray-400">Support</div>
-        </motion.div>
+      {/* ── STATS STRIP ── full-bleed 4-col ─────────── */}
+      <section className="grid grid-cols-4 border-t border-b border-slate-200 bg-white divide-x divide-slate-200">
+        <div className="flex flex-col items-center justify-center py-4 px-2 text-center">
+          <Users className="h-5 w-5 text-blue-600 mb-1" />
+          <div className="text-xl font-bold text-slate-900 tabular-nums">{stats.members}</div>
+          <div className="text-[10px] text-slate-400 font-medium">Members</div>
+        </div>
+        <div className="flex flex-col items-center justify-center py-4 px-2 text-center">
+          <TrendingUp className="h-5 w-5 text-emerald-600 mb-1" />
+          <div className="text-xl font-bold text-slate-900 tabular-nums">{stats.funded}</div>
+          <div className="text-[10px] text-slate-400 font-medium">Funded</div>
+        </div>
+        <div className="flex flex-col items-center justify-center py-4 px-2 text-center">
+          <Award className="h-5 w-5 text-purple-600 mb-1" />
+          <div className="text-xl font-bold text-slate-900 tabular-nums">{(stats.avgWinRate * 100).toFixed(0)}%</div>
+          <div className="text-[10px] text-slate-400 font-medium">Win Rate</div>
+        </div>
+        <div className="flex flex-col items-center justify-center py-4 px-2 text-center">
+          <Heart className="h-5 w-5 text-red-500 mb-1" />
+          <div className="text-xl font-bold text-slate-900">24/7</div>
+          <div className="text-[10px] text-slate-400 font-medium">Support</div>
+        </div>
       </section>
 
       {/* Pending notice */}
       <AnimatePresence>
         {isPendingUser && (
-          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="bg-yellow-600/6 border border-yellow-600/20 p-3 sm:p-4 rounded-xl sm:rounded-2xl text-yellow-200">
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
-              <Shield className="h-4 w-4 flex-shrink-0" />
-              <div className="font-semibold text-sm sm:text-base">Application under review — {formatTierName(subscriptionTier)}</div>
+          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mx-4 bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-800 shadow-xs">
+            <div className="flex items-center gap-2 mb-1">
+              <Shield className="h-4 w-4 text-amber-600 flex-shrink-0" />
+              <div className="font-bold text-sm">Application under review — {formatTierName(subscriptionTier)}</div>
             </div>
-            <div className="text-xs sm:text-sm text-yellow-100/80">You can participate in public discussions. Premium groups will unlock after approval.</div>
+            <div className="text-xs text-amber-700">You can participate in public discussions. Premium groups will unlock after approval.</div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Community Groups */}
-      <section aria-labelledby="groups-heading">
-        <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4 mb-6">
-          <h2 id="groups-heading" className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
-            <Star className="h-6 w-6 text-amber-400" />
-            Premium Trading Groups
+      <section aria-labelledby="groups-heading" className="px-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pt-4">
+          <h2 id="groups-heading" className="text-lg md:text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <Star className="h-5 w-5 text-amber-500" />
+            Premium Groups
           </h2>
-          <div className="text-sm text-gray-400">Exclusive communities for serious traders</div>
+          <div className="text-xs font-medium text-slate-500">Exclusive communities for serious traders</div>
         </div>
 
         {loading ? (
@@ -306,39 +236,37 @@ const CommunityHub: React.FC<CommunityHubProps> = ({ subscriptionTier, userId, o
             <LoadingCard />
           </div>
         ) : error ? (
-          <div className="text-sm text-red-400">{error}</div>
+          <div className="text-sm text-red-600 font-medium">{error}</div>
         ) : (
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 gap-4">
             {premiumLinks.map((link, index) => (
               <motion.article
                 key={link.id}
                 layout
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.01 }}
                 className={cx(
-                  "relative p-6 rounded-2xl border",
-                  isPendingUser && "opacity-80",
-                  "bg-gradient-to-br from-slate-900/40 to-black/40 border-slate-800 shadow-xl"
+                  "relative p-6 rounded-2xl border bg-white shadow-card card-hover border-slate-200",
+                  isPendingUser && "opacity-80"
                 )}
               >
                 {isPendingUser && (
-                  <div className="absolute inset-0 bg-black/50 rounded-2xl z-10 flex flex-col items-center justify-center p-4">
-                    <Lock className="h-6 w-6 mb-2 text-gray-300" />
-                    <div className="text-white font-semibold text-base text-center">Pending Approval</div>
-                    <div className="text-xs text-gray-300 mt-1 text-center">Access unlocked after review</div>
+                  <div className="absolute inset-0 bg-white/70 backdrop-blur-xs rounded-2xl z-10 flex flex-col items-center justify-center p-4">
+                    <Lock className="h-6 w-6 mb-1 text-slate-500" />
+                    <div className="text-slate-900 font-bold text-base text-center">Pending Approval</div>
+                    <div className="text-xs text-slate-500 mt-0.5 text-center">Access unlocked after review</div>
                   </div>
                 )}
 
-                <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+                <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-xl text-white shadow-lg" style={{ backgroundColor: link.iconColor }}>
+                    <div className="p-3 rounded-xl text-white shadow-xs" style={{ backgroundColor: link.iconColor }}>
                       {getPlatformIcon(link.platformKey)}
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold">{link.platformName}</h3>
-                      <div className="text-sm text-gray-400 mt-1">{link.description}</div>
+                      <h3 className="text-xl font-bold text-slate-900">{link.platformName}</h3>
+                      <div className="text-sm text-slate-500 mt-0.5">{link.description}</div>
                     </div>
                   </div>
 
@@ -346,34 +274,34 @@ const CommunityHub: React.FC<CommunityHubProps> = ({ subscriptionTier, userId, o
                     <button
                       onClick={() => handleJoinCommunity(link)}
                       disabled={!!joinLoadingFor}
-                      className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 font-bold hover:from-amber-400 hover:to-amber-500 focus:outline-none transition-all shadow-lg hover:shadow-amber-500/20"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all shadow-blue-glow text-sm"
                     >
                       {joinLoadingFor === link.platformKey ? (
-                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                          <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2" strokeOpacity="0.2" fill="none" />
-                          <path d="M22 12a10 10 0 0 1-10 10" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" />
+                        <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.2" fill="none" />
+                          <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
                         </svg>
                       ) : (
                         <>
                           <span>Join Group</span>
-                          <ArrowRight className="h-5 w-5" />
+                          <ArrowRight className="h-4 w-4" />
                         </>
                       )}
                     </button>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-300">
-                  <div className="flex items-center gap-2">
-                    <Star className="h-5 w-5 text-amber-400" /> 
+                <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-600 pt-3 border-t border-slate-100">
+                  <div className="flex items-center gap-1.5">
+                    <Star className="h-4 w-4 text-amber-500" /> 
                     <span>Trusted Signals & Analysis</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Trophy className="h-5 w-5 text-green-400" /> 
+                  <div className="flex items-center gap-1.5">
+                    <Trophy className="h-4 w-4 text-emerald-600" /> 
                     <span>Top Traders & Mentors</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-purple-400" /> 
+                  <div className="flex items-center gap-1.5">
+                    <Zap className="h-4 w-4 text-purple-600" /> 
                     <span>Real-time Market Updates</span>
                   </div>
                 </div>
@@ -384,13 +312,13 @@ const CommunityHub: React.FC<CommunityHubProps> = ({ subscriptionTier, userId, o
       </section>
 
       {/* Social platforms */}
-      <section>
-        <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4 mb-6">
-          <h2 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
-            <Globe className="h-6 w-6 text-blue-400" />
+      <section className="px-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pt-4">
+          <h2 className="text-lg md:text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <Globe className="h-5 w-5 text-blue-600" />
             Connect Across Platforms
           </h2>
-          <div className="text-sm text-gray-400">Follow our channels for education & market commentary</div>
+          <div className="text-xs font-medium text-slate-500">Follow for education & market commentary</div>
         </div>
 
         {loading ? (
@@ -408,24 +336,24 @@ const CommunityHub: React.FC<CommunityHubProps> = ({ subscriptionTier, userId, o
                 href={link.linkUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ translateY: -8 }}
-                className="group p-5 rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900/40 to-black/40 flex flex-col shadow-lg hover:shadow-xl transition-all"
+                transition={{ delay: index * 0.08 }}
+                whileHover={{ translateY: -4 }}
+                className="group p-5 rounded-xl border border-slate-200 bg-white flex flex-col shadow-card hover:border-slate-300 transition-all"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="p-3 rounded-xl text-white" style={{ backgroundColor: link.iconColor }}>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="p-2.5 rounded-lg text-white" style={{ backgroundColor: link.iconColor }}>
                     {getPlatformIcon(link.platformKey)}
                   </div>
-                  <ArrowRight className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: link.iconColor }} />
+                  <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
                 </div>
 
-                <div className="font-bold text-lg mb-2">{link.platformName}</div>
-                <div className="text-sm text-gray-400 mb-4 line-clamp-2">{link.description}</div>
-                <div className="mt-auto text-sm font-semibold flex items-center gap-1" style={{ color: link.iconColor }}>
+                <div className="font-bold text-slate-900 text-base mb-1">{link.platformName}</div>
+                <div className="text-xs text-slate-500 mb-3 line-clamp-2">{link.description}</div>
+                <div className="mt-auto text-xs font-bold flex items-center gap-1 text-blue-600">
                   <span>Follow</span>
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-3.5 w-3.5" />
                 </div>
               </motion.a>
             ))}
@@ -434,29 +362,29 @@ const CommunityHub: React.FC<CommunityHubProps> = ({ subscriptionTier, userId, o
       </section>
 
       {/* CTA Section */}
-      <section className="text-center py-12">
+      <section className="text-center py-6">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="max-w-2xl mx-auto bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-8 rounded-2xl border border-gray-700"
+          transition={{ delay: 0.4 }}
+          className="max-w-2xl mx-auto bg-gradient-to-br from-blue-50 to-indigo-50/50 p-8 rounded-2xl border border-blue-100 shadow-card"
         >
-          <h3 className="text-2xl font-bold mb-4">Ready to Join Our Community?</h3>
-          <p className="text-gray-300 mb-6">
+          <h3 className="text-2xl font-bold text-slate-900 mb-2">Ready to Join Our Community?</h3>
+          <p className="text-slate-600 text-sm mb-5">
             Connect with thousands of traders, get exclusive signals, and accelerate your trading success.
           </p>
-          <button className="px-6 py-3 bg-gradient-to-r from-amber-500 to-purple-500 text-white font-bold rounded-xl hover:from-amber-400 hover:to-purple-400 transition-all">
+          <button className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-blue-glow transition-all text-sm">
             Get Started Today
           </button>
         </motion.div>
       </section>
 
-      {/* small toast + confetti */}
+      {/* toast + confetti */}
       <AnimatePresence>
         {toast && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed left-4 right-4 sm:left-auto sm:right-6 bottom-6 bg-slate-900/80 border border-slate-700 px-4 py-3 rounded-xl z-50 max-w-md mx-auto sm:mx-0 shadow-lg">
-            <div className="text-sm flex items-center gap-2">
-              <Check className="h-5 w-5 text-green-400" />
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed left-4 right-4 sm:left-auto sm:right-6 bottom-6 bg-slate-900 text-white px-4 py-3 rounded-xl z-50 max-w-md mx-auto sm:mx-0 shadow-lg">
+            <div className="text-sm font-medium flex items-center gap-2">
+              <Check className="h-4 w-4 text-emerald-400" />
               {toast}
             </div>
           </motion.div>

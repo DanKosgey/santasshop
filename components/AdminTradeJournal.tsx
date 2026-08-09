@@ -492,12 +492,12 @@ const AdminTradeJournal: React.FC = () => {
   }
 
   return (
-    <div className="text-white space-y-6 pb-20">
+    <div className="text-slate-900 space-y-6 pb-20 font-sans">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold mb-1">Trade Journal</h1>
-          <p className="text-gray-400">
+          <h1 className="text-2xl font-extrabold text-slate-900 mb-1">Trade Journal</h1>
+          <p className="text-slate-500 text-sm">
             {journalView === 'personal' 
               ? 'Track your trading performance and analytics' 
               : 'Monitor all students trading performance and analytics'}
@@ -505,13 +505,13 @@ const AdminTradeJournal: React.FC = () => {
         </div>
         <div className="flex gap-2 flex-wrap">
           {/* View toggle buttons */}
-          <div className="flex rounded-lg border border-gray-600 overflow-hidden">
+          <div className="flex rounded-xl border border-slate-200 overflow-hidden bg-white shadow-xs">
             <button
               onClick={() => setJournalView('personal')}
-              className={`px-4 py-2 text-sm flex items-center gap-2 transition ${
+              className={`px-4 py-2 text-xs font-bold flex items-center gap-2 transition ${
                 journalView === 'personal'
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  : 'bg-white text-slate-600 hover:bg-slate-50'
               }`}
             >
               <User className="h-4 w-4" />
@@ -519,10 +519,10 @@ const AdminTradeJournal: React.FC = () => {
             </button>
             <button
               onClick={() => setJournalView('all-students')}
-              className={`px-4 py-2 text-sm flex items-center gap-2 transition ${
+              className={`px-4 py-2 text-xs font-bold flex items-center gap-2 transition ${
                 journalView === 'all-students'
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  : 'bg-white text-slate-600 hover:bg-slate-50'
               }`}
             >
               <Users className="h-4 w-4" />
@@ -532,20 +532,20 @@ const AdminTradeJournal: React.FC = () => {
           
           <button 
             onClick={() => setViewMode('analytics')}
-            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition ${
               viewMode === 'analytics' 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-600'
+                ? 'bg-blue-600 text-white shadow-blue-glow' 
+                : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
             }`}
           >
             <BarChart3 className="h-4 w-4" /> Analytics
           </button>
           <button 
             onClick={() => setViewMode('journal')}
-            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition ${
               viewMode === 'journal' 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-600'
+                ? 'bg-blue-600 text-white shadow-blue-glow' 
+                : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
             }`}
           >
             <FileText className="h-4 w-4" /> Journal
@@ -575,7 +575,7 @@ const AdminTradeJournal: React.FC = () => {
               });
               setIsModalOpen(true);
             }}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 transition shadow-lg shadow-blue-900/20"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition shadow-blue-glow"
           >
             <Plus className="h-4 w-4" /> New Entry
           </button>
@@ -586,8 +586,8 @@ const AdminTradeJournal: React.FC = () => {
       {loading && (
         <div className="flex justify-center items-center h-64">
           <div className="flex flex-col items-center">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-            <p className="mt-2 text-gray-400">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <p className="mt-2 text-slate-500 text-sm font-medium">
               {journalView === 'personal' 
                 ? 'Loading your journal entries...' 
                 : 'Loading all students journal entries...'}
@@ -598,11 +598,11 @@ const AdminTradeJournal: React.FC = () => {
 
       {/* Error message */}
       {error && (
-        <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-6 text-center">
-          <p className="text-red-200">{error}</p>
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+          <p className="text-red-600 text-sm font-semibold">{error}</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white"
+            className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-xl text-white text-xs font-bold"
           >
             Retry
           </button>
@@ -616,91 +616,91 @@ const AdminTradeJournal: React.FC = () => {
           {viewMode === 'analytics' && (
             <div className="space-y-6">
               {/* Key Metrics */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-gradient-to-br from-yellow-500/10 to-gray-900 p-6 rounded-xl border border-yellow-500/20 hover:border-yellow-500/50 transition transform hover:scale-105">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-gray-400 text-sm font-medium">Win Rate</div>
-                    <Award className="h-5 w-5 text-yellow-400" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-card min-w-0 flex flex-col justify-between overflow-hidden">
+                  <div className="flex items-center justify-between mb-2 min-w-0">
+                    <div className="text-slate-500 text-xs font-bold uppercase tracking-wider truncate">Win Rate</div>
+                    <Award className="h-5 w-5 text-amber-500 shrink-0" />
                   </div>
-                  <div className="text-4xl font-bold text-yellow-400">{stats.winRate}%</div>
-                  <div className="text-xs text-gray-500 mt-3">{stats.wins} Wins / {stats.losses} Losses</div>
+                  <div className="text-2xl md:text-3xl font-extrabold text-slate-900 tabular-nums truncate">{stats.winRate}%</div>
+                  <div className="text-xs text-slate-500 mt-2 font-medium truncate">{stats.wins} Wins / {stats.losses} Losses</div>
                 </div>
 
-                <div className={`bg-gradient-to-br ${stats.totalPnL >= 0 ? 'from-green-500/10' : 'from-red-500/10'} to-gray-900 p-6 rounded-xl border ${stats.totalPnL >= 0 ? 'border-green-500/20 hover:border-green-500/50' : 'border-red-500/20 hover:border-red-500/50'} transition transform hover:scale-105`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-gray-400 text-sm font-medium">Total P&L</div>
-                    <TrendingUp className={`h-5 w-5 ${stats.totalPnL >= 0 ? 'text-green-400' : 'text-red-400'}`} />
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-card min-w-0 flex flex-col justify-between overflow-hidden">
+                  <div className="flex items-center justify-between mb-2 min-w-0">
+                    <div className="text-slate-500 text-xs font-bold uppercase tracking-wider truncate">Total P&L</div>
+                    <TrendingUp className={`h-5 w-5 shrink-0 ${stats.totalPnL >= 0 ? 'text-emerald-600' : 'text-red-600'}`} />
                   </div>
-                  <div className={`text-4xl font-bold ${stats.totalPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  <div className={`text-2xl md:text-3xl font-extrabold tabular-nums truncate ${stats.totalPnL >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                     ${stats.totalPnL.toFixed(2)}
                   </div>
-                  <div className="text-xs text-gray-500 mt-3">Avg: ${stats.avgPnL}</div>
+                  <div className="text-xs text-slate-500 mt-2 font-medium truncate">Avg: ${stats.avgPnL}</div>
                 </div>
 
-                <div className="bg-gradient-to-br from-purple-500/10 to-gray-900 p-6 rounded-xl border border-purple-500/20 hover:border-purple-500/50 transition transform hover:scale-105">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-gray-400 text-sm font-medium">Profit Factor</div>
-                    <Zap className="h-5 w-5 text-purple-400" />
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-card min-w-0 flex flex-col justify-between overflow-hidden">
+                  <div className="flex items-center justify-between mb-2 min-w-0">
+                    <div className="text-slate-500 text-xs font-bold uppercase tracking-wider truncate">Profit Factor</div>
+                    <Zap className="h-5 w-5 text-purple-600 shrink-0" />
                   </div>
-                  <div className="text-4xl font-bold text-purple-400">{stats.profitFactor}</div>
-                  <div className="text-xs text-gray-500 mt-3">Wins to Losses Ratio</div>
+                  <div className="text-2xl md:text-3xl font-extrabold text-slate-900 tabular-nums truncate">{stats.profitFactor}</div>
+                  <div className="text-xs text-slate-500 mt-2 font-medium truncate">Wins to Losses Ratio</div>
                 </div>
 
-                <div className="bg-gradient-to-br from-cyan-500/10 to-gray-900 p-6 rounded-xl border border-cyan-500/20 hover:border-cyan-500/50 transition transform hover:scale-105">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-gray-400 text-sm font-medium">Total Trades</div>
-                    <Activity className="h-5 w-5 text-cyan-400" />
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-card min-w-0 flex flex-col justify-between overflow-hidden">
+                  <div className="flex items-center justify-between mb-2 min-w-0">
+                    <div className="text-slate-500 text-xs font-bold uppercase tracking-wider truncate">Total Trades</div>
+                    <Activity className="h-5 w-5 text-blue-600 shrink-0" />
                   </div>
-                  <div className="text-4xl font-bold text-cyan-400">{stats.total}</div>
-                  <div className="text-xs text-gray-500 mt-3">{stats.closedTrades} Closed</div>
+                  <div className="text-2xl md:text-3xl font-extrabold text-slate-900 tabular-nums truncate">{stats.total}</div>
+                  <div className="text-xs text-slate-500 mt-2 font-medium truncate">{stats.closedTrades} Closed</div>
                 </div>
               </div>
 
               {/* Win/Loss Details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-gradient-to-br from-green-900/20 to-gray-900 p-6 rounded-xl border border-green-500/30 hover:border-green-400/50 transition">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-3 bg-green-500/20 rounded-lg">
-                      <ArrowUpRight className="h-6 w-6 text-green-400" />
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-card min-w-0 flex flex-col justify-between overflow-hidden">
+                  <div className="flex items-center gap-3 mb-4 min-w-0">
+                    <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 shrink-0">
+                      <ArrowUpRight className="h-5 w-5 text-emerald-600" />
                     </div>
-                    <h3 className="text-lg font-semibold">Largest Win</h3>
+                    <h3 className="text-base font-bold text-slate-900 truncate">Largest Win</h3>
                   </div>
-                  <div className="text-3xl font-bold text-green-400">${stats.largestWin.toFixed(2)}</div>
-                  <div className="text-sm text-gray-500 mt-2">Best performing trade</div>
+                  <div className="text-2xl md:text-3xl font-extrabold text-emerald-600 tabular-nums truncate">${stats.largestWin.toFixed(2)}</div>
+                  <div className="text-xs text-slate-500 mt-1 font-medium truncate">Best performing trade</div>
                 </div>
 
-                <div className="bg-gradient-to-br from-red-900/20 to-gray-900 p-6 rounded-xl border border-red-500/30 hover:border-red-400/50 transition">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-3 bg-red-500/20 rounded-lg">
-                      <ArrowDownRight className="h-6 w-6 text-red-400" />
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-card min-w-0 flex flex-col justify-between overflow-hidden">
+                  <div className="flex items-center gap-3 mb-4 min-w-0">
+                    <div className="p-2.5 bg-red-50 rounded-xl border border-red-200 shrink-0">
+                      <ArrowDownRight className="h-5 w-5 text-red-600" />
                     </div>
-                    <h3 className="text-lg font-semibold">Largest Loss</h3>
+                    <h3 className="text-base font-bold text-slate-900 truncate">Largest Loss</h3>
                   </div>
-                  <div className="text-3xl font-bold text-red-400">-${Math.abs(stats.largestLoss).toFixed(2)}</div>
-                  <div className="text-sm text-gray-500 mt-2">Worst performing trade</div>
+                  <div className="text-2xl md:text-3xl font-extrabold text-red-600 tabular-nums truncate">-${Math.abs(stats.largestLoss).toFixed(2)}</div>
+                  <div className="text-xs text-slate-500 mt-1 font-medium truncate">Worst performing trade</div>
                 </div>
               </div>
 
               {/* Strategy Performance */}
-              <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-6 backdrop-blur-sm">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <Target className="h-5 w-5 text-blue-400" /> Strategy Performance
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-card">
+                <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <Target className="h-5 w-5 text-blue-600" /> Strategy Performance
                 </h3>
                 <div className="space-y-3">
                   {Object.entries(stats.strategyStats).sort((a, b) => (b[1] as any).pnl - (a[1] as any).pnl).map(([strategy, data]) => (
-                    <div key={strategy} className="flex items-center justify-between p-4 bg-gray-900/50 rounded-lg border border-gray-700 hover:border-blue-500/30 transition group">
+                    <div key={strategy} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200 transition group">
                       <div className="flex-1">
-                        <div className="font-semibold text-white group-hover:text-blue-400 transition">{strategy}</div>
-                        <div className="text-sm text-gray-400">{(data as any).wins}W / {(data as any).losses}L</div>
+                        <div className="font-bold text-slate-900 text-sm group-hover:text-blue-600 transition">{strategy}</div>
+                        <div className="text-xs text-slate-500 font-medium">{(data as any).wins}W / {(data as any).losses}L</div>
                       </div>
                       <div className="flex items-center gap-4">
-                        <div className="w-24 bg-gray-700 rounded-full h-2 overflow-hidden">
+                        <div className="w-24 bg-slate-200 rounded-full h-2 overflow-hidden">
                           <div 
-                            className="bg-gradient-to-r from-blue-500 to-cyan-400 h-full transition-all duration-500" 
+                            className="bg-blue-600 h-full transition-all duration-500" 
                             style={{ width: `${Math.min((Math.abs((data as any).pnl) / Math.abs(stats.totalPnL) * 100) || 0, 100)}%` }}
                           />
                         </div>
-                        <div className={`text-lg font-bold w-24 text-right ${(data as any).pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        <div className={`text-base font-bold w-24 text-right tabular-nums ${(data as any).pnl >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                           ${(data as any).pnl.toFixed(2)}
                         </div>
                       </div>
@@ -709,25 +709,23 @@ const AdminTradeJournal: React.FC = () => {
                 </div>
               </div>
 
-              {/* Time Frame & Pair Performance */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-6 backdrop-blur-sm">
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <Anchor className="h-5 w-5 text-cyan-400" /> Currency Pair Stats
-                  </h3>
-                  <div className="space-y-2">
-                    {Object.entries(stats.pairStats).sort((a, b) => (b[1] as any).pnl - (a[1] as any).pnl).slice(0, 6).map(([pair, data]) => (
-                      <div key={pair} className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700 hover:border-cyan-500/30 transition">
-                        <div className="flex-1">
-                          <span className="text-gray-300 font-mono font-bold">{pair}</span>
-                          <span className="text-gray-500 text-xs ml-2">({(data as any).total}T • {(data as any).wins}W • {(data as any).losses}L)</span>
-                        </div>
-                        <div className={`text-sm font-bold ${(data as any).pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                          ${(data as any).pnl.toFixed(2)}
-                        </div>
+              {/* Currency Pair Performance */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-card">
+                <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <Anchor className="h-5 w-5 text-blue-600" /> Currency Pair Stats
+                </h3>
+                <div className="space-y-2">
+                  {Object.entries(stats.pairStats).sort((a, b) => (b[1] as any).pnl - (a[1] as any).pnl).slice(0, 6).map(([pair, data]) => (
+                    <div key={pair} className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200 transition">
+                      <div className="flex-1">
+                        <span className="text-slate-900 font-mono font-bold text-sm">{pair}</span>
+                        <span className="text-slate-500 text-xs ml-2 font-medium">({(data as any).total}T • {(data as any).wins}W • {(data as any).losses}L)</span>
                       </div>
-                    ))}
-                  </div>
+                      <div className={`text-sm font-bold tabular-nums ${(data as any).pnl >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                        ${(data as any).pnl.toFixed(2)}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -738,32 +736,32 @@ const AdminTradeJournal: React.FC = () => {
             <>
               {/* Quick Stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-gradient-to-br from-blue-500/10 to-gray-900 p-5 rounded-xl border border-blue-500/20">
-                  <div className="text-gray-400 text-sm mb-2 flex items-center gap-2"><Award className="h-4 w-4" /> Win Rate</div>
-                  <div className={`text-3xl font-bold ${stats.winRate >= 50 ? 'text-green-400' : 'text-yellow-400'}`}>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-card">
+                  <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5"><Award className="h-4 w-4 text-amber-500" /> Win Rate</div>
+                  <div className={`text-3xl font-extrabold tabular-nums ${stats.winRate >= 50 ? 'text-emerald-600' : 'text-amber-500'}`}>
                     {stats.winRate}%
                   </div>
                 </div>
-                <div className={`bg-gradient-to-br ${stats.totalPnL >= 0 ? 'from-green-500/10' : 'from-red-500/10'} to-gray-900 p-5 rounded-xl border ${stats.totalPnL >= 0 ? 'border-green-500/20' : 'border-red-500/20'}`}>
-                  <div className="text-gray-400 text-sm mb-2 flex items-center gap-2"><DollarSign className="h-4 w-4" /> Net P&L</div>
-                  <div className={`text-3xl font-bold ${stats.totalPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-card">
+                  <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5"><DollarSign className="h-4 w-4 text-blue-500" /> Net P&L</div>
+                  <div className={`text-3xl font-extrabold tabular-nums ${stats.totalPnL >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                     ${stats.totalPnL.toFixed(2)}
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-cyan-500/10 to-gray-900 p-5 rounded-xl border border-cyan-500/20">
-                  <div className="text-gray-400 text-sm mb-2 flex items-center gap-2"><Activity className="h-4 w-4" /> Total Trades</div>
-                  <div className="text-3xl font-bold text-white">{stats.total}</div>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-card">
+                  <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5"><Activity className="h-4 w-4 text-blue-600" /> Total Trades</div>
+                  <div className="text-3xl font-extrabold text-slate-900 tabular-nums">{stats.total}</div>
                 </div>
               </div>
 
               {/* Controls Bar */}
-              <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-4 flex flex-col md:flex-row gap-4 items-center backdrop-blur-sm">
+              <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col md:flex-row gap-4 items-center shadow-card">
                 <div className="relative flex-1 w-full md:w-auto">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <input 
                     type="text" 
                     placeholder="Search pairs, notes, strategies..." 
-                    className="w-full bg-gray-900 border border-gray-600 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-blue-400 transition"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 font-medium focus:outline-none focus:border-blue-500 focus:bg-white transition"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -771,7 +769,7 @@ const AdminTradeJournal: React.FC = () => {
 
                 <div className="flex gap-2 w-full md:w-auto overflow-x-auto">
                   <select 
-                    className="bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-blue-400 transition"
+                    className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 font-semibold outline-none focus:border-blue-500 focus:bg-white transition"
                     value={filterType}
                     onChange={(e) => setFilterType(e.target.value as any)}
                   >
@@ -781,7 +779,7 @@ const AdminTradeJournal: React.FC = () => {
                   </select>
 
                   <select 
-                    className="bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-blue-400 transition"
+                    className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 font-semibold outline-none focus:border-blue-500 focus:bg-white transition"
                     value={filterOutcome}
                     onChange={(e) => setFilterOutcome(e.target.value as any)}
                   >
@@ -795,108 +793,108 @@ const AdminTradeJournal: React.FC = () => {
                 <div className="flex gap-2 w-full md:w-auto">
                   <button 
                     onClick={() => handleSort('date')}
-                    className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm border transition ${
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition ${
                       sortConfig.key === 'date' 
-                        ? 'bg-blue-600/20 border-blue-500 text-blue-400' 
-                        : 'bg-gray-900 border-gray-600 text-gray-400 hover:bg-gray-800'
+                        ? 'bg-blue-50 border-blue-200 text-blue-700' 
+                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                     }`}
                   >
-                    <Calendar className="h-4 w-4" /> Date
+                    <Calendar className="h-3.5 w-3.5" /> Date
                   </button>
 
                   <button 
                     onClick={() => handleSort('pnl')}
-                    className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm border transition ${
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition ${
                       sortConfig.key === 'pnl' 
-                        ? 'bg-blue-600/20 border-blue-500 text-blue-400' 
-                        : 'bg-gray-900 border-gray-600 text-gray-400 hover:bg-gray-800'
+                        ? 'bg-blue-50 border-blue-200 text-blue-700' 
+                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                     }`}
                   >
-                    <DollarSign className="h-4 w-4" /> P&L
+                    <DollarSign className="h-3.5 w-3.5" /> P&L
                   </button>
                 </div>
               </div>
 
               {/* Data Table */}
-              <div className="bg-gray-800/50 rounded-xl border border-gray-700 overflow-hidden overflow-x-auto backdrop-blur-sm">
+              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden overflow-x-auto shadow-card">
                 <table className="w-full text-left text-sm min-w-[900px]">
-                  <thead className="bg-gray-900/80 text-gray-400 border-b border-gray-700">
+                  <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 text-xs font-bold uppercase tracking-wider">
                     <tr>
                       {journalView === 'all-students' && (
-                        <th className="p-4 font-semibold">Student</th>
+                        <th className="p-4">Student</th>
                       )}
-                      <th className="p-4 font-semibold whitespace-nowrap">Date</th>
-                      <th className="p-4 font-semibold">Pair</th>
-                      <th className="p-4 font-semibold">Type</th>
-                      <th className="p-4 font-semibold">Strategy</th>
-                      <th className="p-4 font-semibold">Setup Notes</th>
-                      <th className="p-4 font-semibold text-center">Chart</th>
-                      <th className="p-4 font-semibold text-right">P&L</th>
-                      <th className="p-4 font-semibold text-center">Status</th>
+                      <th className="p-4 whitespace-nowrap">Date</th>
+                      <th className="p-4">Pair</th>
+                      <th className="p-4">Type</th>
+                      <th className="p-4">Strategy</th>
+                      <th className="p-4">Setup Notes</th>
+                      <th className="p-4 text-center">Chart</th>
+                      <th className="p-4 text-right">P&L</th>
+                      <th className="p-4 text-center">Status</th>
                       <th className="p-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-700">
+                  <tbody className="divide-y divide-slate-100 font-medium">
                     {processedEntries.map((entry) => (
-                      <tr key={entry.id} className="hover:bg-gray-700/30 transition group">
+                      <tr key={entry.id} className="hover:bg-slate-50 transition group">
                         {journalView === 'all-students' && (
                           <td className="p-4">
                             <div className="flex items-center gap-2">
-                              <div className="bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
+                              <div className="bg-blue-50 border border-blue-100 text-blue-700 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
                                 {(entry as any).studentName?.charAt(0) || 'S'}
                               </div>
                               <div>
-                                <div className="font-medium text-white text-sm">
+                                <div className="font-bold text-slate-900 text-sm">
                                   {(entry as any).studentName || 'Unknown Student'}
                                 </div>
-                                <div className="text-xs text-gray-400">
+                                <div className="text-xs text-slate-400 font-medium">
                                   {(entry as any).studentTier || 'free'} tier
                                 </div>
                               </div>
                             </div>
                           </td>
                         )}
-                        <td className="p-4 text-gray-300 font-mono text-xs">
+                        <td className="p-4 text-slate-500 font-mono text-xs tabular-nums">
                           {new Date(entry.date).toLocaleDateString()}
                         </td>
-                        <td className="p-4 font-bold text-white group-hover:text-blue-400 transition">{entry.pair}</td>
+                        <td className="p-4 font-bold text-slate-900 group-hover:text-blue-600 transition font-mono">{entry.pair}</td>
                         <td className="p-4">
                           <span className={`px-2 py-1 rounded text-xs font-bold uppercase flex items-center gap-1 w-fit ${
-                            entry.type === 'buy' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                            entry.type === 'buy' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
                           }`}>
                             {entry.type === 'buy' ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                             {entry.type}
                           </span>
                         </td>
-                        <td className="p-4 text-gray-400 text-sm">{entry.strategy || '-'}</td>
-                        <td className="p-4 text-gray-400 max-w-xs truncate text-sm" title={entry.notes}>
-                          {entry.notes || <span className="text-gray-600 italic">No notes</span>}
+                        <td className="p-4 text-slate-600 text-xs font-semibold">{entry.strategy || '-'}</td>
+                        <td className="p-4 text-slate-600 max-w-xs truncate text-xs" title={entry.notes}>
+                          {entry.notes || <span className="text-slate-400 italic">No notes</span>}
                         </td>
                         <td className="p-4 text-center">
                           {entry.screenshotUrl ? (
                             <button 
                               onClick={() => setPreviewImage(entry.screenshotUrl!)}
-                              className="text-gray-400 hover:text-blue-400 transition p-1.5 rounded-lg hover:bg-gray-700 bg-gray-800/50 border border-gray-700"
+                              className="text-slate-400 hover:text-blue-600 transition p-1.5 rounded-lg hover:bg-slate-100 bg-slate-50 border border-slate-200"
                               title="View Chart"
                             >
                               <ImageIcon className="h-4 w-4" />
                             </button>
                           ) : (
-                            <span className="text-gray-700">-</span>
+                            <span className="text-slate-300">-</span>
                           )}
                         </td>
-                        <td className={`p-4 text-right font-mono font-bold text-sm ${
-                          entry.pnl && entry.pnl > 0 ? 'text-green-400' : 
-                          entry.pnl && entry.pnl < 0 ? 'text-red-400' : 'text-gray-500'
+                        <td className={`p-4 text-right font-mono font-bold text-sm tabular-nums ${
+                          entry.pnl && entry.pnl > 0 ? 'text-emerald-600' : 
+                          entry.pnl && entry.pnl < 0 ? 'text-red-600' : 'text-slate-400'
                         }`}>
-                          {entry.pnl ? (entry.pnl > 0 ? `+${entry.pnl}` : `${entry.pnl}`) : '-'}
+                          {entry.pnl ? (entry.pnl > 0 ? `+$${entry.pnl.toFixed(2)}` : `-$${Math.abs(entry.pnl).toFixed(2)}`) : '-'}
                         </td>
                         <td className="p-4 text-center">
                           <div className="flex justify-center">
-                            <span className={`w-3 h-3 rounded-full ${
-                              entry.status === 'win' ? 'bg-green-500 shadow-lg shadow-green-500/50' : 
-                              entry.status === 'loss' ? 'bg-red-500 shadow-lg shadow-red-500/50' : 
-                              entry.status === 'breakeven' ? 'bg-yellow-500 shadow-lg shadow-yellow-500/50' : 'bg-gray-500'
+                            <span className={`w-2.5 h-2.5 rounded-full ${
+                              entry.status === 'win' ? 'bg-emerald-500' : 
+                              entry.status === 'loss' ? 'bg-red-500' : 
+                              entry.status === 'breakeven' ? 'bg-amber-500' : 'bg-slate-300'
                             }`}></span>
                           </div>
                         </td>
@@ -904,10 +902,10 @@ const AdminTradeJournal: React.FC = () => {
                           <div className="flex justify-end gap-1">
                             <button 
                               onClick={() => handleEditEntry(entry)}
-                              className="text-gray-400 hover:text-blue-400 transition p-1.5 rounded-lg hover:bg-gray-700 inline-block"
+                              className="text-slate-400 hover:text-blue-600 transition p-1.5 rounded-lg hover:bg-slate-100 inline-block"
                               title="Edit Entry"
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
                                 <path d="m15 5 4 4"/>
                               </svg>
@@ -915,11 +913,11 @@ const AdminTradeJournal: React.FC = () => {
                             <button 
                               onClick={() => handleDeleteEntry(entry.id)}
                               disabled={deleting === entry.id}
-                              className="text-gray-400 hover:text-red-400 transition p-1.5 rounded-lg hover:bg-gray-700 disabled:opacity-50 inline-block"
+                              className="text-slate-400 hover:text-red-600 transition p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-50 inline-block"
                               title="Delete Entry"
                             >
                               {deleting === entry.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <Loader2 className="h-4 w-4 animate-spin text-red-500" />
                               ) : (
                                 <Trash2 className="h-4 w-4" />
                               )}
@@ -931,10 +929,10 @@ const AdminTradeJournal: React.FC = () => {
                     {processedEntries.length === 0 && (
                       <tr>
                         <td colSpan={journalView === 'all-students' ? 10 : 9} className="p-12 text-center">
-                          <div className="flex flex-col items-center justify-center text-gray-500">
-                            <Search className="h-8 w-8 mb-3 opacity-50" />
-                            <p className="text-lg font-medium">No trades found</p>
-                            <p className="text-sm">Try adjusting your filters or search term.</p>
+                          <div className="flex flex-col items-center justify-center text-slate-400">
+                            <Search className="h-8 w-8 mb-3 opacity-50 text-slate-300" />
+                            <p className="text-base font-bold text-slate-700">No trades found</p>
+                            <p className="text-xs text-slate-400 mt-1">Try adjusting your filters or search term.</p>
                           </div>
                         </td>
                       </tr>
@@ -947,18 +945,18 @@ const AdminTradeJournal: React.FC = () => {
 
           {/* Image Preview Modal */}
           {previewImage && (
-            <div className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPreviewImage(null)}>
+            <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4" onClick={() => setPreviewImage(null)}>
               <div className="relative max-w-5xl w-full max-h-[90vh] flex flex-col items-center" onClick={e => e.stopPropagation()}>
                 <button 
                   onClick={() => setPreviewImage(null)}
-                  className="absolute -top-12 right-0 text-gray-400 hover:text-white p-2"
+                  className="absolute -top-10 right-0 text-slate-400 hover:text-white p-2"
                 >
-                  <X className="h-8 w-8" />
+                  <X className="h-6 w-6" />
                 </button>
                 <img 
                   src={previewImage} 
                   alt="Trade Preview" 
-                  className="max-w-full max-h-[85vh] object-contain rounded-lg border border-gray-700 shadow-2xl" 
+                  className="max-w-full max-h-[85vh] object-contain rounded-2xl border border-slate-200 shadow-xl bg-white" 
                 />
               </div>
             </div>
@@ -966,53 +964,53 @@ const AdminTradeJournal: React.FC = () => {
 
           {/* Add/Edit Entry Modal */}
           {isModalOpen && (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-              <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-2xl shadow-2xl my-8">
+            <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
+              <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-2xl shadow-xl my-8">
                 <form onSubmit={handleSubmit}>
-                  <div className="flex justify-between items-center p-6 border-b border-gray-700 bg-gray-800/50">
-                    <h2 className="text-xl font-bold text-white">
+                  <div className="flex justify-between items-center p-6 border-b border-slate-100">
+                    <h2 className="text-xl font-extrabold text-slate-900">
                       {editingEntry ? 'Edit Trade Entry' : 'Log New Trade'}
                     </h2>
-                    <button type="button" onClick={handleCloseModal} className="text-gray-400 hover:text-white">
+                    <button type="button" onClick={handleCloseModal} className="text-slate-400 hover:text-slate-600">
                       <X className="h-6 w-6" />
                     </button>
                   </div>
                   
-                  <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                  <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1 font-semibold">Pair</label>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Pair</label>
                         <input 
                           type="text" 
                           required
-                          className="w-full bg-gray-800 border border-gray-600 rounded p-2 text-white focus:border-blue-400 outline-none uppercase font-bold"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-bold focus:border-blue-500 focus:bg-white outline-none uppercase text-sm"
                           value={formData.pair}
                           onChange={e => setFormData({...formData, pair: e.target.value.toUpperCase()})}
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1 font-semibold">Date</label>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Date</label>
                         <input 
                           type="date" 
                           required
-                          className="w-full bg-gray-800 border border-gray-600 rounded p-2 text-white focus:border-blue-400 outline-none"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-medium focus:border-blue-500 focus:bg-white outline-none text-sm tabular-nums"
                           value={formData.date ? new Date(formData.date).toISOString().split('T')[0] : ''}
                           onChange={e => setFormData({...formData, date: e.target.value})}
                         />
                       </div>
                       <div className="col-span-2">
-                        <label className="block text-xs text-gray-400 mb-1 font-semibold">Direction</label>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Direction</label>
                         <div className="flex gap-2">
                           <button
                             type="button"
-                            className={`flex-1 py-2 rounded font-bold text-sm flex items-center justify-center gap-2 border transition ${formData.type === 'buy' ? 'bg-green-500/20 border-green-500 text-green-400' : 'bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700'}`}
+                            className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border transition ${formData.type === 'buy' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'}`}
                             onClick={() => setFormData({...formData, type: 'buy'})}
                           >
                             <ArrowUpRight className="h-4 w-4" /> BUY
                           </button>
                           <button
                             type="button"
-                            className={`flex-1 py-2 rounded font-bold text-sm flex items-center justify-center gap-2 border transition ${formData.type === 'sell' ? 'bg-red-500/20 border-red-500 text-red-400' : 'bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700'}`}
+                            className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 border transition ${formData.type === 'sell' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'}`}
                             onClick={() => setFormData({...formData, type: 'sell'})}
                           >
                             <ArrowDownRight className="h-4 w-4" /> SELL
@@ -1021,29 +1019,29 @@ const AdminTradeJournal: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-800/30 p-4 rounded-lg border border-gray-700">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1 font-semibold">Entry Price</label>
-                        <input type="number" step="0.00001" className="w-full bg-gray-800 border border-gray-600 rounded p-2 text-white outline-none focus:border-blue-400" value={formData.entryPrice || ''} onChange={e => setFormData({...formData, entryPrice: e.target.value ? Number(e.target.value) : undefined})} />
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Entry Price</label>
+                        <input type="number" step="0.00001" className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 font-medium outline-none focus:border-blue-500 text-xs tabular-nums" value={formData.entryPrice || ''} onChange={e => setFormData({...formData, entryPrice: e.target.value ? Number(e.target.value) : undefined})} />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1 font-semibold">Stop Loss</label>
-                        <input type="number" step="0.00001" className="w-full bg-gray-800 border border-gray-600 rounded p-2 text-red-400 outline-none focus:border-red-400" value={formData.stopLoss || ''} onChange={e => setFormData({...formData, stopLoss: e.target.value ? Number(e.target.value) : undefined})} />
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Stop Loss</label>
+                        <input type="number" step="0.00001" className="w-full bg-white border border-slate-200 rounded-lg p-2 text-red-600 font-medium outline-none focus:border-red-500 text-xs tabular-nums" value={formData.stopLoss || ''} onChange={e => setFormData({...formData, stopLoss: e.target.value ? Number(e.target.value) : undefined})} />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1 font-semibold">Take Profit</label>
-                        <input type="number" step="0.00001" className="w-full bg-gray-800 border border-gray-600 rounded p-2 text-green-400 outline-none focus:border-green-400" value={formData.takeProfit || ''} onChange={e => setFormData({...formData, takeProfit: e.target.value ? Number(e.target.value) : undefined})} />
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Take Profit</label>
+                        <input type="number" step="0.00001" className="w-full bg-white border border-slate-200 rounded-lg p-2 text-emerald-600 font-medium outline-none focus:border-emerald-500 text-xs tabular-nums" value={formData.takeProfit || ''} onChange={e => setFormData({...formData, takeProfit: e.target.value ? Number(e.target.value) : undefined})} />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1 font-semibold">Exit Price</label>
-                        <input type="number" step="0.00001" className="w-full bg-gray-800 border border-gray-600 rounded p-2 text-white outline-none focus:border-blue-400" value={formData.exitPrice || ''} onChange={e => setFormData({...formData, exitPrice: e.target.value ? Number(e.target.value) : undefined})} />
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Exit Price</label>
+                        <input type="number" step="0.00001" className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 font-medium outline-none focus:border-blue-500 text-xs tabular-nums" value={formData.exitPrice || ''} onChange={e => setFormData({...formData, exitPrice: e.target.value ? Number(e.target.value) : undefined})} />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1 font-semibold">Outcome</label>
-                        <select className="w-full bg-gray-800 border border-gray-600 rounded p-2 text-white outline-none focus:border-blue-400" value={formData.status || 'pending'} onChange={e => setFormData({...formData, status: e.target.value as TradeOutcome})}>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Outcome</label>
+                        <select className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 text-xs font-semibold outline-none focus:border-blue-500 focus:bg-white" value={formData.status || 'pending'} onChange={e => setFormData({...formData, status: e.target.value as TradeOutcome})}>
                           <option value="pending">Pending</option>
                           <option value="win">Win</option>
                           <option value="loss">Loss</option>
@@ -1051,17 +1049,17 @@ const AdminTradeJournal: React.FC = () => {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1 font-semibold">P&L ($)</label>
-                        <input type="number" placeholder="0.00" className={`w-full bg-gray-800 border border-gray-600 rounded p-2 outline-none font-bold focus:border-blue-400 ${(formData.pnl || 0) > 0 ? 'text-green-400' : (formData.pnl || 0) < 0 ? 'text-red-400' : 'text-white'}`} value={formData.pnl || ''} onChange={e => setFormData({...formData, pnl: e.target.value ? Number(e.target.value) : undefined})} />
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">P&L ($)</label>
+                        <input type="number" placeholder="0.00" className={`w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-blue-500 focus:bg-white tabular-nums ${(formData.pnl || 0) > 0 ? 'text-emerald-600' : (formData.pnl || 0) < 0 ? 'text-red-600' : 'text-slate-900'}`} value={formData.pnl || ''} onChange={e => setFormData({...formData, pnl: e.target.value ? Number(e.target.value) : undefined})} />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs text-gray-400 mb-1 font-semibold">Setup Notes</label>
-                      <textarea rows={3} className="w-full bg-gray-800 border border-gray-600 rounded p-2 text-white outline-none resize-none focus:border-blue-400" placeholder="Describe your trade setup..." value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} />
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Setup Notes</label>
+                      <textarea rows={3} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 text-xs font-medium outline-none resize-none focus:border-blue-500 focus:bg-white" placeholder="Describe your trade setup..." value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} />
                     </div>
 
-                    <div className="border-2 border-dashed border-gray-700 rounded-lg p-4 flex flex-col items-center justify-center bg-gray-800/30 hover:bg-gray-800/50 transition relative">
+                    <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 transition relative">
                       <input 
                         type="file" 
                         ref={fileInputRef}
@@ -1075,13 +1073,13 @@ const AdminTradeJournal: React.FC = () => {
                           <img 
                             src={formData.screenshotUrl} 
                             alt="Trade Setup" 
-                            className="w-full h-48 object-contain rounded-lg bg-black/50" 
+                            className="w-full h-48 object-contain rounded-lg bg-white border border-slate-200" 
                           />
-                          <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="absolute top-2 right-2 flex gap-2">
                             <button 
                               type="button"
                               onClick={() => setPreviewImage(formData.screenshotUrl!)}
-                              className="bg-gray-900/80 p-2 rounded text-white hover:text-blue-400"
+                              className="bg-slate-900/80 p-2 rounded-lg text-white hover:bg-slate-900"
                               title="View Fullscreen"
                             >
                               <Eye className="h-4 w-4" />
@@ -1089,7 +1087,7 @@ const AdminTradeJournal: React.FC = () => {
                             <button 
                               type="button"
                               onClick={clearImage}
-                              className="bg-red-500/80 p-2 rounded text-white hover:bg-red-600"
+                              className="bg-red-600/90 p-2 rounded-lg text-white hover:bg-red-600"
                               title="Remove Image"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -1101,24 +1099,24 @@ const AdminTradeJournal: React.FC = () => {
                           className="text-center cursor-pointer w-full py-4"
                           onClick={() => fileInputRef.current?.click()}
                         >
-                          <Upload className="h-6 w-6 text-gray-400 mx-auto mb-2" />
-                          <p className="text-sm text-gray-300">Click to upload chart screenshot</p>
-                          <p className="text-xs text-gray-500 mt-1">JPG, PNG up to 5MB</p>
+                          <Upload className="h-6 w-6 text-slate-400 mx-auto mb-2" />
+                          <p className="text-xs font-bold text-slate-700">Click to upload chart screenshot</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">JPG, PNG up to 5MB</p>
                         </div>
                       )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1 font-semibold">Strategy</label>
-                        <select className="w-full bg-gray-800 border border-gray-600 rounded p-2 text-white focus:border-blue-400 outline-none" value={formData.strategy || ''} onChange={e => setFormData({...formData, strategy: e.target.value})}>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Strategy</label>
+                        <select className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 text-xs font-semibold focus:border-blue-500 outline-none" value={formData.strategy || ''} onChange={e => setFormData({...formData, strategy: e.target.value})}>
                           <option value="">Select Strategy</option>
                           {STRATEGIES.map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1 font-semibold">Time Frame</label>
-                        <select className="w-full bg-gray-800 border border-gray-600 rounded p-2 text-white focus:border-blue-400 outline-none" value={formData.timeFrame || ''} onChange={e => setFormData({...formData, timeFrame: e.target.value})}>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Time Frame</label>
+                        <select className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 text-xs font-semibold focus:border-blue-500 outline-none" value={formData.timeFrame || ''} onChange={e => setFormData({...formData, timeFrame: e.target.value})}>
                           <option value="">Select Time Frame</option>
                           {TIME_FRAMES.map(tf => <option key={tf} value={tf}>{tf}</option>)}
                         </select>
@@ -1127,43 +1125,43 @@ const AdminTradeJournal: React.FC = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1 font-semibold">Market Condition</label>
-                        <select className="w-full bg-gray-800 border border-gray-600 rounded p-2 text-white focus:border-blue-400 outline-none" value={formData.marketCondition || ''} onChange={e => setFormData({...formData, marketCondition: e.target.value})}>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Market Condition</label>
+                        <select className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 text-xs font-semibold focus:border-blue-500 outline-none" value={formData.marketCondition || ''} onChange={e => setFormData({...formData, marketCondition: e.target.value})}>
                           <option value="">Select Condition</option>
                           {MARKET_CONDITIONS.map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1 font-semibold">Confidence: {formData.confidenceLevel}/10</label>
-                        <input type="range" min="1" max="10" value={formData.confidenceLevel || 5} onChange={e => setFormData({...formData, confidenceLevel: Number(e.target.value)})} className="w-full" />
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Confidence: {formData.confidenceLevel}/10</label>
+                        <input type="range" min="1" max="10" value={formData.confidenceLevel || 5} onChange={e => setFormData({...formData, confidenceLevel: Number(e.target.value)})} className="w-full accent-blue-600 mt-2" />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1 font-semibold">Risk Amount ($)</label>
-                        <input type="number" step="0.01" className="w-full bg-gray-800 border border-gray-600 rounded p-2 text-white outline-none focus:border-blue-400" value={formData.riskAmount || ''} onChange={e => setFormData({...formData, riskAmount: e.target.value ? Number(e.target.value) : undefined})} />
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Risk Amount ($)</label>
+                        <input type="number" step="0.01" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 text-xs font-medium outline-none focus:border-blue-500 tabular-nums" value={formData.riskAmount || ''} onChange={e => setFormData({...formData, riskAmount: e.target.value ? Number(e.target.value) : undefined})} />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1 font-semibold">Position Size</label>
-                        <input type="number" step="0.01" className="w-full bg-gray-800 border border-gray-600 rounded p-2 text-white outline-none focus:border-blue-400" value={formData.positionSize || ''} onChange={e => setFormData({...formData, positionSize: e.target.value ? Number(e.target.value) : undefined})} />
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Position Size</label>
+                        <input type="number" step="0.01" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 text-xs font-medium outline-none focus:border-blue-500 tabular-nums" value={formData.positionSize || ''} onChange={e => setFormData({...formData, positionSize: e.target.value ? Number(e.target.value) : undefined})} />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1 font-semibold">Trade Duration</label>
-                        <input type="text" placeholder="e.g., PT30M" className="w-full bg-gray-800 border border-gray-600 rounded p-2 text-white outline-none focus:border-blue-400" value={formData.tradeDuration || ''} onChange={e => setFormData({...formData, tradeDuration: e.target.value})} />
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Trade Duration</label>
+                        <input type="text" placeholder="e.g., PT30M" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 text-xs font-medium outline-none focus:border-blue-500" value={formData.tradeDuration || ''} onChange={e => setFormData({...formData, tradeDuration: e.target.value})} />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1 font-semibold">Trade Source</label>
-                        <select className="w-full bg-gray-800 border border-gray-600 rounded p-2 text-white focus:border-blue-400 outline-none" value={formData.tradeSource || 'demo'} onChange={e => setFormData({...formData, tradeSource: e.target.value as any})}>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Trade Source</label>
+                        <select className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 text-xs font-semibold focus:border-blue-500 outline-none" value={formData.tradeSource || 'demo'} onChange={e => setFormData({...formData, tradeSource: e.target.value as any})}>
                           {TRADE_SOURCES.map(s => <option key={s} value={s.toLowerCase()}>{s}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1 font-semibold">Validation Result</label>
-                        <select className="w-full bg-gray-800 border border-gray-600 rounded p-2 text-white focus:border-blue-400 outline-none" value={formData.validationResult || 'none'} onChange={e => setFormData({...formData, validationResult: e.target.value as any})}>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Validation Result</label>
+                        <select className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 text-xs font-semibold focus:border-blue-500 outline-none" value={formData.validationResult || 'none'} onChange={e => setFormData({...formData, validationResult: e.target.value as any})}>
                           <option value="none">None</option>
                           <option value="approved">Approved</option>
                           <option value="warning">Warning</option>
@@ -1171,17 +1169,16 @@ const AdminTradeJournal: React.FC = () => {
                         </select>
                       </div>
                     </div>
-
                   </div>
 
-                  <div className="p-6 border-t border-gray-700 flex justify-end gap-3 bg-gray-800/50">
-                    <button type="button" onClick={handleCloseModal} className="px-4 py-2 text-gray-400 hover:text-white transition">
+                  <div className="p-6 border-t border-slate-100 flex justify-end gap-3">
+                    <button type="button" onClick={handleCloseModal} className="px-4 py-2 text-slate-600 hover:text-slate-900 font-semibold text-xs transition">
                       Cancel
                     </button>
                     <button 
                       type="submit" 
                       disabled={saving}
-                      className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center gap-2 transition shadow-lg shadow-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs flex items-center gap-2 transition shadow-blue-glow disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {saving ? (
                         <>
@@ -1206,4 +1203,5 @@ const AdminTradeJournal: React.FC = () => {
   );
 };
 
-export default AdminTradeJournal; 
+
+export default AdminTradeJournal;

@@ -109,6 +109,7 @@ const TradingVisualization: React.FC<{ mode: 'bull' | 'bear' }> = ({ mode }) => 
                 cy={node.y}
                 r="8"
                 fill={mode === 'bull' ? "#06b6d4" : "#ef4444"}
+                initial={{ scale: 0, opacity: 0 }}
                 animate={{
                   scale: activeNodes.includes(node.id) ? [0, 1.5, 0] : 0,
                   opacity: activeNodes.includes(node.id) ? [0.5, 0.8, 0] : 0
@@ -146,6 +147,7 @@ const TradingVisualization: React.FC<{ mode: 'bull' | 'bear' }> = ({ mode }) => 
                 cy={15 + i * 15}
                 r="2"
                 fill={mode === 'bull' ? "#10b981" : "#ef4444"}
+                initial={{ opacity: 0 }}
                 animate={{
                   x: [0, 210],
                   opacity: [0, 1, 0]
@@ -167,6 +169,7 @@ const TradingVisualization: React.FC<{ mode: 'bull' | 'bear' }> = ({ mode }) => 
                 cy={50}
                 r="1.5"
                 fill={mode === 'bull' ? "#06b6d4" : "#f97316"}
+                initial={{ opacity: 1 }}
                 animate={{
                   x: mode === 'bull' ? [0, 100] : [0, -100],
                   y: mode === 'bull' ? [0, -40] : [0, 40],
@@ -255,6 +258,7 @@ const TradingVisualization: React.FC<{ mode: 'bull' | 'bear' }> = ({ mode }) => 
               width: '80px',
               height: '80px',
             }}
+            initial={{ scale: 0.5, opacity: 0.8 }}
             animate={{
               scale: [0.5, 2],
               opacity: [0.8, 0],
@@ -381,7 +385,7 @@ const FloatingParticles: React.FC = () => {
       {[...Array(20)].map((_, i) => (
         <motion.div
           key={i}
-          className="absolute rounded-full opacity-30 pointer-events-none"
+          className="absolute rounded-full pointer-events-none"
           initial={{ opacity: 0.3 }}
           style={{
             width: Math.random() * 25 + 5,
@@ -402,6 +406,7 @@ const FloatingParticles: React.FC = () => {
             x: [0, (Math.random() - 0.5) * 120, 0],
             scale: [1, Math.random() + 0.8, 1],
             rotate: [0, Math.random() * 180, 360],
+            opacity: [0.3, 0.6, 0.3],
           }}
           transition={{
             duration: Math.random() * 15 + 15,
@@ -891,26 +896,26 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onPlanSelection
                       key={plan.id}
                       variants={childVariants}
                       custom={index}
-                      className={`bg-slate-50 border rounded-2xl sm:rounded-3xl p-6 sm:p-8 flex flex-col w-[280px] md:w-auto flex-shrink-0 snap-center ${isPopular ? 'border-2 border-brand-primary relative shadow-xl scale-[1.02] md:scale-105 my-2 md:my-0' : 'border border-slate-200'} hover:shadow-2xl transition-all`}
+                      className={`bg-white border rounded-2xl sm:rounded-3xl p-6 sm:p-8 flex flex-col w-[280px] md:w-auto flex-shrink-0 snap-center ${isPopular ? 'border-2 border-blue-600 relative shadow-xl scale-[1.02] md:scale-105 my-2 md:my-0' : 'border border-slate-200'} shadow-card card-hover transition-all`}
                       whileHover={{ y: -5 }}
                     >
-                      {isPopular && <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-brand-primary text-white font-bold px-3 py-1 sm:px-4 sm:py-1 rounded-full text-xs sm:text-sm shadow-md">MOST POPULAR</div>}
+                      {isPopular && <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-600 text-white font-bold px-3 py-1 sm:px-4 sm:py-1 rounded-full text-xs sm:text-sm shadow-sm">MOST POPULAR</div>}
 
-                      <h3 className={`text-lg sm:text-xl font-bold mb-2 ${isElite ? 'text-violet-600' : isFree ? 'text-slate-500' : 'text-slate-900'}`}>{plan.name}</h3>
+                      <h3 className={`text-lg sm:text-xl font-bold mb-2 ${isElite ? 'text-purple-600' : isFree ? 'text-slate-500' : 'text-slate-900'}`}>{plan.name}</h3>
 
-                      <div className={`text-3xl sm:text-4xl font-black mb-4 sm:mb-6 ${isPopular ? 'text-brand-primary' : isElite ? 'text-violet-600' : 'text-slate-900'}`}>
+                      <div className={`text-3xl sm:text-4xl font-black mb-4 sm:mb-6 ${isPopular ? 'text-blue-600' : isElite ? 'text-purple-600' : 'text-slate-900'}`}>
                         ${plan.price}
                       </div>
 
                       <ul className="space-y-3 sm:space-y-4 mb-6 sm:mb-8 flex-1">
                         {plan.features.map((feature, idx) => (
-                          <li key={idx} className={`flex gap-2 sm:gap-3 ${isPopular || (isElite && idx === 0) ? 'text-slate-900' : 'text-slate-600'}`}>
-                            <Check className={`h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0 ${isElite ? 'text-violet-500' : isPopular || (isFree && idx === 0) ? 'text-brand-primary' : 'text-brand-primary'}`} />
-                            <span className={isPopular || (isElite && idx === 0) ? 'font-bold' : ''}>{feature}</span>
+                          <li key={idx} className={`flex gap-2 sm:gap-3 text-sm ${isPopular || (isElite && idx === 0) ? 'text-slate-900' : 'text-slate-600'}`}>
+                            <Check className={`h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0 ${isElite ? 'text-purple-600' : 'text-blue-600'}`} />
+                            <span className={isPopular || (isElite && idx === 0) ? 'font-semibold' : ''}>{feature}</span>
                           </li>
                         ))}
                         {isElite && (
-                          <li className="flex gap-2 sm:gap-3 text-violet-600 font-bold">
+                          <li className="flex gap-2 sm:gap-3 text-purple-600 font-bold text-sm">
                             <Bot className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0" />
                             <span>Alpha-V5 MQL5 Bot Included</span>
                           </li>
@@ -926,7 +931,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onPlanSelection
                           }
                         }}
                         whileHover={{ scale: 1.02 }}
-                        className={`w-full py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold transition text-sm sm:text-base ${isPopular ? 'bg-slate-900 text-white hover:bg-slate-800' : isElite ? 'bg-slate-800 hover:bg-slate-700 text-white' : 'border border-slate-700 hover:bg-slate-800 text-white'}`}
+                        className={`w-full py-3 sm:py-3.5 rounded-lg sm:rounded-xl font-bold transition text-sm sm:text-base ${isPopular ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-glow' : isElite ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm' : 'border border-slate-200 hover:bg-slate-50 text-slate-800'}`}
                       >
                         {isFree ? 'Join for Free' : isElite ? 'Apply Now' : 'Get Started'}
                       </motion.button>
@@ -952,24 +957,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onPlanSelection
         >
           <div className="container mx-auto px-4 sm:px-6">
             <motion.div variants={childVariants} className="text-center mb-12 sm:mb-16">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-black mb-4">Why Traders Often <span className="text-red-500">Lose</span></h2>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 mb-4">Why Traders Often <span className="text-red-500">Lose</span></h2>
               <p className="text-lg text-slate-600">Many follow signals blindly. We teach <span className="text-slate-900 font-bold">institutional thinking</span> and repeatable process.</p>
             </motion.div>
 
             <motion.div variants={sectionVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {[
                 { icon: AlertTriangle, title: "Retail Logic", desc: "Chasing indicator noise while liquidity does the heavy lifting.", color: "text-red-500" },
-                { icon: Shield, title: "Institutional Logic", desc: "We align with institutional flows: liquidity, structure, and order blocks.", color: "text-brand-primary" },
-                { icon: TrendingUp, title: "Precision R:R", desc: "Strict risk management (min 1:3) enforced by our AI guard.", color: "text-blue-400" }
+                { icon: Shield, title: "Institutional Logic", desc: "We align with institutional flows: liquidity, structure, and order blocks.", color: "text-blue-600" },
+                { icon: TrendingUp, title: "Precision R:R", desc: "Strict risk management (min 1:3) enforced by our AI guard.", color: "text-emerald-600" }
               ].map((item, idx) => (
                 <motion.div
                   key={idx}
                   variants={childVariants}
-                  className="bg-white p-6 sm:p-8 rounded-xl sm:rounded-2xl border border-slate-100 hover:shadow-lg transition hover:bg-slate-50"
-                  whileHover={{ y: -8, boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}
+                  className="bg-white p-6 sm:p-8 rounded-xl sm:rounded-2xl border border-slate-200 shadow-card card-hover transition"
+                  whileHover={{ y: -6 }}
                 >
-                  <item.icon className={`h-8 w-8 sm:h-12 sm:w-12 ${item.color} mb-4 sm:mb-6`} />
-                  <h3 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3">{item.title}</h3>
+                  <item.icon className={`h-8 w-8 sm:h-10 sm:w-10 ${item.color} mb-4 sm:mb-5`} />
+                  <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2 sm:mb-3">{item.title}</h3>
                   <p className="text-slate-600 text-sm sm:text-base leading-relaxed">{item.desc}</p>
                 </motion.div>
               ))}
@@ -983,23 +988,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onPlanSelection
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="py-16 sm:py-24 relative overflow-hidden bg-slate-50"
+          className="py-16 sm:py-24 relative overflow-hidden bg-[#F5F7FA]"
         >
           <div className="container mx-auto px-4 sm:px-6 relative z-10">
             <div className="flex flex-col lg:flex-row items-center gap-8 sm:gap-12 lg:gap-16">
               <motion.div variants={childVariants} className="lg:w-1/2">
-                <div className="inline-block bg-brand-primary text-white font-bold px-3 py-1 sm:px-4 sm:py-1 rounded-full mb-4 sm:mb-6 text-xs sm:text-sm shadow-sm">EXCLUSIVE TECHNOLOGY</div>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-4 sm:mb-6 leading-tight">The Program With An <span className="text-brand-primary">AI That Says "NO"</span></h2>
+                <div className="inline-block bg-blue-50 text-blue-700 border border-blue-200 font-bold px-3.5 py-1 rounded-full mb-4 sm:mb-6 text-xs uppercase tracking-wider">EXCLUSIVE TECHNOLOGY</div>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 mb-4 sm:mb-6 leading-tight">The Program With An <span className="text-blue-600">AI That Says "NO"</span></h2>
                 <p className="text-base sm:text-lg md:text-xl text-slate-600 mb-6 sm:mb-8">
                   Paste your setup → AI runs a proven checklist.
                   <br /><br />
-                  <span className="text-green-600 font-bold">✅ Green Light:</span> High probability trade.<br />
+                  <span className="text-emerald-600 font-bold">✅ Green Light:</span> High probability trade.<br />
                   <span className="text-red-500 font-bold">❌ Red Light:</span> Stop and reassess.
                 </p>
                 <motion.button
-                  whileHover={{ scale: 1.05 }}
+                  whileHover={{ scale: 1.03 }}
                   onClick={() => onSelectTier('signup')}
-                  className="bg-slate-900 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold text-base sm:text-lg hover:bg-slate-800 transition flex items-center gap-2 shadow-md"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-lg sm:rounded-xl font-bold text-base sm:text-lg transition flex items-center gap-2 shadow-blue-glow"
                 >
                   Try AI Trade Guard <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
                 </motion.button>
@@ -1008,22 +1013,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onPlanSelection
               <motion.div
                 variants={childVariants}
                 className="lg:w-1/2"
-                initial={{ rotate: 2 }}
+                initial={{ rotate: 1 }}
                 whileHover={{ rotate: 0 }}
                 transition={{ duration: 0.4 }}
               >
-                <div className="bg-white border border-slate-100 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-xl">
+                <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-card">
                   <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6 border-b border-slate-100 pb-3 sm:pb-4">
-                    <div className="h-2 w-2 sm:h-3 sm:w-3 bg-green-500 rounded-full animate-pulse" />
-                    <div className="font-bold text-sm sm:text-base">AI Analysis: EURUSD Buy Setup</div>
+                    <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 bg-emerald-500 rounded-full animate-pulse-dot" />
+                    <div className="font-bold text-sm sm:text-base text-slate-900">AI Analysis: EURUSD Buy Setup</div>
                   </div>
                   <div className="space-y-3 sm:space-y-4">
-                    <motion.div initial={{ x: -20, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex items-start gap-2 sm:gap-3 text-green-600"><CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0" /> <span className="text-sm sm:text-base">Liquidity grabbed from PD Low</span></motion.div>
-                    <motion.div initial={{ x: -20, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="flex items-start gap-2 sm:gap-3 text-green-600"><CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0" /> <span className="text-sm sm:text-base">Unmitigated FVG Identified</span></motion.div>
-                    <motion.div initial={{ x: -20, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} transition={{ delay: 0.3 }} className="flex items-start gap-2 sm:gap-3 text-green-600"><CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0" /> <span className="text-sm sm:text-base">Market Structure Shift (MSS) confirmed</span></motion.div>
-                    <motion.div initial={{ scale: 0.95, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} transition={{ delay: 0.4 }} className="bg-green-500/10 border border-green-500/30 p-3 sm:p-4 rounded-lg mt-3 sm:mt-4">
-                      <p className="font-bold text-green-600 mb-1 text-sm sm:text-base">✅ TRADE APPROVED</p>
-                      <p className="text-xs sm:text-sm text-slate-500">All confluence factors met. Risk 1% and set TP at 1.0950.</p>
+                    <motion.div initial={{ x: -20, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex items-start gap-2 sm:gap-3 text-emerald-700 font-semibold"><CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0" /> <span className="text-sm sm:text-base">Liquidity grabbed from PD Low</span></motion.div>
+                    <motion.div initial={{ x: -20, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="flex items-start gap-2 sm:gap-3 text-emerald-700 font-semibold"><CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0" /> <span className="text-sm sm:text-base">Unmitigated FVG Identified</span></motion.div>
+                    <motion.div initial={{ x: -20, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} transition={{ delay: 0.3 }} className="flex items-start gap-2 sm:gap-3 text-emerald-700 font-semibold"><CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0" /> <span className="text-sm sm:text-base">Market Structure Shift (MSS) confirmed</span></motion.div>
+                    <motion.div initial={{ scale: 0.95, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} transition={{ delay: 0.4 }} className="bg-emerald-50 border border-emerald-200 p-3 sm:p-4 rounded-lg mt-3 sm:mt-4">
+                      <p className="font-bold text-emerald-700 mb-1 text-sm sm:text-base">✅ TRADE APPROVED</p>
+                      <p className="text-xs sm:text-sm text-slate-600 font-medium">All confluence factors met. Risk 1% and set TP at 1.0950.</p>
                     </motion.div>
                   </div>
                 </div>
@@ -1038,27 +1043,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onPlanSelection
           whileInView={{ opacity: 1 }}
           transition={{ duration: 1 }}
           viewport={{ once: true }}
-          className="py-16 sm:py-24 bg-gradient-to-br from-slate-900 via-brand-primary/20 to-cyan-500/10 text-center relative overflow-hidden"
+          className="py-16 sm:py-24 bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-center relative overflow-hidden"
         >
-          {/* Animated background elements */}
-          <motion.div
-            className="absolute inset-0 opacity-10"
-            animate={{
-              backgroundPosition: ['0% 0%', '100% 100%'],
-            }}
-            transition={{
-              duration: 20,
-              repeat: Infinity,
-              ease: "linear"
-            }}
-            initial={false}
-            style={{
-              backgroundImage: `radial-gradient(circle at 20% 80%, rgba(6,182,212,0.3) 0%, transparent 50%),
-                              radial-gradient(circle at 80% 20%, rgba(239,68,68,0.2) 0%, transparent 50%),
-                              radial-gradient(circle at 40% 40%, rgba(16,185,129,0.2) 0%, transparent 50%)`
-            }}
-          />
-
           <div className="container mx-auto px-4 sm:px-6 relative z-10">
             <motion.h2
               initial={{ opacity: 0, y: 30 }}
@@ -1073,49 +1059,32 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onPlanSelection
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-lg sm:text-xl text-slate-200 mb-8 max-w-2xl mx-auto"
+              className="text-lg sm:text-xl text-slate-300 mb-8 max-w-2xl mx-auto font-medium"
             >
               Join thousands of successful traders today. Limited spots available.
             </motion.p>
 
             <motion.div
               animate={{
-                y: [0, -10, 0],
-                scale: [1, 1.02, 1]
+                y: [0, -6, 0],
               }}
               transition={{
                 repeat: Infinity,
-                duration: 2,
+                duration: 2.5,
                 ease: 'easeInOut'
               }}
               className="flex flex-col sm:flex-row gap-4 justify-center items-center"
             >
               <motion.button
-                whileHover={{
-                  scale: 1.05,
-                  boxShadow: '0 10px 40px rgba(0,0,0,0.4)'
-                }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
                 onClick={() => onSelectTier('signup')}
-                className="px-10 sm:px-16 py-5 sm:py-6 bg-slate-900 text-white text-xl sm:text-2xl font-black rounded-2xl shadow-2xl hover:shadow-3xl transition-all relative overflow-hidden group"
+                className="px-8 sm:px-12 py-4 sm:py-5 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-xl shadow-blue-glow transition-all"
               >
                 <span className="relative z-10 flex items-center justify-center gap-3">
                   Start Your Journey
-                  <motion.div
-                    animate={{ rotate: [0, 360] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                  >
-                    <Sparkles className="h-6 w-6" />
-                  </motion.div>
+                  <Sparkles className="h-5 w-5" />
                 </span>
-
-                {/* Shimmer effect */}
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                  initial={{ x: '-100%' }}
-                  whileHover={{ x: '100%' }}
-                  transition={{ duration: 0.8 }}
-                />
               </motion.button>
             </motion.div>
 
@@ -1123,7 +1092,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onPlanSelection
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.5 }}
-              className="mt-12 text-slate-400 text-sm"
+              className="mt-12 text-slate-400 text-xs font-medium"
             >
               {APP_MESSAGES.copyright}
             </motion.div>
@@ -1133,37 +1102,28 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onPlanSelection
 
       <style>{`
         :root {
-          --brand-primary: #06b6d4;
-          --brand-accent: #ffd54f;
+          --brand-primary: #3B82F6;
+          --brand-accent: #1D4ED8;
         }
-        .text-brand-primary { color: var(--brand-primary); }
-        .bg-brand-primary { background-color: var(--brand-primary); }
+        .text-brand-primary { color: #3B82F6; }
+        .bg-brand-primary { background-color: #3B82F6; }
         
-        /* Smooth scrolling */
         html {
           scroll-behavior: smooth;
         }
         
-        /* Custom scrollbar */
         ::-webkit-scrollbar {
           width: 8px;
         }
         
         ::-webkit-scrollbar-track {
-          background: #f1f5f9;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-          background: var(--brand-primary);
-          border-radius: 4px;
-        }
-        
+          background: #F5F7FA;
         ::-webkit-scrollbar-thumb:hover {
-          background: #0891b2;
+          background: #94a3b8;
         }
       `}</style>
     </>
   );
-}
+};
 
 export default LandingPage;

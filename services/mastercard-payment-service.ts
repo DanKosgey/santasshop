@@ -3,7 +3,7 @@
  * Handles payment processing and Telegram notifications for trading bot purchases
  */
 
-interface MastercardPaymentData {
+export interface MastercardPaymentData {
   cardholderName: string;
   cardNumber: string;
   expiryMonth: string;

@@ -312,19 +312,28 @@ const SettingsTab: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-trade-neon"></div>
+      <div className="py-20 flex justify-center items-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-2 border-blue-600 border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-slide-up">
+    <div className="space-y-0 animate-slide-up">
+      {/* Page Header */}
+      <div className="page-header">
+        <h2 className="section-title">Platform Settings</h2>
+        <p className="section-desc">Manage community social links and platform subscription pricing plans.</p>
+      </div>
+
       {/* Community Links Section */}
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-200">Community Links Management</h2>
-          <button 
+      <div className="page-section">
+        <div className="section-header flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="section-title">Community Links Management</h3>
+            <p className="section-desc">Configure social links visible to students.</p>
+          </div>
+          <button
             onClick={() => {
               setEditingLink(null);
               setLinkFormData({
@@ -337,241 +346,233 @@ const SettingsTab: React.FC = () => {
                 sortOrder: 0
               });
               setShowLinkForm(true);
-            }} 
-            className="flex items-center gap-2 px-5 py-3 bg-trade-neon text-black font-bold rounded-xl hover:bg-green-400 transition-colors"
+            }}
+            className="btn btn-primary shrink-0"
           >
-            <Plus className="h-5 w-5" /> New Link
+            <Plus className="h-4 w-4" /> New Link
           </button>
         </div>
-        
+
         {/* Community Links Form Modal */}
         {showLinkForm && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
+            <div className="modal-panel p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-white">
+                <h3 className="text-lg font-bold text-slate-900">
                   {editingLink ? 'Edit Community Link' : 'Create New Community Link'}
                 </h3>
-                <button 
+                <button
                   onClick={() => {
                     setShowLinkForm(false);
                     setEditingLink(null);
                   }}
-                  className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                  className="btn btn-sm btn-ghost"
                 >
-                  <X className="h-5 w-5 text-gray-400" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
-              
+
               <form onSubmit={handleLinkFormSubmit} className="space-y-4">
                 {!editingLink && (
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Select Platform</label>
+                    <label className="input-label">Select Platform Preset</label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
                       {COMMON_PLATFORMS.map(platform => (
                         <button
                           key={platform.key}
                           type="button"
                           onClick={() => handlePlatformSelect(platform.key)}
-                          className={`p-3 rounded-lg border text-xs flex flex-col items-center justify-center transition-colors ${
+                          className={`p-2.5 rounded-lg border text-xs flex flex-col items-center justify-center transition-colors ${
                             linkFormData.platformKey === platform.key
-                              ? 'border-trade-neon bg-trade-neon/20'
-                              : 'border-gray-600 bg-gray-700/50 hover:bg-gray-600/50'
+                              ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
+                              : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700'
                           }`}
                         >
-                          <div 
-                            className="w-6 h-6 rounded-full mb-1" 
+                          <div
+                            className="w-5 h-5 rounded-full mb-1"
                             style={{ backgroundColor: platform.color }}
                           ></div>
-                          <span className="text-white truncate w-full">{platform.name}</span>
+                          <span className="truncate w-full text-center">{platform.name}</span>
                         </button>
                       ))}
                     </div>
                   </div>
                 )}
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Platform Name</label>
+                    <label className="input-label">Platform Name</label>
                     <input
                       type="text"
                       name="platformName"
                       value={linkFormData.platformName}
                       onChange={handleLinkFormChange}
-                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-trade-neon"
+                      className="input"
                       required
                     />
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Platform Key</label>
+                    <label className="input-label">Platform Key</label>
                     <input
                       type="text"
                       name="platformKey"
                       value={linkFormData.platformKey}
                       onChange={handleLinkFormChange}
-                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-trade-neon"
+                      className="input"
                       required
                     />
                   </div>
-                  
+
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Link URL</label>
+                    <label className="input-label">Link URL</label>
                     <input
                       type="url"
                       name="linkUrl"
                       value={linkFormData.linkUrl}
                       onChange={handleLinkFormChange}
-                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-trade-neon"
+                      className="input"
                       required
                       placeholder="https://example.com/community"
                     />
                   </div>
-                  
+
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                    <label className="input-label">Description</label>
                     <textarea
                       name="description"
                       value={linkFormData.description}
                       onChange={handleLinkFormChange}
                       rows={3}
-                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-trade-neon"
+                      className="input"
                       placeholder="Describe this community platform..."
                     />
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Icon Color</label>
+                    <label className="input-label">Icon Color</label>
                     <input
                       type="color"
                       name="iconColor"
                       value={linkFormData.iconColor}
                       onChange={handleLinkFormChange}
-                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-trade-neon"
+                      className="input h-10 p-1 cursor-pointer"
                     />
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Sort Order</label>
+                    <label className="input-label">Sort Order</label>
                     <input
                       type="number"
                       name="sortOrder"
                       value={linkFormData.sortOrder}
                       onChange={handleLinkFormChange}
-                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-trade-neon"
+                      className="input"
                       min="0"
                     />
                   </div>
-                  
-                  <div className="flex items-center md:col-span-2">
+
+                  <div className="flex items-center md:col-span-2 mt-2">
                     <input
                       type="checkbox"
+                      id="isActiveLink"
                       name="isActive"
                       checked={linkFormData.isActive}
                       onChange={handleLinkFormChange}
-                      className="h-5 w-5 text-trade-neon rounded focus:ring-trade-neon"
+                      className="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
                     />
-                    <label className="ml-2 text-sm text-gray-300">Active (Visible to users)</label>
+                    <label htmlFor="isActiveLink" className="ml-2 text-sm text-slate-700 font-medium">Active (Visible to users)</label>
                   </div>
                 </div>
-                
-                <div className="flex justify-end gap-3 pt-4">
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => {
                       setShowLinkForm(false);
                       setEditingLink(null);
                     }}
-                    className="px-5 py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                    className="btn btn-secondary"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isCreatingLink || isUpdatingLink}
-                    className="px-5 py-2.5 bg-trade-neon hover:bg-green-400 text-black font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn btn-primary disabled:opacity-50"
                   >
-                    {isCreatingLink || isUpdatingLink ? (
-                      <span className="flex items-center">
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Processing...
-                      </span>
-                    ) : (
-                      editingLink ? 'Update Link' : 'Create Link'
-                    )}
+                    {isCreatingLink || isUpdatingLink ? 'Processing...' : (editingLink ? 'Update Link' : 'Create Link')}
                   </button>
                 </div>
               </form>
             </div>
           </div>
         )}
-        
-        {/* Community Links Display */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        {/* Community Links Display Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {communityLinks.map(link => (
-            <div 
-              key={link.id} 
-              className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-6 shadow-xl"
+            <div
+              key={link.id}
+              className="content-card p-5 flex flex-col justify-between"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-xl font-bold text-white flex items-center gap-3 flex-wrap">
-                    <div className="w-6 h-6 rounded-full flex-shrink-0" style={{backgroundColor: link.iconColor}}></div>
-                    <span className="truncate">{link.platformName}</span>
-                  </h3>
-                  <p className="text-gray-300 text-sm truncate max-w-xs mt-1">{link.linkUrl}</p>
+              <div>
+                <div className="flex justify-between items-start gap-2 mb-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-5 h-5 rounded-full shrink-0" style={{ backgroundColor: link.iconColor }}></div>
+                    <h4 className="font-bold text-slate-900 text-base truncate">{link.platformName}</h4>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <button
+                      onClick={() => {
+                        setEditingLink(link);
+                        setShowLinkForm(true);
+                      }}
+                      className="btn btn-sm btn-ghost p-1.5"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-4 w-4 text-blue-600" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteCommunityLink(link.id, link.platformKey);
+                      }}
+                      className="btn btn-sm btn-ghost p-1.5 text-red-500 hover:text-red-700"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-1 ml-2 flex-shrink-0">
-                  <button 
-                    onClick={() => {
-                      console.log('Edit button clicked for link:', link);
-                      setEditingLink(link);
-                      setShowLinkForm(true);
-                    }} 
-                    className="p-2 bg-gray-700/50 hover:bg-gray-600/50 rounded-lg transition-colors"
-                    title="Edit"
-                  >
-                    <Edit2 className="h-4 w-4 text-blue-400" />
-                  </button>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      console.log('Delete button clicked for link:', link);
-                      handleDeleteCommunityLink(link.id, link.platformKey);
-                    }} 
-                    className="p-2 bg-red-900/30 hover:bg-red-900/50 rounded-lg transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 className="h-4 w-4 text-red-400" />
-                  </button>
-                </div>
+                <p className="text-xs text-blue-600 truncate mb-2">{link.linkUrl}</p>
+                <p className="text-sm text-slate-500 line-clamp-2 mb-4">{link.description}</p>
               </div>
-              <p className="text-gray-300 mb-4 text-sm line-clamp-3">{link.description}</p>
-              <div className="flex items-center justify-between">
-                <span className={`text-sm px-3 py-1 rounded-full ${link.isActive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
+                <span className={link.isActive ? 'badge badge-success' : 'badge badge-danger'}>
                   {link.isActive ? 'Active' : 'Inactive'}
                 </span>
-                <span className="text-sm text-gray-400">Order: {link.sortOrder}</span>
+                <span className="text-slate-400 font-medium">Sort Order: {link.sortOrder}</span>
               </div>
             </div>
           ))}
           {!communityLinks.length && (
-            <div className="col-span-full text-center py-16 bg-gray-800/50 border border-gray-700/50 border-dashed rounded-2xl">
-              <p className="text-gray-400 text-lg">No community links created yet.</p>
+            <div className="col-span-full content-card text-center py-12 text-slate-400 text-sm border-dashed">
+              No community links created yet.
             </div>
           )}
         </div>
       </div>
-      
+
       {/* Subscription Plans Section */}
-      <div className="space-y-6 pt-8 border-t border-gray-700/50">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-200">Subscription Plans Management</h2>
-          <button 
+      <div className="page-section">
+        <div className="section-header flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="section-title">Subscription Tiers & Plans</h3>
+            <p className="section-desc">Manage platform membership pricing and feature tiers.</p>
+          </div>
+          <button
             onClick={() => {
               setEditingPlan(null);
               setPlanFormData({
@@ -584,220 +585,205 @@ const SettingsTab: React.FC = () => {
                 sortOrder: 0
               });
               setShowPlanForm(true);
-            }} 
-            className="flex items-center gap-2 px-5 py-3 bg-trade-neon text-black font-bold rounded-xl hover:bg-green-400 transition-colors"
+            }}
+            className="btn btn-primary shrink-0"
           >
-            <Plus className="h-5 w-5" /> New Plan
+            <Plus className="h-4 w-4" /> New Plan
           </button>
         </div>
-        
-        {/* Subscription Plan Form Modal */}
+
+        {/* Plan Form Modal */}
         {showPlanForm && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
+            <div className="modal-panel p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-white">
+                <h3 className="text-lg font-bold text-slate-900">
                   {editingPlan ? 'Edit Subscription Plan' : 'Create New Subscription Plan'}
                 </h3>
-                <button 
+                <button
                   onClick={() => {
                     setShowPlanForm(false);
                     setEditingPlan(null);
                   }}
-                  className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                  className="btn btn-sm btn-ghost"
                 >
-                  <X className="h-5 w-5 text-gray-400" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
-              
+
               <form onSubmit={handlePlanFormSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Plan Name</label>
+                    <label className="input-label">Plan Name</label>
                     <input
                       type="text"
                       name="name"
                       value={planFormData.name}
                       onChange={handlePlanFormChange}
-                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-trade-neon"
+                      className="input"
                       required
                     />
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Price ($)</label>
+                    <label className="input-label">Price ($)</label>
                     <input
                       type="number"
                       name="price"
                       value={planFormData.price}
                       onChange={handlePlanFormChange}
-                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-trade-neon"
+                      className="input"
                       min="0"
                       step="0.01"
                       required
                     />
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Interval</label>
+                    <label className="input-label">Interval</label>
                     <select
                       name="interval"
                       value={planFormData.interval}
                       onChange={handlePlanFormChange}
-                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-trade-neon"
+                      className="input"
                     >
                       <option value="one-time">One Time</option>
                       <option value="monthly">Monthly</option>
                       <option value="yearly">Yearly</option>
                     </select>
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Sort Order</label>
+                    <label className="input-label">Sort Order</label>
                     <input
                       type="number"
                       name="sortOrder"
                       value={planFormData.sortOrder}
                       onChange={handlePlanFormChange}
-                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-trade-neon"
+                      className="input"
                       min="0"
                     />
                   </div>
-                  
+
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                    <label className="input-label">Description</label>
                     <textarea
                       name="description"
                       value={planFormData.description}
                       onChange={handlePlanFormChange}
                       rows={3}
-                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-trade-neon"
+                      className="input"
                     />
                   </div>
-                  
+
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Features (one per line)</label>
+                    <label className="input-label">Features (one per line)</label>
                     <textarea
                       name="features"
                       value={planFormData.features}
                       onChange={handlePlanFormChange}
-                      rows={5}
-                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-trade-neon"
-                      placeholder="Enter one feature per line&#10;Example:&#10;- Access to premium content&#10;- Priority support&#10;- Advanced analytics"
+                      rows={4}
+                      className="input"
+                      placeholder="Access to courses&#10;Community chat&#10;Trade alerts"
                     />
                   </div>
-                  
-                  <div className="flex items-center md:col-span-2">
+
+                  <div className="flex items-center md:col-span-2 mt-2">
                     <input
                       type="checkbox"
+                      id="isActivePlan"
                       name="isActive"
                       checked={planFormData.isActive}
                       onChange={handlePlanFormChange}
-                      className="h-5 w-5 text-trade-neon rounded focus:ring-trade-neon"
+                      className="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
                     />
-                    <label className="ml-2 text-sm text-gray-300">Active</label>
+                    <label htmlFor="isActivePlan" className="ml-2 text-sm text-slate-700 font-medium">Active (Available for purchase)</label>
                   </div>
                 </div>
-                
-                <div className="flex justify-end gap-3 pt-4">
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => {
                       setShowPlanForm(false);
                       setEditingPlan(null);
                     }}
-                    className="px-5 py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                    className="btn btn-secondary"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isCreatingPlan || isUpdatingPlan}
-                    className="px-5 py-2.5 bg-trade-neon hover:bg-green-400 text-black font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn btn-primary disabled:opacity-50"
                   >
-                    {isCreatingPlan || isUpdatingPlan ? (
-                      <span className="flex items-center">
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Processing...
-                      </span>
-                    ) : (
-                      editingPlan ? 'Update Plan' : 'Create Plan'
-                    )}
+                    {isCreatingPlan || isUpdatingPlan ? 'Processing...' : (editingPlan ? 'Update Plan' : 'Create Plan')}
                   </button>
                 </div>
               </form>
             </div>
           </div>
         )}
-        
-        {/* Subscription Plans Display */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        {/* Subscription Plans Display Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {plans.map(plan => (
-            <div key={plan.id} className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-6 shadow-xl">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-bold text-white">{plan.name}</h3>
-                  <p className="text-gray-300 text-sm">${plan.price} / {plan.interval}</p>
+            <div key={plan.id} className="content-card p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h4 className="text-lg font-bold text-slate-900">{plan.name}</h4>
+                    <p className="text-base font-extrabold text-blue-600 tabular-nums">${plan.price} <span className="text-xs text-slate-400 font-normal">/ {plan.interval}</span></p>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <button
+                      onClick={() => {
+                        setEditingPlan(plan);
+                        setShowPlanForm(true);
+                      }}
+                      className="btn btn-sm btn-ghost p-1.5"
+                    >
+                      <Edit2 className="h-4 w-4 text-blue-600" />
+                    </button>
+                    <button
+                      onClick={() => handleDeletePlan(plan.id)}
+                      className="btn btn-sm btn-ghost p-1.5 text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-3">
-                  <button 
-                    onClick={() => {
-                      setEditingPlan(plan);
-                      setShowPlanForm(true);
-                    }} 
-                    className="p-3 bg-gray-700/50 hover:bg-gray-600/50 rounded-xl transition-colors"
-                  >
-                    <Edit2 className="h-5 w-5 text-blue-400" />
-                  </button>
-                  <button 
-                    onClick={() => handleDeletePlan(plan.id)} 
-                    className="p-3 bg-red-900/30 hover:bg-red-900/50 rounded-xl transition-colors"
-                  >
-                    <Trash2 className="h-5 w-5 text-red-400" />
-                  </button>
-                </div>
+                <p className="text-sm text-slate-500 line-clamp-2 mb-4">{plan.description}</p>
+                {plan.features?.length > 0 && (
+                  <ul className="text-xs text-slate-600 mb-4 space-y-1.5">
+                    {plan.features.slice(0, 3).map((f, i) => (
+                      <li key={i} className="flex items-center gap-1.5">
+                        <span className="text-emerald-500 font-bold">✓</span> {f}
+                      </li>
+                    ))}
+                    {plan.features.length > 3 && (
+                      <li className="text-slate-400 font-medium">+ {plan.features.length - 3} more features</li>
+                    )}
+                  </ul>
+                )}
               </div>
-              <p className="text-gray-300 mb-4 text-sm line-clamp-3">{plan.description}</p>
-              {plan.features?.length > 0 && (
-                <ul className="text-sm text-gray-300 mb-4 space-y-2">
-                  {plan.features.slice(0, 3).map((f, i) => (
-                    <li key={i} className="flex items-center gap-2">
-                      <span className="text-trade-neon">✓</span>{f}
-                    </li>
-                  ))}
-                  {plan.features.length > 3 && (
-                    <li className="text-gray-400">+ {plan.features.length - 3} more features</li>
-                  )}
-                </ul>
-              )}
-              <div className="flex items-center justify-between">
-                <span className={`text-sm px-3 py-1 rounded-full ${plan.isActive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
+                <span className={plan.isActive ? 'badge badge-success' : 'badge badge-danger'}>
                   {plan.isActive ? 'Active' : 'Inactive'}
                 </span>
-                <span className="text-sm text-gray-400">Order: {plan.sortOrder}</span>
+                <span className="text-slate-400 font-medium">Sort Order: {plan.sortOrder}</span>
               </div>
             </div>
           ))}
           {!plans.length && (
-            <div className="col-span-full text-center py-16 bg-gray-800/50 border border-gray-700/50 border-dashed rounded-2xl">
-              <p className="text-gray-400 text-lg">No subscription plans created yet.</p>
+            <div className="col-span-full content-card text-center py-12 text-slate-400 text-sm border-dashed">
+              No subscription plans created yet.
             </div>
           )}
         </div>
       </div>
-      {/* Loading Overlay */}
-      {(isCreatingLink || isUpdatingLink || isCreatingPlan || isUpdatingPlan) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-xl p-8 flex flex-col items-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-trade-neon"></div>
-            <p className="text-white text-lg font-medium">Hang tight while we process your request...</p>
-            <p className="text-gray-400 text-sm">This usually takes just a moment</p>
-          </div>
-        </div>
-      )}
+
+      <div className="h-10" />
     </div>
   );
 };

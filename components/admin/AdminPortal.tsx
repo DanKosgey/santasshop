@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { User, CourseModule } from '../../types';
 import {
-  LayoutDashboard, Users, Layers, PieChart as PieIcon,
-  BookOpen, Zap, DollarSign, CreditCard, BarChart3, ShieldAlert, UserCog
+  Users, Layers, PieChart as PieIcon,
+  BookOpen, Zap, DollarSign, CreditCard, BarChart3, UserCog
 } from 'lucide-react';
 import { useAdminPortal } from './AdminPortalContext';
 import AdminHeader from './AdminHeader';
 import AdminNavigation from './AdminNavigation';
-import OverviewTab from './tabs/OverviewTab';
 import DirectoryTab from './tabs/DirectoryTab';
 import StudentManagementTab from './tabs/StudentManagementTab';
 import TradesTab from './tabs/TradesTab';
@@ -25,36 +24,44 @@ interface AdminPortalProps {
   user: User;
 }
 
-const AdminPortal: React.FC<AdminPortalProps> = ({ courses, initialTab = 'overview', user }) => {
+const VALID_TABS = [
+  'directory', 'trades', 'analytics',
+  'content', 'rules', 'journal', 'admin-analytics', 'settings', 'student-management', 'bot-inquiries'
+];
+
+const isValidTab = (tab: string) => VALID_TABS.includes(tab);
+
+const AdminPortal: React.FC<AdminPortalProps> = ({ courses, initialTab = 'directory', user }) => {
   const { activeTab, setActiveTab } = useAdminPortal();
 
-  // Set initial tab from prop only if not already set by provider (e.g. from localStorage)
+  // If initialTab is overview or invalid, fall back to directory
+  const defaultTab = (initialTab && initialTab !== 'overview' && isValidTab(initialTab)) ? initialTab : 'directory';
+
   useEffect(() => {
-    if (initialTab && isValidTab(initialTab) && activeTab === 'overview') {
+    if (activeTab === 'overview' || !isValidTab(activeTab)) {
+      setActiveTab(defaultTab);
+    } else if (initialTab && initialTab !== 'overview' && isValidTab(initialTab) && activeTab !== initialTab) {
       setActiveTab(initialTab);
     }
   }, [initialTab]);
 
-  // Update URL search param when tab changes, but don't force it back on every render
   useEffect(() => {
-    const url = new URL(window.location.href);
-    if (url.searchParams.get('tab') !== activeTab) {
-      url.searchParams.set('tab', activeTab);
-      window.history.replaceState({}, '', url);
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('page') !== activeTab || url.searchParams.get('tab') !== activeTab) {
+        url.searchParams.set('page', activeTab);
+        url.searchParams.set('tab', activeTab);
+        window.history.replaceState({}, '', url.toString());
+      }
+      localStorage.setItem('forex_elites_active_view', activeTab);
+      localStorage.setItem('adminPortalActiveTab', activeTab);
+    } catch (e) {
+      console.error('Error updating URL in AdminPortal:', e);
     }
   }, [activeTab]);
 
-  const isValidTab = (tab: string): tab is typeof activeTab => {
-    return [
-      'overview', 'directory', 'trades', 'analytics',
-      'content', 'rules', 'journal', 'admin-analytics', 'settings', 'student-management', 'bot-inquiries'
-    ].includes(tab);
-  };
-
   const renderActiveTab = () => {
     switch (activeTab) {
-      case 'overview':
-        return <OverviewTab />;
       case 'directory':
         return <DirectoryTab />;
       case 'student-management':
@@ -63,7 +70,6 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ courses, initialTab = 'overvi
         return <TradesTab />;
       case 'analytics':
         return <AnalyticsTab />;
-      // Applications tab removed
       case 'content':
         return <ContentTab user={user} courses={courses} />;
       case 'rules':
@@ -77,12 +83,11 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ courses, initialTab = 'overvi
       case 'bot-inquiries':
         return <BotInquiriesTab />;
       default:
-        return <OverviewTab />;
+        return <DirectoryTab />;
     }
   };
 
   const tabs = [
-    { id: 'overview', label: 'Command Center', icon: LayoutDashboard },
     { id: 'directory', label: 'Directory', icon: Users },
     { id: 'student-management', label: 'Student Mgmt', icon: UserCog },
     { id: 'trades', label: 'Trade Analysis', icon: Layers },
@@ -96,10 +101,26 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ courses, initialTab = 'overvi
   ];
 
   return (
-    <div className="space-y-8 text-white min-h-screen bg-gradient-to-br from-gray-900 to-black p-6 md:p-8">
-      <AdminHeader />
-      <AdminNavigation tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
-      <div className="animate-slide-up">
+    <div className="admin-portal font-sans text-slate-700 pb-6">
+      {/* ── Sub-header: title + nav tab bar ─────────────── */}
+      <div className="bg-white border-b border-slate-200 shadow-xs">
+        {/* Title row */}
+        <div className="px-4 pt-3 pb-1 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="p-1.5 bg-purple-50 rounded-lg shrink-0">
+              <Users className="h-4 w-4 text-purple-600" />
+            </span>
+            <div className="min-w-0">
+              <h1 className="text-base md:text-xl font-bold text-slate-900 tracking-tight leading-tight">Admin Portal</h1>
+              <p className="text-slate-400 text-[10px] md:text-xs font-normal hidden sm:block">Manage students, trades & platform</p>
+            </div>
+          </div>
+          <AdminNavigation tabs={tabs} activeTab={activeTab === 'overview' ? 'directory' : activeTab} onTabChange={setActiveTab} />
+        </div>
+      </div>
+
+      {/* ── Tab Content ─────────────────────────────────── */}
+      <div className="px-4 pt-4 md:px-6 md:pt-6 animate-slide-up">
         {renderActiveTab()}
       </div>
     </div>
