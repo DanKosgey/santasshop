@@ -5,9 +5,10 @@ import { APP_MESSAGES } from '../lib/constants';
 
 interface LoginPageProps {
   onBack: () => void;
+  onSwitchToSignup?: () => void;
 }
 
-const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
+const LoginPage: React.FC<LoginPageProps> = ({ onBack, onSwitchToSignup }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -95,6 +96,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
     setOtpSent(false);
   };
 
+  const targetIntent = typeof window !== 'undefined' ? sessionStorage.getItem('maichez_target_intent') : null;
+  const intentLabels: Record<string, string> = {
+    'vip-signals': 'VIP Signals & Telegram Community',
+    'account-management': 'Account Management & Prop Firm',
+    'pool-trading': 'Pool Trading Investment',
+    'bot-store': 'Automated Trading Bots',
+    'dashboard': 'Trading Portal Hub'
+  };
+
   return (
     <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center p-4 relative overflow-hidden font-sans">
       {/* Background Subtle Gradient */}
@@ -103,6 +113,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
       </div>
 
       <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 relative z-10 shadow-card">
+        {targetIntent && intentLabels[targetIntent] && (
+          <div className="mb-6 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold text-center flex items-center justify-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Destination: <span className="font-bold">{intentLabels[targetIntent]}</span>
+          </div>
+        )}
+
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-50 mb-4 border border-blue-100">
             <TrendingUp className="h-8 w-8 text-blue-600" />
@@ -164,20 +181,33 @@ const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-base transition flex items-center justify-center gap-2 shadow-blue-glow disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <span className="animate-pulse">Processing...</span>
-              ) : (
-                <>
-                  Login to Portal
-                  <ArrowRight className="h-5 w-5" />
-                </>
+            <div className="space-y-3 pt-2">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-base transition flex items-center justify-center gap-2 shadow-blue-glow disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <span className="animate-pulse">Processing...</span>
+                ) : (
+                  <>
+                    Login to Portal
+                    <ArrowRight className="h-5 w-5" />
+                  </>
+                )}
+              </button>
+
+              {onSwitchToSignup && (
+                <button
+                  type="button"
+                  onClick={onSwitchToSignup}
+                  className="w-full py-3 rounded-xl font-bold text-sm bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 transition text-center"
+                  disabled={isLoading}
+                >
+                  Need an account? <span className="text-blue-600 underline">Create Account</span>
+                </button>
               )}
-            </button>
+            </div>
 
             <div className="text-center pt-2">
               <button

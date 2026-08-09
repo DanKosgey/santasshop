@@ -6,13 +6,14 @@ import { APP_MESSAGES } from '../lib/constants';
 interface SignupPageProps {
   onBack: () => void;
   onSignupSuccess: () => void;
+  onSwitchToLogin?: () => void;
 }
 
-const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
+const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess, onSwitchToLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [subscriptionTier, setSubscriptionTier] = useState('free');
+  const [subscriptionTier] = useState('free');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -210,6 +211,15 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
     );
   }
 
+  const targetIntent = typeof window !== 'undefined' ? sessionStorage.getItem('maichez_target_intent') : null;
+  const intentLabels: Record<string, string> = {
+    'vip-signals': 'VIP Signals & Telegram Community',
+    'account-management': 'Account Management & Prop Firm',
+    'pool-trading': 'Pool Trading Investment',
+    'bot-store': 'Automated Trading Bots',
+    'dashboard': 'Trading Portal Hub'
+  };
+
   return (
     <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center p-4 relative overflow-hidden font-sans">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -217,6 +227,13 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
       </div>
 
       <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 relative z-10 shadow-card">
+        {targetIntent && intentLabels[targetIntent] && (
+          <div className="mb-6 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold text-center flex items-center justify-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Destination: <span className="font-bold">{intentLabels[targetIntent]}</span>
+          </div>
+        )}
+
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-50 mb-4 border border-blue-100">
             <TrendingUp className="h-8 w-8 text-blue-600" />
@@ -277,31 +294,6 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Subscription Tier</label>
-            <div className="grid grid-cols-2 gap-2.5">
-              {[
-                { value: 'free', label: 'Free' },
-                { value: 'foundation', label: 'Foundation' },
-                { value: 'professional', label: 'Professional' },
-                { value: 'elite', label: 'Elite' }
-              ].map((tier) => (
-                <button
-                  key={tier.value}
-                  type="button"
-                  onClick={() => setSubscriptionTier(tier.value)}
-                  className={`py-3 rounded-xl font-bold transition-all text-xs ${subscriptionTier === tier.value
-                      ? 'bg-blue-600 text-white shadow-blue-glow'
-                      : 'bg-slate-50 text-slate-700 border border-slate-200 hover:border-slate-300'
-                    }`}
-                  disabled={isLoading}
-                >
-                  {tier.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {error && (
             <div className="text-red-600 text-xs font-semibold text-center bg-red-50 py-3 rounded-lg border border-red-200 flex items-center justify-center gap-2">
               <AlertCircle className="h-4 w-4" />
@@ -315,20 +307,33 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess }) => {
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-base transition flex items-center justify-center gap-2 shadow-blue-glow disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? (
-              <span className="animate-pulse">Processing...</span>
-            ) : (
-              <>
-                Create Account
-                <ArrowRight className="h-5 w-5" />
-              </>
+          <div className="space-y-3 pt-2">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-base transition flex items-center justify-center gap-2 shadow-blue-glow disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <span className="animate-pulse">Creating Account...</span>
+              ) : (
+                <>
+                  Create Account
+                  <ArrowRight className="h-5 w-5" />
+                </>
+              )}
+            </button>
+
+            {onSwitchToLogin && (
+              <button
+                type="button"
+                onClick={onSwitchToLogin}
+                className="w-full py-3 rounded-xl font-bold text-sm bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 transition text-center"
+                disabled={isLoading}
+              >
+                Already have an account? <span className="text-blue-600 underline">Log In</span>
+              </button>
             )}
-          </button>
+          </div>
         </form>
 
         <div className="mt-8 pt-6 border-t border-slate-100">

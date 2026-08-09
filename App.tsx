@@ -128,11 +128,14 @@ const getSavedView = (): string | null => {
 
 // --- APP COMPONENT ---
 
-type AppViewState = 'landing' | 'login' | 'signup' | 'portal' | 'application';
+import { AuthJunctionGateway, GatewayTarget } from './components/AuthJunctionGateway';
+
+type AppViewState = 'landing' | 'gateway' | 'login' | 'signup' | 'portal' | 'application';
 
 const App: React.FC = () => {
   // App Logic State
   const [viewState, setViewState] = useState<AppViewState>('landing');
+  const [targetIntent, setTargetIntent] = useState<GatewayTarget | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [portalView, setPortalView] = useState<string>(() => getSavedView() || 'dashboard');
@@ -374,7 +377,7 @@ const App: React.FC = () => {
 
       if (data) {
         console.log('Profile found:', data);
-        setUser({
+        const fetchedUser: User = {
           id: data.id,
           name: data.full_name || email.split('@')[0],
           email: email,
@@ -383,24 +386,11 @@ const App: React.FC = () => {
           progress: 0,
           botAccess: data.bot_access || false,
           botPurchaseStatus: data.bot_purchase_status || 'none'
-        });
+        };
+        setUser(fetchedUser);
 
-        // Preserve current route if present, otherwise set default based on Role
-        const savedView = getSavedView();
-        if (savedView) {
-          handleViewChange(savedView);
-        } else if (data.role === 'admin') {
-          handleViewChange('overview');
-        } else {
-          // Redirect based on subscription tier
-          if (data.subscription_tier.includes('-pending')) {
-            handleViewChange('dashboard'); // Will show under review page
-          } else if (data.subscription_tier === 'free') {
-            handleViewChange('community');
-          } else {
-            handleViewChange('dashboard');
-          }
-        }
+        // Apply saved target intent from Gateway if present
+        applyTargetIntentOrFallback(fetchedUser);
       } else {
         console.log('No profile found for user, creating one:', userId);
         // Create a default profile for the user
@@ -455,47 +445,71 @@ const App: React.FC = () => {
   // --- HANDLERS ---
 
   const handleNavigationRequest = (tier: 'free' | 'foundation' | 'professional' | 'elite' | 'login' | 'signup') => {
-    if (tier === 'login') {
-      // Redirect to login page
-      setViewState('login');
-    } else if (tier === 'signup') {
-      // Redirect to signup page
-      setViewState('signup');
-    } else {
-      // For all plans, redirect to signup page instead of application form
-      setViewState('signup');
-    }
+    // Navigate to Gateway welcome page to let user pick destination junction
+    setViewState('gateway');
   };
 
   const handlePlanSelection = (planName: string) => {
-    if (planName === 'signup') {
-      // Handle signup navigation
-      setViewState('signup');
-      return;
-    }
-
-    // For all plans, redirect to signup page instead of application form
-    setViewState('signup');
+    setViewState('gateway');
   };
 
-  const handleLogin = (loggedInUser: User) => {
-    setUser(loggedInUser);
-    setViewState('portal');
+  const handleSelectGatewayOption = (target: GatewayTarget, mode: 'login' | 'signup') => {
+    setTargetIntent(target);
+    try {
+      sessionStorage.setItem('maichez_target_intent', target);
+    } catch (e) {
+      console.error('Session storage error:', e);
+    }
+    setViewState(mode);
+  };
+
+  const applyTargetIntentOrFallback = (usr: User) => {
+    const savedIntent = targetIntent || (sessionStorage.getItem('maichez_target_intent') as GatewayTarget | null);
+    if (savedIntent) {
+      try {
+        sessionStorage.removeItem('maichez_target_intent');
+      } catch (e) {}
+      setTargetIntent(null);
+
+      if (savedIntent === 'vip-signals') {
+        handleViewChange('telegram-bot-purchase');
+        return;
+      } else if (savedIntent === 'account-management') {
+        handleViewChange('account-management');
+        return;
+      } else if (savedIntent === 'pool-trading') {
+        handleViewChange('pool-trading');
+        return;
+      } else if (savedIntent === 'bot-store') {
+        handleViewChange('bot-store');
+        return;
+      } else if (savedIntent === 'dashboard') {
+        handleViewChange('dashboard');
+        return;
+      }
+    }
 
     const saved = getSavedView();
     if (saved) {
       handleViewChange(saved);
-    } else if (loggedInUser.role === 'admin') {
+    } else if (usr.role === 'admin') {
       handleViewChange('overview');
     } else {
       handleViewChange('dashboard');
     }
   };
 
+  const handleLogin = (loggedInUser: User) => {
+    setUser(loggedInUser);
+    setViewState('portal');
+    applyTargetIntentOrFallback(loggedInUser);
+  };
+
   const handleLogout = async () => {
     try {
       localStorage.removeItem('forex_elites_active_view');
       localStorage.removeItem('adminPortalActiveTab');
+      sessionStorage.removeItem('maichez_target_intent');
       const url = new URL(window.location.href);
       url.searchParams.delete('page');
       url.searchParams.delete('tab');
@@ -612,6 +626,15 @@ const App: React.FC = () => {
     />;
   }
 
+  if (viewState === 'gateway') {
+    return (
+      <AuthJunctionGateway
+        onSelectOption={handleSelectGatewayOption}
+        onBackToLanding={() => setViewState('landing')}
+      />
+    );
+  }
+
   if (viewState === 'application') {
     return (
       <EliteApplicationForm
@@ -626,6 +649,7 @@ const App: React.FC = () => {
     return (
       <LoginPage
         onBack={() => setViewState('landing')}
+        onSwitchToSignup={() => setViewState('signup')}
       />
     );
   }
@@ -635,6 +659,7 @@ const App: React.FC = () => {
       <SignupPage
         onBack={() => setViewState('landing')}
         onSignupSuccess={() => setViewState('portal')}
+        onSwitchToLogin={() => setViewState('login')}
       />
     );
   }
