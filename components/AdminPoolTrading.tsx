@@ -262,9 +262,20 @@ const INIT_INVESTMENTS: ActiveInvestment[] = [
 ];
 
 const INIT_PACKAGES: Package[] = [
-  { id: 'pkg_1', name: '24-Hour Starter', duration_value: 24, duration_unit: 'hours', roi_percentage: 8.5, risk_level: 'low', active: true, min_amount: 100, max_amount: 1000 },
-  { id: 'pkg_2', name: '7-Day Growth Plan', duration_value: 7, duration_unit: 'days', roi_percentage: 24.0, risk_level: 'medium', active: true, min_amount: 500, max_amount: 5000 },
-  { id: 'pkg_3', name: '30-Day VIP Syndicate', duration_value: 30, duration_unit: 'days', roi_percentage: 65.0, risk_level: 'high', active: true, min_amount: 2500 },
+  /* ── 24-Hour Plans ────────────────────────────────────────────────────── */
+  { id: 'pkg_24h_500',   name: '24H · £500 Plan',       duration_value: 24, duration_unit: 'hours', roi_percentage: 840, risk_level: 'low',    active: true, min_amount: 500,   max_amount: 500   },
+  { id: 'pkg_24h_600',   name: '24H · £600 Plan',       duration_value: 24, duration_unit: 'hours', roi_percentage: 833, risk_level: 'low',    active: true, min_amount: 600,   max_amount: 600   },
+  { id: 'pkg_24h_700',   name: '24H · £700 Plan',       duration_value: 24, duration_unit: 'hours', roi_percentage: 871, risk_level: 'low',    active: true, min_amount: 700,   max_amount: 700   },
+  { id: 'pkg_24h_800',   name: '24H · £800 Plan',       duration_value: 24, duration_unit: 'hours', roi_percentage: 875, risk_level: 'low',    active: true, min_amount: 800,   max_amount: 800   },
+  /* ── 2-Day Plans ──────────────────────────────────────────────────────── */
+  { id: 'pkg_2d_900',    name: '2-Day · £900 Plan',     duration_value: 2,  duration_unit: 'days',  roi_percentage: 889, risk_level: 'medium', active: true, min_amount: 900,   max_amount: 900   },
+  { id: 'pkg_2d_1000',   name: '2-Day · £1,000 Plan',   duration_value: 2,  duration_unit: 'days',  roi_percentage: 900, risk_level: 'medium', active: true, min_amount: 1000,  max_amount: 1000  },
+  { id: 'pkg_2d_1500',   name: '2-Day · £1,500 Plan',   duration_value: 2,  duration_unit: 'days',  roi_percentage: 800, risk_level: 'medium', active: true, min_amount: 1500,  max_amount: 1500  },
+  /* ── Weekly Plans ─────────────────────────────────────────────────────── */
+  { id: 'pkg_7d_2000',   name: 'Weekly · £2,000 Plan',  duration_value: 7,  duration_unit: 'days',  roi_percentage: 800, risk_level: 'high',   active: true, min_amount: 2000,  max_amount: 2000  },
+  { id: 'pkg_7d_3000',   name: 'Weekly · £3,000 Plan',  duration_value: 7,  duration_unit: 'days',  roi_percentage: 667, risk_level: 'high',   active: true, min_amount: 3000,  max_amount: 3000  },
+  { id: 'pkg_7d_5000',   name: 'Weekly · £5,000 Plan',  duration_value: 7,  duration_unit: 'days',  roi_percentage: 600, risk_level: 'high',   active: true, min_amount: 5000,  max_amount: 5000  },
+  { id: 'pkg_7d_10000',  name: 'Weekly · £10,000 Plan', duration_value: 7,  duration_unit: 'days',  roi_percentage: 600, risk_level: 'high',   active: true, min_amount: 10000, max_amount: 10000 },
 ];
 
 export function AdminPoolTrading() {

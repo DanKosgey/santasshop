@@ -112,9 +112,10 @@ function Modal({ open, onClose, title, children, maxW = 'max-w-md' }: {
    PACKAGE CARD
 ═══════════════════════════════════════════════════════════════════════════ */
 function PackageCard({ pkg, onSelect }: { key?: string; pkg: PoolPackage; onSelect: (p: PoolPackage) => void }) {
-  const [calcAmt, setCalcAmt] = useState(pkg.min_amount);
   const r = riskCfg[pkg.risk_level];
-  const est = (calcAmt * pkg.roi_percentage) / 100;
+  // Fixed profit = invest × roi_percentage / 100
+  const fixedProfit = (pkg.min_amount * pkg.roi_percentage) / 100;
+  const fixedPayout = pkg.min_amount + fixedProfit;
 
   return (
     <div className={`relative bg-white flex flex-col rounded-xl overflow-hidden shadow-card shadow-card-hover
@@ -150,18 +151,16 @@ function PackageCard({ pkg, onSelect }: { key?: string; pkg: PoolPackage; onSele
         {/* Details 2x2 grid */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="bg-slate-50 rounded-lg p-3">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Min. Investment</p>
-            <p className="text-base font-bold text-slate-800 tabular-nums mt-0.5">${fmt(pkg.min_amount)}</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Invest Capital</p>
+            <p className="text-base font-bold text-slate-800 tabular-nums mt-0.5">£{fmt(pkg.min_amount)}</p>
           </div>
           <div className="bg-emerald-50 rounded-lg p-3">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Expected ROI</p>
-            <p className="text-base font-bold text-emerald-600 tabular-nums mt-0.5">{pkg.roi_percentage}%</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">You Receive</p>
+            <p className="text-base font-bold text-emerald-600 tabular-nums mt-0.5">£{fmt(fixedProfit)}</p>
           </div>
-          <div className="bg-slate-50 rounded-lg p-3">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Max. Investment</p>
-            <p className="text-base font-bold text-slate-800 tabular-nums mt-0.5">
-              {pkg.max_amount ? `$${fmt(pkg.max_amount)}` : 'Unlimited'}
-            </p>
+          <div className="bg-blue-50 rounded-lg p-3">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Total Payout</p>
+            <p className="text-base font-bold text-blue-700 tabular-nums mt-0.5">£{fmt(fixedPayout)}</p>
           </div>
           <div className="bg-slate-50 rounded-lg p-3">
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Duration</p>
@@ -169,27 +168,24 @@ function PackageCard({ pkg, onSelect }: { key?: string; pkg: PoolPackage; onSele
           </div>
         </div>
 
-        {/* Earnings Calculator */}
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-4 mb-4">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Earnings Estimator</p>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-slate-500">$</span>
-            <input
-              type="number"
-              value={calcAmt}
-              min={pkg.min_amount}
-              max={pkg.max_amount}
-              onChange={e => setCalcAmt(Math.max(pkg.min_amount, Number(e.target.value)))}
-              className="flex-1 bg-white border border-blue-200 rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-900 tabular-nums focus:border-blue-400 transition-all"
-            />
+        {/* Fixed Return Summary */}
+        <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4 mb-4">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Returns Summary</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-slate-500">Invest</p>
+              <p className="text-lg font-extrabold text-slate-800 tabular-nums">£{fmt(pkg.min_amount)}</p>
+            </div>
+            <div className="text-2xl text-emerald-400 font-black">→</div>
+            <div className="text-right">
+              <p className="text-xs text-slate-500">Profit</p>
+              <p className="text-lg font-extrabold text-emerald-600 tabular-nums">£{fmt(fixedProfit)}</p>
+            </div>
           </div>
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-slate-500">Estimated Payout</span>
-            <span className="text-base font-extrabold text-emerald-600 tabular-nums">
-              ${fmt(calcAmt + est)}
-            </span>
+          <div className="mt-2 pt-2 border-t border-emerald-100 flex items-center justify-between">
+            <span className="text-xs text-slate-500">Total Payout</span>
+            <span className="text-base font-extrabold text-blue-600 tabular-nums">£{fmt(fixedPayout)}</span>
           </div>
-          <p className="text-xs text-emerald-600 font-semibold mt-0.5 text-right">+${fmt(est)} profit</p>
         </div>
 
         {/* CTA */}
@@ -470,19 +466,55 @@ function SuccessState({ sub, onDismiss, whatsappUrl }: { sub: any; onDismiss: ()
    MAIN COMPONENT
 ═══════════════════════════════════════════════════════════════════════════ */
 const PACKAGES: PoolPackage[] = [
+  /* ── 24-Hour Plans ─────────────────────────────────────────────────────── */
   {
-    id: 'pkg_1', name: '24-Hour Starter', description: 'Ideal for quick liquidity testing and short-term scalp returns. Perfect entry into institutional pools.',
-    duration_value: 24, duration_unit: 'hours', min_amount: 100, max_amount: 1000, roi_percentage: 8.5, risk_level: 'low'
+    id: 'pkg_24h_500', name: '24H · £500 Plan', description: 'Quick 24-hour institutional pool. Invest £500 and receive £4,200 profit within 24 hours.',
+    duration_value: 24, duration_unit: 'hours', min_amount: 500, max_amount: 500, roi_percentage: 840, risk_level: 'low'
   },
   {
-    id: 'pkg_2', name: '7-Day Growth Plan', description: 'Balanced risk-reward pool managed by senior institutional traders targeting mid-cap swing setups.',
-    duration_value: 7, duration_unit: 'days', min_amount: 500, max_amount: 5000, roi_percentage: 24.0, risk_level: 'medium', recommended: true
+    id: 'pkg_24h_600', name: '24H · £600 Plan', description: 'Quick 24-hour institutional pool. Invest £600 and receive £5,000 profit within 24 hours.',
+    duration_value: 24, duration_unit: 'hours', min_amount: 600, max_amount: 600, roi_percentage: 833, risk_level: 'low'
   },
   {
-    id: 'pkg_3', name: '30-Day VIP Syndicate', description: 'Maximum compound yields targeting high-tier trend continuation setups with institutional capital.',
-    duration_value: 30, duration_unit: 'days', min_amount: 2500, roi_percentage: 65.0, risk_level: 'high'
+    id: 'pkg_24h_700', name: '24H · £700 Plan', description: 'Quick 24-hour institutional pool. Invest £700 and receive £6,100 profit within 24 hours.',
+    duration_value: 24, duration_unit: 'hours', min_amount: 700, max_amount: 700, roi_percentage: 871, risk_level: 'low'
+  },
+  {
+    id: 'pkg_24h_800', name: '24H · £800 Plan', description: 'Quick 24-hour institutional pool. Invest £800 and receive £7,000 profit within 24 hours.',
+    duration_value: 24, duration_unit: 'hours', min_amount: 800, max_amount: 800, roi_percentage: 875, risk_level: 'low', recommended: true
+  },
+  /* ── 2-Day Plans ───────────────────────────────────────────────────────── */
+  {
+    id: 'pkg_2d_900', name: '2-Day · £900 Plan', description: 'Two-day compounded pool. Invest £900 and receive £8,000 profit at maturity.',
+    duration_value: 2, duration_unit: 'days', min_amount: 900, max_amount: 900, roi_percentage: 889, risk_level: 'medium'
+  },
+  {
+    id: 'pkg_2d_1000', name: '2-Day · £1,000 Plan', description: 'Two-day compounded pool. Invest £1,000 and receive £9,000 profit at maturity.',
+    duration_value: 2, duration_unit: 'days', min_amount: 1000, max_amount: 1000, roi_percentage: 900, risk_level: 'medium'
+  },
+  {
+    id: 'pkg_2d_1500', name: '2-Day · £1,500 Plan', description: 'Two-day compounded pool. Invest £1,500 and receive £12,000 profit at maturity.',
+    duration_value: 2, duration_unit: 'days', min_amount: 1500, max_amount: 1500, roi_percentage: 800, risk_level: 'medium'
+  },
+  /* ── Weekly Plans ──────────────────────────────────────────────────────── */
+  {
+    id: 'pkg_7d_2000', name: 'Weekly · £2,000 Plan', description: 'Full-week institutional syndicate. Invest £2,000 and receive £16,000 profit at maturity.',
+    duration_value: 7, duration_unit: 'days', min_amount: 2000, max_amount: 2000, roi_percentage: 800, risk_level: 'high'
+  },
+  {
+    id: 'pkg_7d_3000', name: 'Weekly · £3,000 Plan', description: 'Full-week institutional syndicate. Invest £3,000 and receive £20,000 profit at maturity.',
+    duration_value: 7, duration_unit: 'days', min_amount: 3000, max_amount: 3000, roi_percentage: 667, risk_level: 'high'
+  },
+  {
+    id: 'pkg_7d_5000', name: 'Weekly · £5,000 Plan', description: 'Full-week institutional syndicate. Invest £5,000 and receive £30,000 profit at maturity.',
+    duration_value: 7, duration_unit: 'days', min_amount: 5000, max_amount: 5000, roi_percentage: 600, risk_level: 'high'
+  },
+  {
+    id: 'pkg_7d_10000', name: 'Weekly · £10,000 Plan', description: 'Elite-tier week syndicate. Invest £10,000 and receive £60,000 profit at maturity.',
+    duration_value: 7, duration_unit: 'days', min_amount: 10000, max_amount: 10000, roi_percentage: 600, risk_level: 'high'
   },
 ];
+
 
 const INVESTMENTS: Investment[] = [
   {
@@ -541,10 +573,11 @@ export function PoolTradingDashboard() {
 
   const handleConfirmApplication = () => {
     if (!selectedPackage) return;
-    const expectedReturn = (confirmAmt * selectedPackage.roi_percentage) / 100;
-    setSubmissionSuccess({ package_name: selectedPackage.name, amount: confirmAmt, expected_return: expectedReturn });
+    const fixedAmt = selectedPackage.min_amount;
+    const expectedReturn = (fixedAmt * selectedPackage.roi_percentage) / 100;
+    setSubmissionSuccess({ package_name: selectedPackage.name, amount: fixedAmt, expected_return: expectedReturn });
     setHistory(prev => [
-      { id: `app_${Date.now()}`, date: new Date().toLocaleDateString(), package_name: selectedPackage.name, amount: confirmAmt, status: 'pending' },
+      { id: `app_${Date.now()}`, date: new Date().toLocaleDateString(), package_name: selectedPackage.name, amount: fixedAmt, status: 'pending' },
       ...prev
     ]);
     setSelectedPackage(null);
@@ -719,7 +752,7 @@ export function PoolTradingDashboard() {
                       </div>
                       <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
                         <span>Date: {h.date}</span>
-                        <span className="font-extrabold text-slate-900 tabular-nums text-sm">${fmt(h.amount)}</span>
+                        <span className="font-extrabold text-slate-900 tabular-nums text-sm">£{fmt(h.amount)}</span>
                       </div>
                       {h.rejection_reason && (
                         <p className="text-[11px] text-red-600 bg-red-50 p-2 rounded border border-red-100 mt-1">
@@ -739,30 +772,28 @@ export function PoolTradingDashboard() {
       <Modal open={!!selectedPackage} onClose={() => setSelectedPackage(null)} title="Confirm Application">
         {selectedPackage && (() => {
           const r = riskCfg[selectedPackage.risk_level];
-          const est = (confirmAmt * selectedPackage.roi_percentage) / 100;
+          const fixedProfit = (selectedPackage.min_amount * selectedPackage.roi_percentage) / 100;
+          const fixedPayout = selectedPackage.min_amount + fixedProfit;
           return (
             <div className="space-y-4">
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
                 <p className="text-xs font-bold text-blue-500 uppercase tracking-wide mb-0.5">Selected Package</p>
                 <p className="text-base font-extrabold text-slate-900">{selectedPackage.name}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{selectedPackage.duration_value} {selectedPackage.duration_unit} · {selectedPackage.roi_percentage}% ROI · <span className={r.textColor}>{r.label}</span></p>
+                <p className="text-xs text-slate-500 mt-0.5">{selectedPackage.duration_value} {selectedPackage.duration_unit} · <span className={r.textColor}>{r.label}</span></p>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Investment Amount (USD)</label>
-                <input type="number" value={confirmAmt}
-                  min={selectedPackage.min_amount} max={selectedPackage.max_amount}
-                  onChange={e => setConfirmAmt(Math.max(selectedPackage.min_amount, Number(e.target.value)))}
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-base font-bold text-slate-900 bg-slate-50 focus:bg-white focus:border-blue-400 tabular-nums transition-all" />
-                <p className="text-xs text-slate-400 mt-1">Min: ${fmt(selectedPackage.min_amount)} {selectedPackage.max_amount ? `· Max: $${fmt(selectedPackage.max_amount)}` : ''}</p>
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Investment Amount (GBP)</p>
+                <p className="text-2xl font-extrabold text-slate-900 tabular-nums">£{fmt(selectedPackage.min_amount)}</p>
+                <p className="text-xs text-slate-400 mt-1">Fixed amount for this plan</p>
               </div>
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-600">Expected Profit</span>
-                  <span className="text-lg font-extrabold text-emerald-600 tabular-nums">+${fmt(est)}</span>
+                  <span className="text-lg font-extrabold text-emerald-600 tabular-nums">+£{fmt(fixedProfit)}</span>
                 </div>
                 <div className="flex items-center justify-between mt-1">
                   <span className="text-sm text-slate-600">Total Payout</span>
-                  <span className="text-xl font-extrabold text-emerald-700 tabular-nums">${fmt(confirmAmt + est)}</span>
+                  <span className="text-xl font-extrabold text-emerald-700 tabular-nums">£{fmt(fixedPayout)}</span>
                 </div>
               </div>
               <div className="flex gap-3">
