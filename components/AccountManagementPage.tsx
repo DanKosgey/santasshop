@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  User, Mail, Phone, ShieldCheck, ShieldAlert, Edit3, KeyRound,
-  Send, Lock, LogOut, CheckCircle2, X, MessageCircle,
-  TrendingUp, DollarSign, Activity, Eye, EyeOff, Trash2, AlertTriangle
+  Mail, Phone, ShieldCheck, ShieldAlert, Edit3,
+  Send, CheckCircle2, X, MessageCircle,
+  TrendingUp, DollarSign, Activity, Trash2, AlertTriangle
 } from 'lucide-react';
 import { ADMIN_WHATSAPP, ADMIN_TELEGRAM_URL, ADMIN_TELEGRAM_USERNAME } from '../lib/constants';
+import { supabase } from '../lib/supabase';
+import { User } from '../types';
 
 export interface UserProfile {
   id: string;
@@ -28,10 +30,21 @@ const fmt = (n: number) =>
 function getInitials(name: string) {
   return name
     .split(' ')
+    .filter(Boolean)
     .map((w) => w[0])
     .slice(0, 2)
     .join('')
-    .toUpperCase();
+    .toUpperCase() || 'U';
+}
+
+function formatTierDisplay(tier?: string, role?: string): string {
+  if (role === 'admin') return 'Administrator';
+  if (!tier || tier === 'free') return 'Free Member';
+  if (tier === 'foundation') return 'Foundation Member';
+  if (tier === 'professional') return 'Professional Member';
+  if (tier === 'elite') return 'Elite Member';
+  if (tier.includes('pending')) return 'Membership Under Review';
+  return tier.charAt(0).toUpperCase() + tier.slice(1) + ' Member';
 }
 
 /* ─── Reusable Modal Wrapper ─────────────────────────────────────────────── */
@@ -72,7 +85,7 @@ function Toast({ msg, type = 'success' }: { msg: string; type?: 'success' | 'err
   );
 }
 
-/* ─── Stat Card ──────────────────────────────────────────────────────────── */
+/* ─── Stat Card ──────────────────────────────────────────────────── */
 function StatCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: any; color: string }) {
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
@@ -90,77 +103,227 @@ function StatCard({ label, value, icon: Icon, color }: { label: string; value: s
 /* ═══════════════════════════════════════════════════════════════════════════
    MAIN COMPONENT
 ═══════════════════════════════════════════════════════════════════════════ */
-export function AccountManagementPage() {
+interface AccountManagementPageProps {
+  currentUser?: User | null;
+  onProfileUpdated?: (updated: { name: string; phone?: string }) => void;
+}
+
+export function AccountManagementPage({ currentUser, onProfileUpdated }: AccountManagementPageProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Modals
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
 
-  const [isPwOpen, setIsPwOpen] = useState(false);
-  const [currentPw, setCurrentPw] = useState('');
-  const [newPw, setNewPw] = useState('');
-  const [confirmPw, setConfirmPw] = useState('');
-  const [showPw, setShowPw] = useState(false);
-
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteInput, setDeleteInput] = useState('');
 
   const [toast, setToast] = useState<{ msg: string; type?: 'success' | 'error' } | null>(null);
-  const [vipRequested, setVipRequested] = useState(false);
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
   };
 
-  useEffect(() => {
-    setTimeout(() => {
-      const mock: UserProfile = {
-        id: 'usr_78912',
-        name: 'Francesco Battista',
-        email: 'francesco.battista@forexelites.com',
-        phone: '+1 (208) 969-5688',
-        email_verified: true,
-        vip_status: 'none',
-        vip_group_url: 'https://t.me/SIRLEONARD1',
-        active_pool_trades_count: 3,
-        total_invested: 5250.00,
-        total_withdrawn: 1890.50,
-        account_tier: 'Professional Member',
-        last_login: new Date().toLocaleString(),
-      };
-      setProfile(mock);
-      setEditName(mock.name);
-      setEditPhone(mock.phone);
-      setLoading(false);
-    }, 600);
-  }, []);
+  const fetchRealUserData = useCallback(async () => {
+    try {
+      setLoading(true);
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+      // 1. Get current authenticated user
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const authUser = session?.user;
+
+      if (!authUser) {
+        if (currentUser) {
+          setProfile({
+            id: currentUser.id,
+            name: currentUser.name || currentUser.email.split('@')[0],
+            email: currentUser.email,
+            phone: 'Not set',
+            email_verified: true,
+            vip_status: 'none',
+            vip_group_url: ADMIN_TELEGRAM_URL,
+            active_pool_trades_count: 0,
+            total_invested: 0,
+            total_withdrawn: 0,
+            account_tier: formatTierDisplay(currentUser.subscriptionTier, currentUser.role),
+            last_login: new Date().toLocaleString(),
+          });
+          setEditName(currentUser.name || '');
+          setEditPhone('');
+        }
+        setLoading(false);
+        return;
+      }
+
+      // 2. Fetch full DB profile record
+      const { data: dbProfile, error: profileErr } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authUser.id)
+        .maybeSingle();
+
+      if (profileErr && profileErr.code !== 'PGRST116') {
+        console.warn('Profile fetch warning:', profileErr.message);
+      }
+
+      // 3. Fetch user pool trading investments for real stats
+      const { data: investments } = await supabase
+        .from('pool_trading_investments')
+        .select('invested_amount, status')
+        .eq('user_id', authUser.id);
+
+      const userInvestments = investments || [];
+      const activeTradesCount = userInvestments.filter(
+        i => i.status === 'active' || i.status === 'matured' || i.status === 'withdrawal_pending'
+      ).length;
+
+      const totalInvested = userInvestments
+        .filter(i => i.status !== 'cancelled' && i.status !== 'rejected')
+        .reduce((sum, i) => sum + (Number(i.invested_amount) || 0), 0);
+
+      // 4. Fetch user withdrawal requests for total withdrawn
+      const { data: withdrawals } = await supabase
+        .from('withdrawal_requests')
+        .select('amount, status')
+        .eq('user_id', authUser.id);
+
+      const userWithdrawals = withdrawals || [];
+      const totalWithdrawn = userWithdrawals
+        .filter(w => w.status === 'completed')
+        .reduce((sum, w) => sum + (Number(w.amount) || 0), 0);
+
+      // 5. Compute formatted user profile values
+      const metaName = authUser.user_metadata?.full_name || authUser.user_metadata?.name;
+      const resolvedName = dbProfile?.full_name || metaName || currentUser?.name || authUser.email?.split('@')[0] || 'User';
+      const resolvedEmail = authUser.email || dbProfile?.email || currentUser?.email || '';
+      const resolvedPhone = dbProfile?.phone || authUser.phone || authUser.user_metadata?.phone || '';
+      const isEmailVerified = Boolean(authUser.email_confirmed_at || authUser.confirmed_at);
+      const tier = dbProfile?.subscription_tier || currentUser?.subscriptionTier || authUser.user_metadata?.subscription_tier || 'free';
+      const role = dbProfile?.role || currentUser?.role || 'student';
+      const formattedTier = formatTierDisplay(tier, role);
+
+      const lastLoginFormatted = authUser.last_sign_in_at
+        ? new Date(authUser.last_sign_in_at).toLocaleString()
+        : new Date().toLocaleString();
+
+      const userProfile: UserProfile = {
+        id: authUser.id,
+        name: resolvedName,
+        email: resolvedEmail,
+        phone: resolvedPhone || 'Not set',
+        avatar_url: dbProfile?.avatar_url || authUser.user_metadata?.avatar_url || '',
+        email_verified: isEmailVerified,
+        vip_status: dbProfile?.vip_status || 'none',
+        vip_group_url: ADMIN_TELEGRAM_URL,
+        active_pool_trades_count: activeTradesCount,
+        total_invested: totalInvested,
+        total_withdrawn: totalWithdrawn,
+        account_tier: formattedTier,
+        last_login: lastLoginFormatted,
+      };
+
+      setProfile(userProfile);
+      setEditName(resolvedName);
+      setEditPhone(resolvedPhone);
+    } catch (err) {
+      console.error('Error fetching real account data:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    fetchRealUserData();
+  }, [fetchRealUserData]);
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
-    setProfile({ ...profile, name: editName, phone: editPhone });
-    setIsEditOpen(false);
-    showToast('Profile updated successfully!');
+    setIsSaving(true);
+    try {
+      // 1. Update Supabase Auth user metadata
+      const { error: authUpdateError } = await supabase.auth.updateUser({
+        data: {
+          full_name: editName,
+          phone: editPhone
+        }
+      });
+      if (authUpdateError) {
+        console.warn('Auth metadata update:', authUpdateError.message);
+      }
+
+      // 2. Update profiles table in database
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editName,
+          ...(editPhone ? { phone: editPhone } : {})
+        })
+        .eq('id', profile.id);
+
+      if (profileError && !profileError.message.includes('column "phone" does not exist')) {
+        console.warn('Profile table update notice:', profileError.message);
+      }
+
+      setProfile(prev => prev ? ({
+        ...prev,
+        name: editName,
+        phone: editPhone || 'Not set'
+      }) : null);
+
+      if (onProfileUpdated) {
+        onProfileUpdated({ name: editName, phone: editPhone });
+      }
+
+      setIsEditOpen(false);
+      showToast('Profile updated successfully!');
+    } catch (err: any) {
+      console.error('Error updating profile:', err);
+      showToast(err?.message || 'Failed to update profile', 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPw !== confirmPw) { showToast('New passwords do not match!', 'error'); return; }
-    if (newPw.length < 8) { showToast('Password must be at least 8 characters.', 'error'); return; }
-    setIsPwOpen(false);
-    setCurrentPw(''); setNewPw(''); setConfirmPw('');
-    showToast('Password changed successfully!');
+  const handleVerifyEmail = async () => {
+    if (!profile?.email) return;
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: profile.email
+      });
+      if (error) throw error;
+      showToast(`Verification link sent to ${profile.email}`);
+    } catch (err: any) {
+      console.error('Error resending verification:', err);
+      showToast(err?.message || 'Failed to send verification email', 'error');
+    }
   };
 
-  const handleDeleteAccount = (e: React.FormEvent) => {
+  const handleDeleteAccount = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (deleteInput !== 'DELETE') { showToast('Type DELETE exactly to confirm.', 'error'); return; }
-    setIsDeleteOpen(false);
-    showToast('Account scheduled for deletion. Logging out...');
+    if (deleteInput !== 'DELETE') {
+      showToast('Type DELETE exactly to confirm.', 'error');
+      return;
+    }
+    try {
+      if (profile?.id) {
+        await supabase.from('profiles').delete().eq('id', profile.id).catch(() => {});
+      }
+      await supabase.auth.signOut();
+      setIsDeleteOpen(false);
+      showToast('Account scheduled for deletion. Logging out...');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1200);
+    } catch (err: any) {
+      console.error('Error deleting account:', err);
+      showToast(err?.message || 'Failed to delete account', 'error');
+    }
   };
 
   if (loading || !profile) {
@@ -226,8 +389,8 @@ export function AccountManagementPage() {
                     <ShieldCheck className="w-3.5 h-3.5" /> Verified
                   </span>
                 ) : (
-                  <button onClick={() => showToast('Verification email sent!')}
-                    className="inline-flex items-center gap-1 text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full hover:bg-amber-100 transition-all">
+                  <button onClick={handleVerifyEmail}
+                    className="inline-flex items-center gap-1 text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full hover:bg-amber-100 transition-all cursor-pointer">
                     <ShieldAlert className="w-3.5 h-3.5" /> Unverified — Verify Now
                   </button>
                 )}
@@ -257,46 +420,6 @@ export function AccountManagementPage() {
             icon={DollarSign} color="bg-purple-50 text-purple-600" />
         </div>
 
-        {/* ── SECURITY & SESSION ────────────────────────────────────────── */}
-        <div>
-          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Security & Session</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Password Card */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-card p-5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
-                  <KeyRound className="w-5 h-5 text-slate-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-800">Password</p>
-                  <p className="text-xs text-slate-400">••••••••••••</p>
-                </div>
-              </div>
-              <button onClick={() => setIsPwOpen(true)}
-                className="text-xs font-bold text-blue-600 hover:text-blue-800 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-all">
-                Change
-              </button>
-            </div>
-
-            {/* Session Card */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-card p-5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
-                  <LogOut className="w-5 h-5 text-slate-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-800">Active Session</p>
-                  <p className="text-xs text-slate-400 truncate max-w-[140px]" title={profile.last_login}>{profile.last_login}</p>
-                </div>
-              </div>
-              <button onClick={() => showToast('Logged out from all sessions.')}
-                className="text-xs font-bold text-red-500 hover:text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-all">
-                Log Out
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* ── SUPPORT CONTACT ───────────────────────────────────────────── */}
         <div>
           <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Need Help?</h3>
@@ -312,7 +435,7 @@ export function AccountManagementPage() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-slate-900">Chat on WhatsApp</p>
                 <p className="text-xs text-slate-500 mt-0.5">Instant replies, usually within minutes.</p>
-                <p className="text-xs font-semibold text-emerald-600 mt-1">+1 (208) 969-5688</p>
+                <p className="text-xs font-semibold text-emerald-600 mt-1">+{ADMIN_WHATSAPP}</p>
               </div>
               <svg className="w-4 h-4 text-slate-300 group-hover:text-emerald-500 transition-all flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -366,42 +489,16 @@ export function AccountManagementPage() {
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Phone Number</label>
             <input type="tel" value={editPhone} onChange={e => setEditPhone(e.target.value)}
+              placeholder="+1 (555) 000-0000"
               className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-900 bg-slate-50 focus:bg-white focus:border-blue-400 transition-all" />
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={() => setIsEditOpen(false)}
               className="flex-1 py-2.5 text-sm font-semibold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all">Cancel</button>
-            <button type="submit"
-              className="flex-1 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all">Save Changes</button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Change Password Modal */}
-      <Modal open={isPwOpen} onClose={() => setIsPwOpen(false)} title="Change Password">
-        <form onSubmit={handleChangePassword} className="space-y-4">
-          {[
-            { label: 'Current Password', val: currentPw, set: setCurrentPw },
-            { label: 'New Password', val: newPw, set: setNewPw },
-            { label: 'Confirm New Password', val: confirmPw, set: setConfirmPw },
-          ].map(({ label, val, set }) => (
-            <div key={label}>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">{label}</label>
-              <div className="relative">
-                <input type={showPw ? 'text' : 'password'} value={val} onChange={e => set(e.target.value)}
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2.5 pr-10 text-sm text-slate-900 bg-slate-50 focus:bg-white focus:border-blue-400 transition-all" required />
-                <button type="button" onClick={() => setShowPw(p => !p)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-          ))}
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={() => setIsPwOpen(false)}
-              className="flex-1 py-2.5 text-sm font-semibold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all">Cancel</button>
-            <button type="submit"
-              className="flex-1 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all">Update Password</button>
+            <button type="submit" disabled={isSaving}
+              className="flex-1 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-all">
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
           </div>
         </form>
       </Modal>

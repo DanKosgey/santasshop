@@ -788,7 +788,14 @@ const App: React.FC = () => {
       // --- STUDENT VIEWS ---
       switch (portalView) {
         case 'account':
-          return <AccountManagementPage />;
+          return (
+            <AccountManagementPage
+              currentUser={user}
+              onProfileUpdated={(updated) => {
+                setUser(prev => prev ? { ...prev, name: updated.name } : prev);
+              }}
+            />
+          );
         case 'pool-trading':
           return <PoolTradingDashboard />;
         case 'dashboard':
