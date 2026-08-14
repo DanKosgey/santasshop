@@ -1,8 +1,17 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@theme {
+  --color-trade-black: #050b14;
+  --color-trade-dark: #0f172a;
+  --color-trade-card: #111827;
+  --color-trade-accent: #3b82f6;
+  --color-trade-neon: #00ff94;
+  --color-trade-success: #10b981;
+  --color-trade-danger: #ef4444;
+  --font-sans: 'Inter', sans-serif;
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
 
 /* ============================================================
    DESIGN TOKENS
