@@ -1,5 +1,5 @@
 import React from 'react';
-import { Send, TrendingUp, Users, ArrowRight, ArrowLeft, Sparkles, CheckCircle2, ShieldCheck, Lock, UserPlus } from 'lucide-react';
+import { Send, TrendingUp, Users, ArrowRight, ArrowLeft, Sparkles, CheckCircle2, ShieldCheck } from 'lucide-react';
 
 export type GatewayTarget = 'vip-signals' | 'pool-trading' | 'account-management' | 'dashboard' | 'bot-store';
 
@@ -85,14 +85,7 @@ export const AuthJunctionGateway: React.FC<AuthJunctionGatewayProps> = ({
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => onSelectOption('dashboard', 'login')}
-            className="text-xs sm:text-sm font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3.5 py-1.5 rounded-lg transition-all"
-          >
-            Sign In
-          </button>
-        </div>
+        <div />
       </header>
 
       {/* Main Content Area */}
@@ -106,7 +99,7 @@ export const AuthJunctionGateway: React.FC<AuthJunctionGatewayProps> = ({
             Choose Your <span className="text-blue-600">Destination</span>
           </h1>
           <p className="text-slate-500 text-sm sm:text-base leading-relaxed px-2">
-            Select your path below. You will be seamlessly directed to your chosen feature after a quick sign in or account creation.
+            Select your path below and you will be directed to sign in to access your chosen feature.
           </p>
         </div>
 
@@ -117,7 +110,8 @@ export const AuthJunctionGateway: React.FC<AuthJunctionGatewayProps> = ({
             return (
               <div
                 key={opt.id}
-                className="group relative bg-white border border-slate-200 hover:border-blue-400 rounded-2xl p-5 sm:p-6 transition-all duration-200 hover:-translate-y-1 shadow-card hover:shadow-xl flex flex-col justify-between overflow-hidden"
+                onClick={() => onSelectOption(opt.id, 'login')}
+                className="group relative bg-white border border-slate-200 hover:border-blue-400 rounded-2xl p-5 sm:p-6 transition-all duration-200 hover:-translate-y-1 shadow-card hover:shadow-xl flex flex-col justify-between overflow-hidden cursor-pointer"
               >
                 {/* Top Accent Bar */}
                 <div
@@ -151,7 +145,7 @@ export const AuthJunctionGateway: React.FC<AuthJunctionGatewayProps> = ({
                   </p>
 
                   {/* Highlights list */}
-                  <div className="bg-slate-50 rounded-xl p-3 sm:p-4 mb-5 border border-slate-100">
+                  <div className="bg-slate-50 rounded-xl p-3 sm:p-4 border border-slate-100">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Key Features</p>
                     <ul className="space-y-2">
                       {opt.highlights.map((h, i) => (
@@ -164,24 +158,12 @@ export const AuthJunctionGateway: React.FC<AuthJunctionGatewayProps> = ({
                   </div>
                 </div>
 
-                {/* Dual Action Buttons (Login / Signup) */}
-                <div className="space-y-2 pt-2 border-t border-slate-100">
-                  <button
-                    onClick={() => onSelectOption(opt.id, 'login')}
-                    className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-slate-900 hover:bg-blue-600 active:scale-[0.99] flex items-center justify-center gap-2 shadow-sm transition-all"
-                  >
-                    <Lock className="w-3.5 h-3.5 opacity-70" />
-                    <span>Login to Access {opt.ctaText}</span>
-                    <ArrowRight className="w-4 h-4 ml-auto" />
-                  </button>
-
-                  <button
-                    onClick={() => onSelectOption(opt.id, 'signup')}
-                    className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-slate-700 hover:text-blue-600 bg-slate-100 hover:bg-blue-50 border border-slate-200 transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <UserPlus className="w-3.5 h-3.5 text-slate-400" />
-                    <span>New User? Create Account</span>
-                  </button>
+                {/* Click indicator */}
+                <div className="flex items-center justify-end pt-4 mt-2 border-t border-slate-100">
+                  <span className="text-xs font-semibold text-slate-400 group-hover:text-blue-600 transition-colors flex items-center gap-1">
+                    Sign in to access
+                    <ArrowRight className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-1 transition-transform" />
+                  </span>
                 </div>
               </div>
             );
