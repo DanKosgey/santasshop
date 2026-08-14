@@ -703,7 +703,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onPlanSelection
               transition={{ delay: 0.7, duration: 0.8 }}
               className="text-lg sm:text-xl md:text-2xl text-slate-600 mb-8 sm:mb-12 max-w-2xl sm:max-w-3xl md:max-w-4xl mx-auto leading-relaxed"
             >
-              <span className="text-brand-primary font-bold">AI-powered signals, institutional risk management,</span> and mentorship that transforms retail traders into consistent performers.
+              <span className="text-brand-primary font-bold">Precision signals, institutional risk management,</span> and mentorship that transforms retail traders into consistent performers.
             </motion.p>
 
             {/* Enhanced Market Visualization Container */}
@@ -726,7 +726,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onPlanSelection
                 </motion.div>
               </AnimatePresence>
               <div className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 text-xs sm:text-sm text-slate-400 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full border border-slate-200/60">
-                Live Market Vibe • Powered by Advanced AI
+                Live Market Vibe • Real-Time Data
               </div>
             </motion.div>
 
@@ -818,7 +818,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onPlanSelection
               <InteractiveFeatureCard
                 icon={Target}
                 title="Precision Signals"
-                description="AI-powered trade setups with exact entry, stop loss, and take profit levels based on institutional order flow."
+                description="Precision trade setups with exact entry, stop loss, and take profit levels based on institutional order flow."
                 delay={0.1}
               />
               <InteractiveFeatureCard
@@ -982,60 +982,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelectTier, onPlanSelection
           </div>
         </motion.section>
 
-        {/* AI Feature Section */}
-        <motion.section
-          variants={sectionVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="py-16 sm:py-24 relative overflow-hidden bg-[#F5F7FA]"
-        >
-          <div className="container mx-auto px-4 sm:px-6 relative z-10">
-            <div className="flex flex-col lg:flex-row items-center gap-8 sm:gap-12 lg:gap-16">
-              <motion.div variants={childVariants} className="lg:w-1/2">
-                <div className="inline-block bg-blue-50 text-blue-700 border border-blue-200 font-bold px-3.5 py-1 rounded-full mb-4 sm:mb-6 text-xs uppercase tracking-wider">EXCLUSIVE TECHNOLOGY</div>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 mb-4 sm:mb-6 leading-tight">The Program With An <span className="text-blue-600">AI That Says "NO"</span></h2>
-                <p className="text-base sm:text-lg md:text-xl text-slate-600 mb-6 sm:mb-8">
-                  Paste your setup → AI runs a proven checklist.
-                  <br /><br />
-                  <span className="text-emerald-600 font-bold">✅ Green Light:</span> High probability trade.<br />
-                  <span className="text-red-500 font-bold">❌ Red Light:</span> Stop and reassess.
-                </p>
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  onClick={() => onSelectTier('signup')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-lg sm:rounded-xl font-bold text-base sm:text-lg transition flex items-center gap-2 shadow-blue-glow"
-                >
-                  Try AI Trade Guard <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
-                </motion.button>
-              </motion.div>
-
-              <motion.div
-                variants={childVariants}
-                className="lg:w-1/2"
-                initial={{ rotate: 1 }}
-                whileHover={{ rotate: 0 }}
-                transition={{ duration: 0.4 }}
-              >
-                <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-card">
-                  <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6 border-b border-slate-100 pb-3 sm:pb-4">
-                    <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 bg-emerald-500 rounded-full animate-pulse-dot" />
-                    <div className="font-bold text-sm sm:text-base text-slate-900">AI Analysis: EURUSD Buy Setup</div>
-                  </div>
-                  <div className="space-y-3 sm:space-y-4">
-                    <motion.div initial={{ x: -20, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex items-start gap-2 sm:gap-3 text-emerald-700 font-semibold"><CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0" /> <span className="text-sm sm:text-base">Liquidity grabbed from PD Low</span></motion.div>
-                    <motion.div initial={{ x: -20, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="flex items-start gap-2 sm:gap-3 text-emerald-700 font-semibold"><CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0" /> <span className="text-sm sm:text-base">Unmitigated FVG Identified</span></motion.div>
-                    <motion.div initial={{ x: -20, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} transition={{ delay: 0.3 }} className="flex items-start gap-2 sm:gap-3 text-emerald-700 font-semibold"><CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0" /> <span className="text-sm sm:text-base">Market Structure Shift (MSS) confirmed</span></motion.div>
-                    <motion.div initial={{ scale: 0.95, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} transition={{ delay: 0.4 }} className="bg-emerald-50 border border-emerald-200 p-3 sm:p-4 rounded-lg mt-3 sm:mt-4">
-                      <p className="font-bold text-emerald-700 mb-1 text-sm sm:text-base">✅ TRADE APPROVED</p>
-                      <p className="text-xs sm:text-sm text-slate-600 font-medium">All confluence factors met. Risk 1% and set TP at 1.0950.</p>
-                    </motion.div>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </motion.section>
 
         {/* Enhanced CTA Section */}
         <motion.section

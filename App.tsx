@@ -3,7 +3,7 @@ import Layout from './components/Layout';
 import LoginPage from './components/LoginPage';
 import Dashboard from './components/Dashboard';
 import { AdminPortal, AdminPortalProvider } from './components/admin';
-import AITradeAssistant from './components/AITradeAssistant';
+
 import { supabase } from './supabase/client';
 import { User, StudentProfile, TradeRule, TradeEntry, CourseModule, MentorshipApplication } from './types';
 import LandingPage from './components/LandingPage';
@@ -805,77 +805,7 @@ const App: React.FC = () => {
               onContinueCourse={() => setPortalView('courses')}
             />
           );
-        case 'ai':
-          // Access Control: Only Professional and Elite tiers can access AI
-          // Pending users and free users cannot access
-          const hasAIAccess = (user.subscriptionTier === 'professional' || user.subscriptionTier === 'elite') &&
-            !user.subscriptionTier.includes('-pending');
 
-          if (!hasAIAccess) {
-            // For users without access, show the professional feature message
-            return (
-              <div className="flex flex-col items-center justify-center h-[60vh] text-center max-w-lg mx-auto animate-in fade-in zoom-in duration-300">
-                <div className="bg-gray-800 p-6 rounded-full mb-6 relative">
-                  <Lock className="h-12 w-12 mb-4 text-gray-500" />
-                  <div className="absolute -top-1 -right-1 bg-trade-neon/20 text-trade-neon text-xs font-bold px-2 py-1 rounded-full border border-trade-neon/50">PRO</div>
-                </div>
-
-                <h2 className="text-3xl font-bold text-white mb-4">Professional Feature</h2>
-
-                {user.subscriptionTier.includes('-pending') ? (
-                  <div className="bg-yellow-500/10 border border-yellow-500/20 p-6 rounded-xl text-yellow-200 max-w-md">
-                    <p className="font-bold mb-2 text-lg">Application Under Review</p>
-                    <p className="text-sm opacity-80">
-                      Your application for the {user.subscriptionTier.replace('-pending', '').charAt(0).toUpperCase() + user.subscriptionTier.replace('-pending', '').slice(1)} tier is currently being processed by our team.
-                      Access to the AI Assistant will be unlocked upon approval.
-                    </p>
-                  </div>
-                ) : user.subscriptionTier === 'free' ? (
-                  <div className="bg-gray-800/50 border border-gray-700 p-6 rounded-xl text-gray-200 max-w-md">
-                    <p className="font-bold mb-2 text-lg">Free Tier Limitation</p>
-                    <p className="text-sm opacity-80">
-                      The AI Trade Assistant is exclusively available to <span className="text-trade-neon font-bold">Professional</span> and <span className="text-purple-500 font-bold">Elite</span> members.
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-gray-400 mb-8 text-lg leading-relaxed">
-                      The AI Trade Assistant is exclusively available to <span className="text-trade-neon font-bold">Professional</span> and <span className="text-purple-500 font-bold">Elite</span> members.
-                    </p>
-
-                    <div className="space-y-3 w-full max-w-sm text-left">
-                      <div className="p-4 bg-gray-900 rounded-xl border border-gray-800 flex gap-4 items-center">
-                        <div className="bg-trade-neon/10 p-2 rounded-lg text-trade-neon"><Bot className="h-5 w-5" /></div>
-                        <div>
-                          <div className="text-white font-bold text-sm">AI Trade Guard</div>
-                          <p className="text-xs text-gray-500">Real-time setup validation</p>
-                        </div>
-                      </div>
-                      <div className="p-4 bg-gray-900 rounded-xl border border-gray-800 flex gap-4 items-center">
-                        <div className="bg-purple-500/10 p-2 rounded-lg text-purple-400"><BarChart className="h-5 w-5" /></div>
-                        <div>
-                          <div className="text-white font-bold text-sm">Advanced Analytics</div>
-                          <p className="text-xs text-gray-500">Performance breakdown by pair</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <button className="mt-8 w-full max-w-sm py-4 bg-trade-neon text-black font-black text-lg rounded-xl hover:bg-green-400 transition shadow-lg shadow-trade-neon/20">
-                      Upgrade to Professional
-                    </button>
-                  </>
-                )}
-              </div>
-            );
-          }
-
-          // For users with access, render the AI Trade Assistant
-          return (
-            <AITradeAssistant
-              userId={user.id}
-              onLogTrade={handleLogTradeFromAI}
-            />
-          );
         case 'journal':
           // Access Control: Only foundation, professional, and elite tiers can access journals
           // Pending users cannot access
