@@ -9,8 +9,9 @@ CREATE TABLE IF NOT EXISTS pool_trading_packages (
     duration_unit VARCHAR(10) NOT NULL,     -- 'hours' or 'days'
     min_amount DECIMAL(18, 2) NOT NULL,
     max_amount DECIMAL(18, 2),              -- NULL means no max
-    roi_percentage DECIMAL(5, 2) NOT NULL,  -- e.g., 15.00 for 15%
+    roi_percentage DECIMAL(10, 2) NOT NULL, -- e.g., 840.00 for 840%
     risk_level VARCHAR(10) NOT NULL DEFAULT 'medium',  -- 'low', 'medium', 'high'
+    recommended BOOLEAN NOT NULL DEFAULT FALSE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     sort_order INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),

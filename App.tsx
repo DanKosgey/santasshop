@@ -725,7 +725,7 @@ const App: React.FC = () => {
               />
             );
           case 'admin-pool-trading':
-            return <AdminPoolTrading />;
+            return <AdminPoolTrading currentUser={user} />;
           case 'rules':
             return (
               <div className="h-full">
@@ -797,7 +797,7 @@ const App: React.FC = () => {
             />
           );
         case 'pool-trading':
-          return <PoolTradingDashboard />;
+          return <PoolTradingDashboard currentUser={user} />;
         case 'dashboard':
           // Check if user is under review
           if (user.subscriptionTier.includes('-pending')) {

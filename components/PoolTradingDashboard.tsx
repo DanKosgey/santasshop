@@ -1,45 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   TrendingUp, Lock, Unlock, CheckCircle2, AlertTriangle,
   Send, MessageCircle, X, ChevronRight, Copy, Clock,
-  DollarSign, Percent, Shield, Zap, Star
+  DollarSign, Percent, Shield, Zap, Star, RefreshCw,
+  Wallet, ArrowUpRight, Check, Info, Sparkles
 } from 'lucide-react';
 import { ADMIN_WHATSAPP, ADMIN_TELEGRAM_URL } from '../lib/constants';
-
-/* ─── Types ─────────────────────────────────────────────────────────────── */
-export interface PoolPackage {
-  id: string;
-  name: string;
-  description: string;
-  duration_value: number;
-  duration_unit: 'hours' | 'days';
-  min_amount: number;
-  max_amount?: number;
-  roi_percentage: number;
-  risk_level: 'low' | 'medium' | 'high';
-  recommended?: boolean;
-}
-
-export interface Investment {
-  id: string;
-  package_name: string;
-  invested_amount: number;
-  expected_return: number;
-  total_payout: number;
-  start_date: string;
-  maturity_date: string;
-  status: 'active' | 'matured' | 'withdrawal_pending' | 'withdrawn' | 'rejected' | 'pending';
-  rejection_reason?: string;
-}
-
-export interface ApplicationHistoryItem {
-  id: string;
-  date: string;
-  package_name: string;
-  amount: number;
-  status: 'pending' | 'approved' | 'rejected' | 'withdrawn';
-  rejection_reason?: string;
-}
+import { supabase } from '../supabase/client';
+import {
+  poolTradingService,
+  PoolPackage,
+  PoolInvestment,
+  PoolApplication,
+  WithdrawalRequest,
+  DEFAULT_PACKAGES
+} from '../services/poolTradingService';
+import { User } from '../types';
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 const fmt = (n: number) =>
@@ -52,7 +28,7 @@ function formatCountdown(ms: number) {
   const h = Math.floor((s % 86400) / 3600);
   const m = Math.floor((s % 3600) / 60);
   const sec = s % 60;
-  if (d > 0) return `${d}d ${h}h ${m}m`;
+  if (d > 0) return `${d}d ${h}h ${m}m ${sec}s`;
   return `${h}h ${m}m ${sec}s`;
 }
 
@@ -71,7 +47,7 @@ const riskCfg = {
   high: { label: 'High Risk', color: '#F59E0B', textColor: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', accent: '#F59E0B' },
 };
 
-/* ─── Global CSS ────────────────────────────────────────────────────────────────────── */
+/* ─── Global CSS ─────────────────────────────────────────────────────────── */
 const globalCSS = `
   .shadow-card { box-shadow: 0 4px 6px -1px rgba(15,23,42,0.06), 0 2px 4px -2px rgba(15,23,42,0.04); }
   .shadow-card-hover { transition: all 0.2s ease; }
@@ -85,7 +61,6 @@ const globalCSS = `
   .scroll-snap-x { scroll-snap-type: x mandatory; overflow-x: auto; display: flex; gap: 20px; padding: 4px 16px 12px; -webkit-overflow-scrolling: touch; }
   .scroll-snap-x::-webkit-scrollbar { display: none; }
   .snap-card { scroll-snap-align: start; flex-shrink: 0; }
-  /* Swipe hint animations */
   @keyframes swipe-nudge {
     0%   { transform: translateX(0); opacity: 1; }
     30%  { transform: translateX(18px); opacity: 1; }
@@ -111,7 +86,7 @@ function Modal({ open, onClose, title, children, maxW = 'max-w-md' }: {
 }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/50 backdrop-blur-sm">
       <div className={`bg-white w-full ${maxW} rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto`}
         style={{ animation: 'modalIn 0.18s ease' }}>
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100 sticky top-0 bg-white z-10">
@@ -129,95 +104,76 @@ function Modal({ open, onClose, title, children, maxW = 'max-w-md' }: {
 /* ═══════════════════════════════════════════════════════════════════════════
    PACKAGE CARD
 ═══════════════════════════════════════════════════════════════════════════ */
-function PackageCard({ pkg, onSelect }: { key?: string; pkg: PoolPackage; onSelect: (p: PoolPackage) => void }) {
-  const r = riskCfg[pkg.risk_level];
-  // Fixed profit = invest × roi_percentage / 100
+function PackageCard({ pkg, onSelect }: { pkg: PoolPackage; onSelect: (p: PoolPackage) => void }) {
+  const r = riskCfg[pkg.risk_level] || riskCfg.medium;
   const fixedProfit = (pkg.min_amount * pkg.roi_percentage) / 100;
   const fixedPayout = pkg.min_amount + fixedProfit;
 
   return (
-    <div className={`relative bg-white flex flex-col rounded-xl overflow-hidden shadow-card shadow-card-hover
-      ${pkg.recommended ? 'border-2 border-blue-500' : 'border border-slate-200'}`}>
-
-      {/* Accent bar */}
-      <div className="h-1 w-full flex-shrink-0" style={{ background: r.accent }} />
-
-      {/* Most Popular badge */}
+    <div className={`relative bg-white flex flex-col rounded-2xl overflow-hidden shadow-card shadow-card-hover border transition-all ${
+      pkg.recommended ? 'border-2 border-blue-500 ring-4 ring-blue-500/10' : 'border-slate-200'
+    }`}>
       {pkg.recommended && (
-        <div className="absolute top-3 right-3 bg-blue-500 text-white text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
-          <Star className="w-3 h-3" /> Most Popular
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[11px] font-extrabold uppercase tracking-wider py-1 px-3 text-center flex items-center justify-center gap-1.5 shadow-sm">
+          <Sparkles className="w-3 h-3 text-yellow-300" /> Recommended Institutional Plan
         </div>
       )}
 
-      <div className="p-5 flex flex-col flex-1">
-        {/* Header */}
-        <div className="mb-4">
-          <div className="flex items-center gap-2 flex-wrap pr-20">
-            <h3 className="text-lg font-bold text-slate-900">{pkg.name}</h3>
-          </div>
-          <div className="mt-1.5 flex items-center gap-2">
-            <span className="text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-full">
-              {pkg.duration_value} {pkg.duration_unit}
-            </span>
-            <span className={`text-xs font-semibold ${r.bg} ${r.textColor} border ${r.border} px-2 py-0.5 rounded-full`}>
-              {r.label}
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 mt-2 leading-relaxed">{pkg.description}</p>
-        </div>
-
-        {/* Details 2x2 grid */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="bg-slate-50 rounded-lg p-3">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Invest Capital</p>
-            <p className="text-base font-bold text-slate-800 tabular-nums mt-0.5">£{fmt(pkg.min_amount)}</p>
-          </div>
-          <div className="bg-emerald-50 rounded-lg p-3">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">You Receive</p>
-            <p className="text-base font-bold text-emerald-600 tabular-nums mt-0.5">£{fmt(fixedProfit)}</p>
-          </div>
-          <div className="bg-blue-50 rounded-lg p-3">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Total Payout</p>
-            <p className="text-base font-bold text-blue-700 tabular-nums mt-0.5">£{fmt(fixedPayout)}</p>
-          </div>
-          <div className="bg-slate-50 rounded-lg p-3">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Duration</p>
-            <p className="text-base font-bold text-slate-800 mt-0.5">{pkg.duration_value} {pkg.duration_unit}</p>
-          </div>
-        </div>
-
-        {/* Fixed Return Summary */}
-        <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4 mb-4">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Returns Summary</p>
-          <div className="flex items-center justify-between">
+      <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between">
+        <div>
+          {/* Top header & badges */}
+          <div className="flex items-start justify-between gap-2 mb-3">
             <div>
-              <p className="text-xs text-slate-500">Invest</p>
-              <p className="text-lg font-extrabold text-slate-800 tabular-nums">£{fmt(pkg.min_amount)}</p>
+              <span className={`inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${r.bg} ${r.textColor} ${r.border} mb-1.5`}>
+                {r.label}
+              </span>
+              <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 leading-snug">{pkg.name}</h3>
             </div>
-            <div className="text-2xl text-emerald-400 font-black">→</div>
             <div className="text-right">
-              <p className="text-xs text-slate-500">Profit</p>
-              <p className="text-lg font-extrabold text-emerald-600 tabular-nums">£{fmt(fixedProfit)}</p>
+              <span className="text-xs font-bold text-slate-400 block uppercase">Duration</span>
+              <span className="text-sm font-extrabold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md">
+                {pkg.duration_value} {pkg.duration_unit}
+              </span>
             </div>
           </div>
-          <div className="mt-2 pt-2 border-t border-emerald-100 flex items-center justify-between">
-            <span className="text-xs text-slate-500">Total Payout</span>
-            <span className="text-base font-extrabold text-blue-600 tabular-nums">£{fmt(fixedPayout)}</span>
+
+          <p className="text-xs text-slate-500 mb-5 leading-relaxed min-h-[36px]">
+            {pkg.description || `Institutional pool plan with ${pkg.duration_value} ${pkg.duration_unit} maturity cycle.`}
+          </p>
+
+          {/* Investment & Profit Details */}
+          <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 mb-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500">Deposit Amount</span>
+              <span className="text-base font-extrabold text-slate-900 tabular-nums">£{fmt(pkg.min_amount)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500">ROI Percentage</span>
+              <span className="text-sm font-extrabold text-emerald-600 tabular-nums">+{pkg.roi_percentage}%</span>
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
+              <span className="text-xs font-semibold text-slate-500">Expected Profit</span>
+              <span className="text-base font-extrabold text-emerald-600 tabular-nums">+£{fmt(fixedProfit)}</span>
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+              <span className="text-xs font-bold text-slate-700">Total Payout at Maturity</span>
+              <span className="text-lg font-black text-blue-600 tabular-nums">£{fmt(fixedPayout)}</span>
+            </div>
           </div>
         </div>
 
-        {/* CTA */}
-        <div className="mt-auto pt-3 border-t border-slate-100">
-          <button
-            onClick={() => onSelect(pkg)}
-            className={`w-full py-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2
-              ${pkg.recommended
-                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
-                : 'bg-slate-900 hover:bg-slate-800 text-white'}`}
-          >
-            Select & Apply <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+        {/* CTA Button */}
+        <button
+          onClick={() => onSelect(pkg)}
+          className={`w-full py-3.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 active:scale-[0.99] ${
+            pkg.recommended
+              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/25'
+              : 'bg-slate-900 hover:bg-slate-800 text-white'
+          }`}
+        >
+          <span>Select Plan & Apply</span>
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );
@@ -227,7 +183,7 @@ function PackageCard({ pkg, onSelect }: { key?: string; pkg: PoolPackage; onSele
    INVESTMENT VAULT CARD
 ═══════════════════════════════════════════════════════════════════════════ */
 function InvestmentCard({ inv, now, onWithdraw }: {
-  key?: string; inv: Investment; now: number; onWithdraw: (i: Investment) => void;
+  inv: PoolInvestment; now: number; onWithdraw: (i: PoolInvestment) => void;
 }) {
   const maturityMs = new Date(inv.maturity_date).getTime();
   const remaining = maturityMs - now;
@@ -236,85 +192,99 @@ function InvestmentCard({ inv, now, onWithdraw }: {
   const isActive = inv.status === 'active' || inv.status === 'matured';
 
   const statusCfg: Record<string, { label: string; class: string; dot?: boolean }> = {
-    active: { label: 'Active — Growing', class: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: true },
-    matured: { label: 'Matured — Ready', class: 'bg-blue-50 text-blue-700 border-blue-200' },
-    withdrawal_pending: { label: 'Withdrawal Pending', class: 'bg-amber-50 text-amber-700 border-amber-200' },
-    withdrawn: { label: 'Withdrawn', class: 'bg-slate-100 text-slate-500 border-slate-200' },
-    rejected: { label: 'Rejected', class: 'bg-red-50 text-red-700 border-red-200' },
-    pending: { label: 'Pending Review', class: 'bg-amber-50 text-amber-700 border-amber-200' },
+    active: { label: 'Active — Compounding', class: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: true },
+    matured: { label: 'Matured — Ready to Withdraw', class: 'bg-blue-50 text-blue-700 border-blue-200' },
+    withdrawal_pending: { label: 'Withdrawal Processing', class: 'bg-amber-50 text-amber-700 border-amber-200' },
+    withdrawn: { label: 'Withdrawn — Paid Out', class: 'bg-slate-100 text-slate-600 border-slate-200' },
+    cancelled: { label: 'Cancelled', class: 'bg-red-50 text-red-700 border-red-200' },
   };
-  const sc = statusCfg[inv.status] || statusCfg.pending;
+  const sc = statusCfg[inv.status] || { label: inv.status, class: 'bg-slate-100 text-slate-700 border-slate-200' };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
-      {/* Top Row */}
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-card overflow-hidden transition-all hover:border-slate-300">
+      {/* Top Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100">
-        <h3 className="text-base font-bold text-slate-900">{inv.package_name}</h3>
-        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold border px-2.5 py-0.5 rounded-full ${sc.class}`}>
-          {sc.dot && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+        <div>
+          <h3 className="text-base font-extrabold text-slate-900">{inv.package_name}</h3>
+          <p className="text-[11px] text-slate-400">Started: {new Date(inv.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+        </div>
+        <span className={`inline-flex items-center gap-1.5 text-xs font-bold border px-3 py-1 rounded-full ${sc.class}`}>
+          {sc.dot && <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />}
           {sc.label}
         </span>
       </div>
 
       <div className="px-5 py-4">
-        {/* Financials */}
-        <div className="flex items-end justify-between mb-4">
-          <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Invested Amount</p>
-            <p className="text-3xl font-bold text-slate-900 tabular-nums">${fmt(inv.invested_amount)}</p>
+        {/* Financial Metrics */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Invested Principal</p>
+            <p className="text-xl sm:text-2xl font-black text-slate-900 tabular-nums">£{fmt(inv.invested_amount)}</p>
           </div>
-          <div className="text-right">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Expected Return</p>
-            <p className="text-xl font-bold text-emerald-600 tabular-nums">+${fmt(inv.expected_return)}</p>
+          <div className="bg-emerald-50/70 p-3 rounded-xl border border-emerald-100">
+            <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wide">Expected Profit</p>
+            <p className="text-xl sm:text-2xl font-black text-emerald-600 tabular-nums">+£{fmt(inv.expected_return)}</p>
           </div>
         </div>
 
-        {/* Maturity */}
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm text-slate-600">
-            Matures: <span className="font-semibold">{new Date(inv.maturity_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+        {/* Maturity info and countdown */}
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs text-slate-600 font-medium">
+            Matures: <span className="font-bold text-slate-800">{new Date(inv.maturity_date).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
           </span>
-          {isActive && remaining > 0 && (
-            <span className="text-sm font-bold text-blue-600 tabular-nums">{formatCountdown(remaining)}</span>
+          {isActive && remaining > 0 ? (
+            <span className="text-xs font-extrabold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md tabular-nums">
+              ⏱ {formatCountdown(remaining)}
+            </span>
+          ) : (
+            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+              ✓ Cycle Completed
+            </span>
           )}
         </div>
 
-        {/* Progress Bar */}
-        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-4">
+        {/* Dynamic Progress Bar */}
+        <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden mb-4">
           <div
-            className="h-full rounded-full transition-all duration-1000"
-            style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #3B82F6, #60A5FA)' }}
+            className="h-full rounded-full transition-all duration-1000 bg-gradient-to-r from-blue-500 to-indigo-600"
+            style={{ width: `${pct}%` }}
           />
         </div>
 
-        {/* Withdrawal Button */}
+        {/* Total Payout Summary */}
+        <div className="flex items-center justify-between p-3 rounded-xl bg-blue-50/50 border border-blue-100 mb-4">
+          <span className="text-xs font-bold text-slate-700">Total Guaranteed Payout</span>
+          <span className="text-lg font-black text-blue-700 tabular-nums">£{fmt(inv.total_payout)}</span>
+        </div>
+
+        {/* Action Button */}
         {isActive && (
           isUnlocked ? (
             <button
               onClick={() => onWithdraw(inv)}
-              className="btn-unlock w-full py-3 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 transition-all"
+              className="btn-unlock w-full py-3.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] transition-all shadow-lg shadow-emerald-600/20"
             >
               <Unlock className="w-4 h-4" />
-              Withdraw ${fmt(inv.total_payout)}
+              <span>Withdraw £{fmt(inv.total_payout)} Now</span>
             </button>
           ) : (
             <button disabled
-              className="w-full py-3 rounded-lg text-sm font-semibold text-slate-400 bg-slate-100 border border-slate-200 flex items-center justify-center gap-2 cursor-not-allowed">
+              className="w-full py-3 rounded-xl text-xs sm:text-sm font-semibold text-slate-400 bg-slate-100 border border-slate-200 flex items-center justify-center gap-2 cursor-not-allowed">
               <Lock className="w-4 h-4" />
-              Locked until {new Date(inv.maturity_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              <span>Locked until maturity date</span>
             </button>
           )
         )}
 
-        {inv.status === 'withdrawn' && (
-          <div className="w-full py-3 rounded-lg text-sm font-semibold text-slate-400 bg-slate-50 border border-slate-200 flex items-center justify-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-slate-400" /> Withdrawal Complete
+        {inv.status === 'withdrawal_pending' && (
+          <div className="w-full py-3 rounded-xl text-xs sm:text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 flex items-center justify-center gap-2">
+            <Clock className="w-4 h-4 text-amber-500 animate-spin" /> Payout Request Under Review by Admin
           </div>
         )}
 
-        {inv.status === 'rejected' && (
-          <div className="w-full py-3 rounded-lg text-sm font-semibold text-red-500 bg-red-50 border border-red-200 text-center">
-            Rejected: {inv.rejection_reason || 'Contact support for details.'}
+        {inv.status === 'withdrawn' && (
+          <div className="w-full py-3 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 bg-slate-50 border border-slate-200 flex items-center justify-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Funds Dispatched & Completed
           </div>
         )}
       </div>
@@ -326,31 +296,34 @@ function InvestmentCard({ inv, now, onWithdraw }: {
    WITHDRAWAL MODAL
 ═══════════════════════════════════════════════════════════════════════════ */
 const NETWORKS = [
-  { id: 'USDT_TRC20', label: 'USDT TRC20', prefix: 'T', len: 34, hint: 'Starts with T, 34 chars' },
-  { id: 'USDT_ERC20', label: 'USDT ERC20 (ETH)', prefix: '0x', len: 42, hint: 'Starts with 0x, 42 chars' },
-  { id: 'BTC', label: 'Bitcoin (BTC)', prefix: 'bc1', len: 0, hint: 'Starts with bc1 or 1 or 3' },
-  { id: 'ETH', label: 'Ethereum (ETH)', prefix: '0x', len: 42, hint: 'Starts with 0x, 42 chars' },
+  { id: 'USDT_TRC20', label: 'USDT (TRC20 - Tron)', placeholder: 'TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', hint: 'Tron address starting with T' },
+  { id: 'USDT_ERC20', label: 'USDT (ERC20 - Ethereum)', placeholder: '0x...', hint: 'Ethereum address starting with 0x' },
+  { id: 'BTC', label: 'Bitcoin (BTC)', placeholder: 'bc1... or 1... or 3...', hint: 'Native BTC address' },
+  { id: 'MPESA', label: 'M-Pesa (Kenya / East Africa)', placeholder: 'e.g. +254 712 345 678', hint: 'Registered M-Pesa phone number' },
+  { id: 'BANK', label: 'Bank Wire Transfer', placeholder: 'Bank Name, Account Number, Swift/IBAN', hint: 'Full bank routing details' },
 ];
 
-function WithdrawModal({ inv, open, onClose, onSubmit }: {
-  inv: Investment | null; open: boolean; onClose: () => void; onSubmit: () => void;
+function WithdrawModal({ inv, open, onClose, onSubmit, isSubmitting }: {
+  inv: PoolInvestment | null;
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (method: string, address: string) => Promise<void>;
+  isSubmitting: boolean;
 }) {
   const [network, setNetwork] = useState('USDT_TRC20');
   const [address, setAddress] = useState('');
   const [error, setError] = useState('');
 
   const validate = (net: string, addr: string) => {
-    if (!addr) return 'Wallet address is required.';
-    const n = NETWORKS.find(x => x.id === net);
-    if (!n) return '';
-    if (net === 'USDT_TRC20' || net === 'USDT_ERC20' || net === 'ETH') {
-      if (!addr.startsWith(n.prefix)) return `${n.label} addresses must start with "${n.prefix}".`;
-      if (n.len > 0 && addr.length !== n.len) return `${n.label} addresses must be exactly ${n.len} characters (currently ${addr.length}).`;
+    if (!addr.trim()) return 'Destination account / wallet address is required.';
+    if (net === 'USDT_TRC20' && (!addr.startsWith('T') || addr.length < 30)) {
+      return 'TRC20 addresses must start with "T" and be at least 34 characters.';
     }
-    if (net === 'BTC') {
-      if (!addr.startsWith('bc1') && !addr.startsWith('1') && !addr.startsWith('3')) {
-        return 'BTC addresses must start with bc1, 1, or 3.';
-      }
+    if ((net === 'USDT_ERC20') && (!addr.startsWith('0x') || addr.length !== 42)) {
+      return 'ERC20 addresses must start with "0x" and be 42 characters.';
+    }
+    if (net === 'MPESA' && addr.replace(/\D/g, '').length < 9) {
+      return 'Please enter a valid phone number for M-Pesa.';
     }
     return '';
   };
@@ -365,268 +338,288 @@ function WithdrawModal({ inv, open, onClose, onSubmit }: {
     setError(validate(net, address));
   };
 
-  const canSubmit = !error && address.length > 0;
+  const handleSubmit = async () => {
+    const err = validate(network, address);
+    if (err) {
+      setError(err);
+      return;
+    }
+    await onSubmit(network, address);
+    setAddress('');
+    setError('');
+  };
 
   if (!open || !inv) return null;
 
   return (
-    <Modal open={open} onClose={onClose} title="Withdraw Funds">
-      {/* Payout Amount */}
-      <div className="text-center py-4 mb-4 bg-emerald-50 rounded-xl border border-emerald-200">
-        <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Total Payout</p>
-        <p className="text-4xl font-extrabold text-emerald-600 tabular-nums mt-1">${fmt(inv.total_payout)}</p>
-        <p className="text-xs text-slate-500 mt-1">${fmt(inv.invested_amount)} principal + ${fmt(inv.expected_return)} profit</p>
-      </div>
+    <Modal open={open} onClose={onClose} title="Withdraw Payout Funds" maxW="max-w-lg">
+      <div className="space-y-4">
+        {/* Payout Amount Banner */}
+        <div className="text-center py-4 bg-emerald-50 rounded-2xl border border-emerald-200">
+          <p className="text-xs font-bold text-emerald-600 uppercase tracking-wide">Total Available Payout</p>
+          <p className="text-3xl sm:text-4xl font-black text-emerald-700 tabular-nums mt-1">£{fmt(inv.total_payout)}</p>
+          <p className="text-xs text-slate-500 mt-1">
+            £{fmt(inv.invested_amount)} principal + £{fmt(inv.expected_return)} profit
+          </p>
+        </div>
 
-      {/* Network Select */}
-      <div className="mb-4">
-        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Select Network</label>
-        <select value={network} onChange={e => handleNetworkChange(e.target.value)}
-          className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-800 bg-slate-50 focus:bg-white focus:border-blue-400 transition-all">
-          {NETWORKS.map(n => <option key={n.id} value={n.id}>{n.label}</option>)}
-        </select>
-        <p className="text-xs text-slate-400 mt-1">{NETWORKS.find(n => n.id === network)?.hint}</p>
-      </div>
+        {/* Network / Payout method selector */}
+        <div>
+          <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+            Select Payout Method
+          </label>
+          <select
+            value={network}
+            onChange={e => handleNetworkChange(e.target.value)}
+            className="w-full border border-slate-200 rounded-xl px-3.5 py-3 text-sm font-semibold text-slate-800 bg-slate-50 focus:bg-white focus:border-blue-500 outline-none transition-all"
+          >
+            {NETWORKS.map(n => (
+              <option key={n.id} value={n.id}>{n.label}</option>
+            ))}
+          </select>
+          <p className="text-[11px] text-slate-400 mt-1">{NETWORKS.find(n => n.id === network)?.hint}</p>
+        </div>
 
-      {/* Wallet Address */}
-      <div className="mb-4">
-        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Wallet Address</label>
-        <div className="relative">
-          <input
-            type="text"
-            value={address}
-            onChange={e => handleAddressChange(e.target.value)}
-            placeholder={network === 'USDT_TRC20' ? 'TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' : '0x...'}
-            className={`w-full border rounded-lg px-3 py-2.5 pr-10 text-sm font-mono text-slate-900 bg-slate-50 focus:bg-white transition-all
-              ${error ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-blue-400'}`}
-          />
-          <button onClick={() => navigator.clipboard.readText?.().then(t => handleAddressChange(t))}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-all" title="Paste">
-            <Copy className="w-4 h-4" />
+        {/* Address / Account Input */}
+        <div>
+          <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+            Receiving Wallet / Account Address
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              value={address}
+              onChange={e => handleAddressChange(e.target.value)}
+              placeholder={NETWORKS.find(n => n.id === network)?.placeholder}
+              className={`w-full border rounded-xl px-3.5 py-3 pr-10 text-sm font-mono text-slate-900 bg-slate-50 focus:bg-white outline-none transition-all ${
+                error ? 'border-red-400 bg-red-50/50' : 'border-slate-200 focus:border-blue-500'
+              }`}
+            />
+            <button
+              type="button"
+              onClick={() => navigator.clipboard.readText?.().then(t => handleAddressChange(t))}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-all p-1"
+              title="Paste from clipboard"
+            >
+              <Copy className="w-4 h-4" />
+            </button>
+          </div>
+          {error && <p className="text-xs text-red-600 mt-1 font-semibold">{error}</p>}
+        </div>
+
+        {/* Safety Warning */}
+        <div className="flex items-start gap-2.5 p-3.5 bg-amber-50 border border-amber-200 rounded-xl">
+          <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-900 font-medium">
+            Please double-check your recipient details. Once dispatched by institutional pool custodians, withdrawals cannot be reversed.
+          </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-3 text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isSubmitting || !address.trim()}
+            className="flex-1 py-3 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl disabled:bg-slate-300 disabled:cursor-not-allowed transition-all shadow-md flex items-center justify-center gap-2"
+          >
+            {isSubmitting ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" /> Submitting...
+              </>
+            ) : (
+              'Submit Withdrawal'
+            )}
           </button>
         </div>
-        {error && <p className="text-xs text-red-600 mt-1 font-medium">{error}</p>}
       </div>
-
-      {/* Danger Banner */}
-      <div className="flex items-start gap-2.5 p-3 bg-amber-50 border border-amber-200 rounded-lg mb-5">
-        <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-        <p className="text-xs text-amber-800 font-medium">
-          Incorrect wallet addresses result in <strong>permanent, irreversible loss of funds</strong>. Verify your address carefully before submitting.
-        </p>
-      </div>
-
-      <button
-        onClick={() => { onSubmit(); onClose(); setAddress(''); setError(''); }}
-        disabled={!canSubmit}
-        className="w-full py-3 rounded-lg text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed transition-all">
-        Submit Withdrawal
-      </button>
     </Modal>
   );
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   SUCCESS STATE
+   SUCCESS STATE COMPONENT
 ═══════════════════════════════════════════════════════════════════════════ */
 function SuccessState({ sub, onDismiss, whatsappUrl }: { sub: any; onDismiss: () => void; whatsappUrl: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-6 text-center" style={{ animation: 'fadeUp 0.3s ease' }}>
-      {/* Checkmark */}
-      <div className="w-20 h-20 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center mb-5"
+    <div className="flex flex-col items-center justify-center py-8 px-4 text-center max-w-lg mx-auto" style={{ animation: 'fadeUp 0.3s ease' }}>
+      <div className="w-20 h-20 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center mb-4"
         style={{ animation: 'scaleIn 0.4s cubic-bezier(0.34,1.56,0.64,1)' }}>
-        <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+        <CheckCircle2 className="w-10 h-10 text-emerald-600" />
       </div>
-      <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Application Submitted!</h2>
-      <p className="text-slate-500 text-sm max-w-sm">
-        Your account manager has been notified. Please contact them to finalize your slot.
+      <h2 className="text-2xl font-black text-slate-900 mb-1">Application Registered!</h2>
+      <p className="text-slate-500 text-xs sm:text-sm max-w-md">
+        Your slot in the institutional pool has been recorded in real-time. Complete payment confirmation with the desk below.
       </p>
 
-      {/* Receipt Card */}
-      <div className="w-full max-w-sm bg-slate-50 border border-slate-200 rounded-xl p-5 mt-6 text-left space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Package</span>
-          <span className="text-sm font-bold text-slate-800">{sub.package_name}</span>
+      {/* Receipt Details */}
+      <div className="w-full bg-white border border-slate-200 shadow-card rounded-2xl p-5 mt-5 text-left space-y-3">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+          <span className="text-xs font-bold text-slate-400 uppercase">Package</span>
+          <span className="text-sm font-bold text-slate-900">{sub.package_name}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Amount</span>
-          <span className="text-sm font-bold text-slate-800 tabular-nums">${fmt(sub.amount)}</span>
+          <span className="text-xs font-bold text-slate-400 uppercase">Deposit Amount</span>
+          <span className="text-base font-extrabold text-slate-900 tabular-nums">£{fmt(sub.amount)}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Expected Return</span>
-          <span className="text-sm font-bold text-emerald-600 tabular-nums">+${fmt(sub.expected_return)}</span>
+          <span className="text-xs font-bold text-slate-400 uppercase">Expected Return</span>
+          <span className="text-base font-extrabold text-emerald-600 tabular-nums">+£{fmt(sub.expected_return)}</span>
         </div>
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Status</span>
-          <span className="text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full">Pending Review</span>
+        {sub.transaction_reference && (
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+            <span className="text-xs font-bold text-slate-400 uppercase">Payment Ref</span>
+            <span className="text-xs font-mono font-bold text-blue-600">{sub.transaction_reference}</span>
+          </div>
+        )}
+        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+          <span className="text-xs font-bold text-slate-400 uppercase">Queue Status</span>
+          <span className="text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+            <Clock className="w-3 h-3" /> Live In Admin Queue
+          </span>
         </div>
       </div>
 
-      {/* Contact Buttons */}
-      <div className="flex flex-col sm:flex-row gap-3 mt-6 w-full max-w-sm">
-        <a href={whatsappUrl} target="_blank" rel="noopener noreferrer"
-          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-bold text-sm text-white bg-emerald-500 hover:bg-emerald-600 transition-all">
-          <MessageCircle className="w-4 h-4" /> Open WhatsApp
+      {/* Support Direct Contacts */}
+      <div className="flex flex-col sm:flex-row gap-3 mt-6 w-full">
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm text-white bg-emerald-600 hover:bg-emerald-700 transition-all shadow-md"
+        >
+          <MessageCircle className="w-4 h-4" /> Message Desk on WhatsApp
         </a>
-        <a href={ADMIN_TELEGRAM_URL} target="_blank" rel="noopener noreferrer"
-          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-bold text-sm text-white bg-blue-500 hover:bg-blue-600 transition-all">
-          <Send className="w-4 h-4" /> Open Telegram
+        <a
+          href={ADMIN_TELEGRAM_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-md"
+        >
+          <Send className="w-4 h-4" /> Open Telegram Support
         </a>
       </div>
-      <button onClick={onDismiss} className="mt-4 text-sm text-slate-400 hover:text-slate-600 transition-all underline">
-        Return to Packages
+
+      <button
+        onClick={onDismiss}
+        className="mt-5 text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all underline"
+      >
+        View My Investments & Status
       </button>
     </div>
   );
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   MAIN COMPONENT
+   MAIN STUDENT POOL TRADING DASHBOARD
 ═══════════════════════════════════════════════════════════════════════════ */
-const PACKAGES: PoolPackage[] = [
-  /* ── 24-Hour Plans ─────────────────────────────────────────────────────── */
-  {
-    id: 'pkg_24h_500', name: '24H · £500 Plan', description: 'Quick 24-hour institutional pool. Invest £500 and receive £4,200 profit within 24 hours.',
-    duration_value: 24, duration_unit: 'hours', min_amount: 500, max_amount: 500, roi_percentage: 840, risk_level: 'low'
-  },
-  {
-    id: 'pkg_24h_600', name: '24H · £600 Plan', description: 'Quick 24-hour institutional pool. Invest £600 and receive £5,000 profit within 24 hours.',
-    duration_value: 24, duration_unit: 'hours', min_amount: 600, max_amount: 600, roi_percentage: 833, risk_level: 'low'
-  },
-  {
-    id: 'pkg_24h_700', name: '24H · £700 Plan', description: 'Quick 24-hour institutional pool. Invest £700 and receive £6,100 profit within 24 hours.',
-    duration_value: 24, duration_unit: 'hours', min_amount: 700, max_amount: 700, roi_percentage: 871, risk_level: 'low'
-  },
-  {
-    id: 'pkg_24h_800', name: '24H · £800 Plan', description: 'Quick 24-hour institutional pool. Invest £800 and receive £7,000 profit within 24 hours.',
-    duration_value: 24, duration_unit: 'hours', min_amount: 800, max_amount: 800, roi_percentage: 875, risk_level: 'low', recommended: true
-  },
-  /* ── 2-Day Plans ───────────────────────────────────────────────────────── */
-  {
-    id: 'pkg_2d_900', name: '2-Day · £900 Plan', description: 'Two-day compounded pool. Invest £900 and receive £8,000 profit at maturity.',
-    duration_value: 2, duration_unit: 'days', min_amount: 900, max_amount: 900, roi_percentage: 889, risk_level: 'medium'
-  },
-  {
-    id: 'pkg_2d_1000', name: '2-Day · £1,000 Plan', description: 'Two-day compounded pool. Invest £1,000 and receive £9,000 profit at maturity.',
-    duration_value: 2, duration_unit: 'days', min_amount: 1000, max_amount: 1000, roi_percentage: 900, risk_level: 'medium'
-  },
-  {
-    id: 'pkg_2d_1500', name: '2-Day · £1,500 Plan', description: 'Two-day compounded pool. Invest £1,500 and receive £12,000 profit at maturity.',
-    duration_value: 2, duration_unit: 'days', min_amount: 1500, max_amount: 1500, roi_percentage: 800, risk_level: 'medium'
-  },
-  /* ── Weekly Plans ──────────────────────────────────────────────────────── */
-  {
-    id: 'pkg_7d_2000', name: 'Weekly · £2,000 Plan', description: 'Full-week institutional syndicate. Invest £2,000 and receive £16,000 profit at maturity.',
-    duration_value: 7, duration_unit: 'days', min_amount: 2000, max_amount: 2000, roi_percentage: 800, risk_level: 'high'
-  },
-  {
-    id: 'pkg_7d_3000', name: 'Weekly · £3,000 Plan', description: 'Full-week institutional syndicate. Invest £3,000 and receive £20,000 profit at maturity.',
-    duration_value: 7, duration_unit: 'days', min_amount: 3000, max_amount: 3000, roi_percentage: 667, risk_level: 'high'
-  },
-  {
-    id: 'pkg_7d_5000', name: 'Weekly · £5,000 Plan', description: 'Full-week institutional syndicate. Invest £5,000 and receive £30,000 profit at maturity.',
-    duration_value: 7, duration_unit: 'days', min_amount: 5000, max_amount: 5000, roi_percentage: 600, risk_level: 'high'
-  },
-  {
-    id: 'pkg_7d_10000', name: 'Weekly · £10,000 Plan', description: 'Elite-tier week syndicate. Invest £10,000 and receive £60,000 profit at maturity.',
-    duration_value: 7, duration_unit: 'days', min_amount: 10000, max_amount: 10000, roi_percentage: 600, risk_level: 'high'
-  },
-];
-
-
-const INVESTMENTS: Investment[] = [
-  {
-    id: 'inv_101', package_name: '7-Day Growth Plan', invested_amount: 500.00, expected_return: 120.00, total_payout: 620.00,
-    start_date: new Date(Date.now() - 3 * 86400000).toISOString(),
-    maturity_date: new Date(Date.now() + 4 * 86400000).toISOString(),
-    status: 'active'
-  },
-  {
-    id: 'inv_102', package_name: '24-Hour Starter', invested_amount: 250.00, expected_return: 21.25, total_payout: 271.25,
-    start_date: new Date(Date.now() - 26 * 3600000).toISOString(),
-    maturity_date: new Date(Date.now() - 2 * 3600000).toISOString(),
-    status: 'matured'
-  },
-  {
-    id: 'inv_103', package_name: '7-Day Growth Plan', invested_amount: 1000.00, expected_return: 240.00, total_payout: 1240.00,
-    start_date: new Date(Date.now() - 10 * 86400000).toISOString(),
-    maturity_date: new Date(Date.now() - 3 * 86400000).toISOString(),
-    status: 'withdrawn'
-  },
-];
-
-const HISTORY: ApplicationHistoryItem[] = [
-  { id: 'app_901', date: new Date(Date.now() - 10 * 86400000).toLocaleDateString(), package_name: '7-Day Growth Plan', amount: 1000.00, status: 'approved' },
-  { id: 'app_902', date: new Date(Date.now() - 5 * 86400000).toLocaleDateString(), package_name: '24-Hour Starter', amount: 250.00, status: 'approved' },
-  { id: 'app_903', date: new Date(Date.now() - 2 * 86400000).toLocaleDateString(), package_name: '30-Day VIP Syndicate', amount: 2500.00, status: 'pending' },
-  { id: 'app_904', date: new Date(Date.now() - 15 * 86400000).toLocaleDateString(), package_name: '24-Hour Starter', amount: 100.00, status: 'rejected', rejection_reason: 'Insufficient KYC documentation.' },
-];
-
-export function PoolTradingDashboard() {
+export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
   const [activeTab, setActiveTab] = useState<'packages' | 'my-investments' | 'history'>('packages');
-  const [investments, setInvestments] = useState<Investment[]>(INVESTMENTS);
-  const [history, setHistory] = useState<ApplicationHistoryItem[]>(HISTORY);
-  const [investFilter, setInvestFilter] = useState<'all' | 'active' | 'matured' | 'withdrawn'>('all');
-  const [submissionSuccess, setSubmissionSuccess] = useState<any | null>(null);
+  const [packages, setPackages] = useState<PoolPackage[]>(DEFAULT_PACKAGES);
+  const [investments, setInvestments] = useState<PoolInvestment[]>([]);
+  const [applications, setApplications] = useState<PoolApplication[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRealtimeActive, setIsRealtimeActive] = useState(true);
+
+  // Application Modal state
   const [selectedPackage, setSelectedPackage] = useState<PoolPackage | null>(null);
-  const [confirmAmt, setConfirmAmt] = useState(500);
-  const [withdrawInv, setWithdrawInv] = useState<Investment | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState('USDT_TRC20');
+  const [transactionRef, setTransactionRef] = useState('');
+  const [appNotes, setAppNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionSuccess, setSubmissionSuccess] = useState<any | null>(null);
+
+  // Withdrawal Modal state
+  const [withdrawInv, setWithdrawInv] = useState<PoolInvestment | null>(null);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+
+  // VIP Request modal state
+  const [showVipModal, setShowVipModal] = useState(false);
+  const [vipNotes, setVipNotes] = useState('');
+  const [isSubmittingVip, setIsSubmittingVip] = useState(false);
+
+  // Filter state
+  const [investFilter, setInvestFilter] = useState<'all' | 'active' | 'matured' | 'withdrawn'>('all');
+  type PkgFilter = 'all' | '24h' | '2day' | 'weekly';
+  const [pkgFilter, setPkgFilter] = useState<PkgFilter>('all');
+  const [showSwipeHint, setShowSwipeHint] = useState(true);
+  const [swipeHintHiding, setSwipeHintHiding] = useState(false);
+  const mobileScrollRef = useRef<HTMLDivElement>(null);
   const [nowTime, setNowTime] = useState(Date.now());
 
-  const userName = 'Francesco Battista';
-  const userEmail = 'francesco.battista@forexelites.com';
+  // Derive active user ID
+  const effectiveUserId = currentUser?.id || 'demo-student-id';
+  const userName = currentUser?.name || 'Trader';
+  const userEmail = currentUser?.email || 'student@forexelites.com';
+
   const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(
-    `Hi, I'm ${userName} (${userEmail}). I just submitted a pool trading application.`
+    `Hello Forex Royal Pool Trading Desk, I am ${userName} (${userEmail}). I would like to confirm my pool trading allocation.`
   )}`;
 
+  // Live timer interval
   useEffect(() => {
     const t = setInterval(() => setNowTime(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
 
-  const handleSelectPackage = (pkg: PoolPackage) => {
-    setSelectedPackage(pkg);
-    setConfirmAmt(pkg.min_amount);
-  };
+  // Fetch initial data & subscribe to real-time changes
+  const loadData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const [pkgs, invs, apps] = await Promise.all([
+        poolTradingService.getActivePackages(),
+        poolTradingService.getUserInvestments(effectiveUserId),
+        poolTradingService.getUserApplications(effectiveUserId),
+      ]);
+      setPackages(pkgs.length > 0 ? pkgs : DEFAULT_PACKAGES);
+      setInvestments(invs);
+      setApplications(apps);
+    } catch (err) {
+      console.error('Error loading pool trading data:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [effectiveUserId]);
 
-  const handleConfirmApplication = () => {
-    if (!selectedPackage) return;
-    const fixedAmt = selectedPackage.min_amount;
-    const expectedReturn = (fixedAmt * selectedPackage.roi_percentage) / 100;
-    setSubmissionSuccess({ package_name: selectedPackage.name, amount: fixedAmt, expected_return: expectedReturn });
-    setHistory(prev => [
-      { id: `app_${Date.now()}`, date: new Date().toLocaleDateString(), package_name: selectedPackage.name, amount: fixedAmt, status: 'pending' },
-      ...prev
-    ]);
-    setSelectedPackage(null);
-  };
+  useEffect(() => {
+    loadData();
 
-  const handleWithdrawSubmit = () => {
-    if (!withdrawInv) return;
-    setInvestments(prev => prev.map(i => i.id === withdrawInv.id ? { ...i, status: 'withdrawal_pending' } : i));
-    setWithdrawInv(null);
-  };
+    // 1. Subscribe to packages changes
+    const unsubPackages = poolTradingService.subscribePackages(async () => {
+      const pkgs = await poolTradingService.getActivePackages();
+      if (pkgs.length > 0) setPackages(pkgs);
+    });
 
-  const filteredInvestments = investments.filter(i => {
-    if (investFilter === 'all') return true;
-    if (investFilter === 'active') return i.status === 'active';
-    if (investFilter === 'matured') return i.status === 'matured' || i.status === 'withdrawal_pending';
-    if (investFilter === 'withdrawn') return i.status === 'withdrawn';
-    return true;
-  });
+    // 2. Subscribe to investments changes
+    const unsubInvestments = poolTradingService.subscribeInvestments(async () => {
+      const invs = await poolTradingService.getUserInvestments(effectiveUserId);
+      setInvestments(invs);
+    });
 
-  const TABS = [
-    { id: 'packages', label: 'Packages' },
-    { id: 'my-investments', label: 'My Investments' },
-    { id: 'history', label: 'History' },
-  ] as const;
+    // 3. Subscribe to applications changes
+    const unsubApplications = poolTradingService.subscribeApplications(async () => {
+      const apps = await poolTradingService.getUserApplications(effectiveUserId);
+      setApplications(apps);
+      // Also refresh investments as an approved application spawns an investment
+      const invs = await poolTradingService.getUserInvestments(effectiveUserId);
+      setInvestments(invs);
+    });
 
-  type PkgFilter = 'all' | '24h' | '2day' | 'weekly';
-  const [pkgFilter, setPkgFilter] = React.useState<PkgFilter>('all');
-  const [showSwipeHint, setShowSwipeHint] = React.useState(true);
-  const [swipeHintHiding, setSwipeHintHiding] = React.useState(false);
-  const mobileScrollRef = React.useRef<HTMLDivElement>(null);
+    return () => {
+      unsubPackages();
+      unsubInvestments();
+      unsubApplications();
+    };
+  }, [effectiveUserId, loadData]);
 
+  // Package Filter
   const PKG_FILTERS: { id: PkgFilter; label: string; emoji: string }[] = [
     { id: 'all',    label: 'All Plans',  emoji: '✨' },
     { id: '24h',   label: '24 Hours',   emoji: '⚡' },
@@ -634,22 +627,22 @@ export function PoolTradingDashboard() {
     { id: 'weekly',label: 'Weekly',     emoji: '🗓️' },
   ];
 
-  const filteredPackages = React.useMemo(() => {
-    if (pkgFilter === 'all') return PACKAGES;
-    if (pkgFilter === '24h')   return PACKAGES.filter(p => p.duration_unit === 'hours' && p.duration_value === 24);
-    if (pkgFilter === '2day')  return PACKAGES.filter(p => p.duration_unit === 'days'  && p.duration_value === 2);
-    if (pkgFilter === 'weekly')return PACKAGES.filter(p => p.duration_unit === 'days'  && p.duration_value === 7);
-    return PACKAGES;
-  }, [pkgFilter]);
+  const filteredPackages = useMemo(() => {
+    if (pkgFilter === 'all') return packages;
+    if (pkgFilter === '24h')   return packages.filter(p => p.duration_unit === 'hours' && p.duration_value === 24);
+    if (pkgFilter === '2day')  return packages.filter(p => p.duration_unit === 'days'  && p.duration_value === 2);
+    if (pkgFilter === 'weekly')return packages.filter(p => p.duration_unit === 'days'  && p.duration_value === 7);
+    return packages;
+  }, [packages, pkgFilter]);
 
-  const dismissSwipeHint = React.useCallback(() => {
+  // Dismiss mobile swipe hint
+  const dismissSwipeHint = useCallback(() => {
     if (!showSwipeHint || swipeHintHiding) return;
     setSwipeHintHiding(true);
     setTimeout(() => setShowSwipeHint(false), 400);
   }, [showSwipeHint, swipeHintHiding]);
 
-  // Auto-dismiss hint when user scrolls
-  React.useEffect(() => {
+  useEffect(() => {
     const el = mobileScrollRef.current;
     if (!el) return;
     const onScroll = () => dismissSwipeHint();
@@ -657,13 +650,101 @@ export function PoolTradingDashboard() {
     return () => el.removeEventListener('scroll', onScroll);
   }, [dismissSwipeHint]);
 
-  // Auto-dismiss after 4s
-  React.useEffect(() => {
+  useEffect(() => {
     if (!showSwipeHint) return;
     const t = setTimeout(() => dismissSwipeHint(), 4000);
     return () => clearTimeout(t);
   }, [showSwipeHint, dismissSwipeHint]);
 
+  // Application Submission Handler
+  const handleConfirmApplication = async () => {
+    if (!selectedPackage) return;
+    try {
+      setIsSubmitting(true);
+      const fixedAmt = selectedPackage.min_amount;
+      const expectedReturn = (fixedAmt * selectedPackage.roi_percentage) / 100;
+
+      const newApp = await poolTradingService.submitApplication({
+        userId: effectiveUserId,
+        packageId: selectedPackage.id,
+        amount: fixedAmt,
+        paymentMethod,
+        transactionReference: transactionRef,
+        notes: appNotes,
+      });
+
+      setSubmissionSuccess({
+        package_name: selectedPackage.name,
+        amount: fixedAmt,
+        expected_return: expectedReturn,
+        transaction_reference: transactionRef,
+      });
+
+      // Update local applications list optimistically
+      setApplications(prev => [newApp, ...prev]);
+      setSelectedPackage(null);
+      setTransactionRef('');
+      setAppNotes('');
+    } catch (err: any) {
+      console.error('Failed to submit application:', err);
+      alert('Application submission failed. Please check connection and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Withdrawal Submission Handler
+  const handleWithdrawSubmit = async (method: string, address: string) => {
+    if (!withdrawInv) return;
+    try {
+      setIsWithdrawing(true);
+      await poolTradingService.submitWithdrawalRequest({
+        userId: effectiveUserId,
+        investmentId: withdrawInv.id,
+        amount: withdrawInv.total_payout,
+        paymentMethod: method,
+        walletAddress: address,
+      });
+
+      // Update local state
+      setInvestments(prev =>
+        prev.map(i => (i.id === withdrawInv.id ? { ...i, status: 'withdrawal_pending' } : i))
+      );
+      setWithdrawInv(null);
+      alert('Withdrawal request submitted successfully! Custodians are processing the payout.');
+    } catch (err: any) {
+      console.error('Failed to submit withdrawal:', err);
+      alert('Withdrawal submission error: ' + (err.message || 'Please try again.'));
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
+
+  // VIP Request Submission
+  const handleVipSubmit = async () => {
+    try {
+      setIsSubmittingVip(true);
+      await poolTradingService.submitVipRequest(effectiveUserId, vipNotes);
+      setShowVipModal(false);
+      setVipNotes('');
+      alert('VIP Syndicate Request received. An institutional partner director will contact you shortly.');
+    } catch (err: any) {
+      alert('Failed to submit VIP request: ' + err.message);
+    } finally {
+      setIsSubmittingVip(false);
+    }
+  };
+
+  // Filtered investments
+  const filteredInvestments = useMemo(() => {
+    return investments.filter(i => {
+      if (investFilter === 'all') return true;
+      if (investFilter === 'active') return i.status === 'active';
+      if (investFilter === 'matured') return i.status === 'matured' || i.status === 'withdrawal_pending';
+      if (investFilter === 'withdrawn') return i.status === 'withdrawn';
+      return true;
+    });
+  }, [investments, investFilter]);
 
   const statusColor: Record<string, string> = {
     pending: 'bg-amber-50 text-amber-700 border-amber-200',
@@ -672,41 +753,77 @@ export function PoolTradingDashboard() {
     withdrawn: 'bg-slate-100 text-slate-500 border-slate-200',
   };
 
+  const TABS = [
+    { id: 'packages', label: 'Pool Packages' },
+    { id: 'my-investments', label: `My Investments (${investments.filter(i => i.status === 'active' || i.status === 'matured').length})` },
+    { id: 'history', label: `Application History (${applications.length})` },
+  ] as const;
+
   return (
     <div className="min-h-screen bg-[#F5F7FA] font-sans pb-24 sm:pb-16">
       <style>{globalCSS}</style>
 
-      <div className="w-full max-w-[1400px] mx-auto px-3.5 sm:px-8 py-3 sm:py-6">
+      <div className="w-full max-w-[1400px] mx-auto px-3.5 sm:px-8 py-4 sm:py-6">
         {/* ── PAGE HEADER ────────────────────────────────────────────── */}
-        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="mb-5 sm:mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
           <div>
-            <h1 className="text-xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 sm:w-7 sm:h-7 text-blue-600 flex-shrink-0" /> Pool Trading
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5 hidden sm:block">Grow your capital passively with expert-managed institutional liquidity pools.</p>
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                <TrendingUp className="w-6 h-6 text-blue-600 flex-shrink-0" /> Institutional Pool Trading
+              </h1>
+              <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live Realtime Sync
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-500">
+              Grow capital with automated high-frequency liquidity pools managed by institutional traders.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowVipModal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 transition-all"
+            >
+              <Sparkles className="w-3.5 h-3.5" /> VIP Syndicate Access
+            </button>
+            <button
+              onClick={loadData}
+              className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 transition-all"
+              title="Refresh Data"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-blue-600' : ''}`} />
+            </button>
           </div>
         </div>
 
         {/* ── TAB BAR ────────────────────────────────────────────────── */}
-        <div className="flex gap-1 bg-white border border-slate-200 rounded-xl p-1 mb-4 sm:mb-6 shadow-sm overflow-x-auto scrollbar-none flex-nowrap -mx-3.5 px-3.5 sm:mx-0 sm:px-1">
+        <div className="flex gap-1.5 bg-white border border-slate-200 rounded-xl p-1.5 mb-5 shadow-sm overflow-x-auto scrollbar-none flex-nowrap">
           {TABS.map(t => (
-            <button key={t.id} onClick={() => setActiveTab(t.id)}
-              className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0 ${activeTab === t.id ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}>
+            <button
+              key={t.id}
+              onClick={() => { setActiveTab(t.id); setSubmissionSuccess(null); }}
+              className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0 ${
+                activeTab === t.id
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
               {t.label}
             </button>
           ))}
         </div>
 
         {/* ──────────────────────────────────────────────────────────── */}
-        {/* TAB: PACKAGES */}
+        {/* TAB 1: PACKAGES */}
         {/* ──────────────────────────────────────────────────────────── */}
         {activeTab === 'packages' && (
           submissionSuccess ? (
             <SuccessState sub={submissionSuccess} onDismiss={() => setSubmissionSuccess(null)} whatsappUrl={whatsappUrl} />
           ) : (
             <>
-              {/* ── Duration Filter Tabs ─────────────────────────────────── */}
-              <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-none flex-nowrap -mx-3.5 px-3.5 sm:mx-0 sm:px-0 pb-1">
+              {/* Duration Filter Pills */}
+              <div className="flex gap-2 mb-5 overflow-x-auto scrollbar-none flex-nowrap pb-1">
                 {PKG_FILTERS.map(f => (
                   <button
                     key={f.id}
@@ -727,84 +844,84 @@ export function PoolTradingDashboard() {
                 ))}
               </div>
 
-              {/* Desktop grid */}
+              {/* Desktop Grid */}
               <div className="hidden sm:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-                {filteredPackages.map(p => <PackageCard key={p.id} pkg={p} onSelect={handleSelectPackage} />)}
+                {filteredPackages.map(p => (
+                  <PackageCard key={p.id} pkg={p} onSelect={setSelectedPackage} />
+                ))}
               </div>
 
-              {/* Mobile horizontal scroll + swipe hint */}
+              {/* Mobile Horizontal Scroll with Swipe Hint */}
               <div className="sm:hidden relative">
-                {/* Swipe hint overlay */}
                 {showSwipeHint && filteredPackages.length > 1 && (
                   <div
-                    className={`swipe-hint${swipeHintHiding ? ' hiding' : ''} pointer-events-none absolute bottom-6 right-4 z-20 flex items-center gap-1.5 bg-slate-900/75 backdrop-blur-sm text-white text-xs font-bold px-3 py-2 rounded-full shadow-lg`}
-                    style={{ animation: swipeHintHiding ? 'hint-fade-out 0.4s ease forwards' : 'hint-fade-in 0.5s ease forwards' }}
+                    className={`swipe-hint${swipeHintHiding ? ' hiding' : ''} pointer-events-none absolute bottom-6 right-4 z-20 flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-sm text-white text-xs font-bold px-3.5 py-2 rounded-full shadow-lg`}
                   >
                     <span className="swipe-hand text-base">👆</span>
-                    <span>Swipe to see more</span>
-                    <svg className="swipe-arrow w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
+                    <span>Swipe to explore plans</span>
+                    <ChevronRight className="w-4 h-4 text-white/70" />
                   </div>
                 )}
-                {/* Right-side gradient fade hinting more content */}
-                {showSwipeHint && filteredPackages.length > 1 && (
-                  <div className="pointer-events-none absolute top-0 right-0 h-full w-16 z-10"
-                    style={{ background: 'linear-gradient(to left, rgba(245,247,250,0.9) 0%, transparent 100%)' }} />
-                )}
+
                 <div ref={mobileScrollRef} className="scroll-snap-x -mx-3.5">
                   {filteredPackages.map(p => (
                     <div key={p.id} className="snap-card" style={{ width: '88vw' }}>
-                      <PackageCard pkg={p} onSelect={handleSelectPackage} />
+                      <PackageCard pkg={p} onSelect={setSelectedPackage} />
                     </div>
                   ))}
                 </div>
-                {/* Dot indicators */}
-                {filteredPackages.length > 1 && (
-                  <div className="flex justify-center gap-1.5 mt-3">
-                    {filteredPackages.map((p, i) => (
-                      <div key={p.id} className={`rounded-full transition-all ${
-                        i === 0 ? 'w-5 h-1.5 bg-blue-600' : 'w-1.5 h-1.5 bg-slate-300'
-                      }`} />
-                    ))}
-                  </div>
-                )}
               </div>
             </>
           )
         )}
 
         {/* ──────────────────────────────────────────────────────────── */}
-        {/* TAB: MY INVESTMENTS */}
+        {/* TAB 2: MY INVESTMENTS */}
         {/* ──────────────────────────────────────────────────────────── */}
         {activeTab === 'my-investments' && (
           <div className="w-full">
-            {/* Filter tabs */}
-            <div className="flex gap-1.5 sm:gap-2 mb-4 sm:mb-5 overflow-x-auto scrollbar-none flex-nowrap">
+            {/* Status Filter */}
+            <div className="flex gap-2 mb-5 overflow-x-auto scrollbar-none flex-nowrap">
               {(['all', 'active', 'matured', 'withdrawn'] as const).map(f => (
-                <button key={f} onClick={() => setInvestFilter(f)}
-                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-bold capitalize transition-all whitespace-nowrap flex-shrink-0 ${investFilter === f ? 'bg-blue-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                <button
+                  key={f}
+                  onClick={() => setInvestFilter(f)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold capitalize transition-all whitespace-nowrap flex-shrink-0 ${
+                    investFilter === f
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
                   {f}
                 </button>
               ))}
             </div>
 
             {filteredInvestments.length === 0 ? (
-              <div className="bg-white border border-slate-200 rounded-2xl p-8 sm:p-12 text-center w-full">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                  <DollarSign className="w-6 h-6 sm:w-8 sm:h-8 text-slate-300" />
+              <div className="bg-white border border-slate-200 rounded-2xl p-8 sm:p-12 text-center w-full shadow-card">
+                <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-3">
+                  <DollarSign className="w-7 h-7 text-blue-500" />
                 </div>
-                <p className="text-base sm:text-lg font-bold text-slate-700">No investments found</p>
-                <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-md mx-auto">Apply for a pool package to start earning passive compound returns.</p>
-                <button onClick={() => setActiveTab('packages')}
-                  className="mt-4 sm:mt-5 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-blue-700 transition-all shadow-sm">
+                <p className="text-base sm:text-lg font-bold text-slate-800">No active investments in this view</p>
+                <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-md mx-auto">
+                  Browse the pool trading packages and apply to start earning compounded returns.
+                </p>
+                <button
+                  onClick={() => setActiveTab('packages')}
+                  className="mt-5 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-blue-700 transition-all shadow-md"
+                >
                   Browse Pool Packages
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 w-full">
                 {filteredInvestments.map(inv => (
-                  <InvestmentCard key={inv.id} inv={inv} now={nowTime} onWithdraw={setWithdrawInv} />
+                  <InvestmentCard
+                    key={inv.id}
+                    inv={inv}
+                    now={nowTime}
+                    onWithdraw={setWithdrawInv}
+                  />
                 ))}
               </div>
             )}
@@ -812,109 +929,188 @@ export function PoolTradingDashboard() {
         )}
 
         {/* ──────────────────────────────────────────────────────────── */}
-        {/* TAB: HISTORY */}
+        {/* TAB 3: APPLICATION HISTORY */}
         {/* ──────────────────────────────────────────────────────────── */}
         {activeTab === 'history' && (
           <div className="w-full">
-            {history.length === 0 ? (
-              <div className="bg-white border border-slate-200 rounded-2xl p-8 sm:p-12 text-center w-full">
-                <Clock className="w-8 h-8 sm:w-10 sm:h-10 text-slate-300 mx-auto mb-3" />
-                <p className="font-bold text-slate-600 text-sm sm:text-base">No transaction history yet</p>
+            {applications.length === 0 ? (
+              <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center w-full shadow-card">
+                <Clock className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                <p className="font-bold text-slate-700 text-base">No application history yet</p>
+                <p className="text-xs text-slate-400 mt-1">Submitted applications and their approval status will show here.</p>
               </div>
             ) : (
-              <>
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-card overflow-hidden w-full">
                 {/* Desktop Table */}
-                <div className="hidden sm:block bg-white rounded-2xl border border-slate-200 shadow-card overflow-hidden w-full">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-slate-50 border-b border-slate-200">
-                          <th className="text-left px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Date</th>
-                          <th className="text-left px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Package Name</th>
-                          <th className="text-right px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Invested Amount</th>
-                          <th className="text-right px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                <div className="hidden sm:block overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200">
+                        <th className="text-left px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Date Applied</th>
+                        <th className="text-left px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Package</th>
+                        <th className="text-right px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Amount</th>
+                        <th className="text-left px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Payment Method</th>
+                        <th className="text-right px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {applications.map(app => (
+                        <tr key={app.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-4 text-slate-600 text-xs whitespace-nowrap">
+                            {new Date(app.created_at).toLocaleString()}
+                          </td>
+                          <td className="px-6 py-4 font-bold text-slate-900 text-xs whitespace-nowrap">
+                            {app.package_name}
+                          </td>
+                          <td className="px-6 py-4 text-right font-black text-slate-900 tabular-nums whitespace-nowrap">
+                            £{fmt(app.amount)}
+                          </td>
+                          <td className="px-6 py-4 text-slate-600 text-xs whitespace-nowrap">
+                            {app.payment_method || 'Crypto'} {app.transaction_reference && `(${app.transaction_reference})`}
+                          </td>
+                          <td className="px-6 py-4 text-right whitespace-nowrap">
+                            <span className={`inline-flex text-xs font-bold border px-3 py-1 rounded-full capitalize ${statusColor[app.status] || ''}`}>
+                              {app.status}
+                            </span>
+                            {app.rejection_reason && (
+                              <p className="text-[11px] text-red-500 mt-1">Reason: {app.rejection_reason}</p>
+                            )}
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {history.map(h => (
-                          <tr key={h.id} className="hover:bg-slate-50 transition-colors">
-                            <td className="px-6 py-4 text-slate-600 font-medium text-xs sm:text-sm whitespace-nowrap">{h.date}</td>
-                            <td className="px-6 py-4 font-bold text-slate-900 text-xs sm:text-sm whitespace-nowrap">
-                              {h.package_name}
-                            </td>
-                            <td className="px-6 py-4 text-right font-extrabold text-slate-900 text-xs sm:text-sm tabular-nums whitespace-nowrap">${fmt(h.amount)}</td>
-                            <td className="px-6 py-4 text-right whitespace-nowrap">
-                              <span className={`inline-flex text-xs font-bold border px-3 py-1 rounded-full capitalize ${statusColor[h.status] || ''}`}>
-                                {h.status}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
 
-                {/* Mobile Cards View */}
-                <div className="sm:hidden space-y-3">
-                  {history.map(h => (
-                    <div key={h.id} className="bg-white border border-slate-200 rounded-xl shadow-card p-4 flex flex-col gap-2">
+                {/* Mobile List View */}
+                <div className="sm:hidden divide-y divide-slate-100">
+                  {applications.map(app => (
+                    <div key={app.id} className="p-4 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-900">{h.package_name}</span>
-                        <span className={`inline-flex text-[11px] font-bold border px-2.5 py-0.5 rounded-full capitalize ${statusColor[h.status] || ''}`}>
-                          {h.status}
+                        <span className="text-sm font-bold text-slate-900">{app.package_name}</span>
+                        <span className={`inline-flex text-[11px] font-bold border px-2.5 py-0.5 rounded-full capitalize ${statusColor[app.status] || ''}`}>
+                          {app.status}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
-                        <span>Date: {h.date}</span>
-                        <span className="font-extrabold text-slate-900 tabular-nums text-sm">£{fmt(h.amount)}</span>
+                      <div className="flex items-center justify-between text-xs text-slate-500">
+                        <span>{new Date(app.created_at).toLocaleDateString()}</span>
+                        <span className="font-extrabold text-slate-900 text-sm">£{fmt(app.amount)}</span>
                       </div>
-                      {h.rejection_reason && (
-                        <p className="text-[11px] text-red-600 bg-red-50 p-2 rounded border border-red-100 mt-1">
-                          Reason: {h.rejection_reason}
+                      {app.transaction_reference && (
+                        <p className="text-[11px] text-slate-400 font-mono">Ref: {app.transaction_reference}</p>
+                      )}
+                      {app.rejection_reason && (
+                        <p className="text-[11px] text-red-600 bg-red-50 p-2 rounded-lg border border-red-100">
+                          Rejection Reason: {app.rejection_reason}
                         </p>
                       )}
                     </div>
                   ))}
                 </div>
-              </>
+              </div>
             )}
           </div>
         )}
       </div>
 
-      {/* ── PACKAGE CONFIRM MODAL ──────────────────────────────────── */}
-      <Modal open={!!selectedPackage} onClose={() => setSelectedPackage(null)} title="Confirm Application">
+      {/* ── PACKAGE CONFIRM / APPLICATION MODAL ────────────────────── */}
+      <Modal
+        open={!!selectedPackage}
+        onClose={() => setSelectedPackage(null)}
+        title="Apply for Pool Trading Slot"
+        maxW="max-w-lg"
+      >
         {selectedPackage && (() => {
-          const r = riskCfg[selectedPackage.risk_level];
+          const r = riskCfg[selectedPackage.risk_level] || riskCfg.medium;
           const fixedProfit = (selectedPackage.min_amount * selectedPackage.roi_percentage) / 100;
           const fixedPayout = selectedPackage.min_amount + fixedProfit;
+
           return (
             <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-                <p className="text-xs font-bold text-blue-500 uppercase tracking-wide mb-0.5">Selected Package</p>
-                <p className="text-base font-extrabold text-slate-900">{selectedPackage.name}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{selectedPackage.duration_value} {selectedPackage.duration_unit} · <span className={r.textColor}>{r.label}</span></p>
-              </div>
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Investment Amount (GBP)</p>
-                <p className="text-2xl font-extrabold text-slate-900 tabular-nums">£{fmt(selectedPackage.min_amount)}</p>
-                <p className="text-xs text-slate-400 mt-1">Fixed amount for this plan</p>
-              </div>
-              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-600">Expected Profit</span>
-                  <span className="text-lg font-extrabold text-emerald-600 tabular-nums">+£{fmt(fixedProfit)}</span>
+              {/* Selected Plan Overview */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-1">
+                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${r.bg} ${r.textColor} ${r.border}`}>
+                    {r.label}
+                  </span>
+                  <span className="text-xs font-bold text-slate-600">
+                    Duration: {selectedPackage.duration_value} {selectedPackage.duration_unit}
+                  </span>
                 </div>
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-sm text-slate-600">Total Payout</span>
-                  <span className="text-xl font-extrabold text-emerald-700 tabular-nums">£{fmt(fixedPayout)}</span>
+                <p className="text-lg font-black text-slate-900">{selectedPackage.name}</p>
+                <p className="text-xs text-slate-500 mt-1">{selectedPackage.description}</p>
+              </div>
+
+              {/* Financial Breakdown */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2">
+                <div className="flex items-center justify-between text-xs text-slate-600 font-semibold">
+                  <span>Required Deposit</span>
+                  <span className="text-base font-black text-slate-900 tabular-nums">£{fmt(selectedPackage.min_amount)}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs text-slate-600 font-semibold">
+                  <span>Guaranteed Profit ({selectedPackage.roi_percentage}%)</span>
+                  <span className="text-base font-black text-emerald-600 tabular-nums">+£{fmt(fixedProfit)}</span>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                  <span className="text-xs font-bold text-slate-800">Total Payout at Maturity</span>
+                  <span className="text-lg font-black text-blue-600 tabular-nums">£{fmt(fixedPayout)}</span>
                 </div>
               </div>
-              <div className="flex gap-3">
-                <button onClick={() => setSelectedPackage(null)} className="flex-1 py-3 text-sm font-semibold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all">Cancel</button>
-                <button onClick={handleConfirmApplication} className="flex-1 py-3 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all">
-                  Confirm Application
+
+              {/* Payment Method Selector */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                  Payment Method
+                </label>
+                <select
+                  value={paymentMethod}
+                  onChange={e => setPaymentMethod(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-800 bg-slate-50 focus:bg-white focus:border-blue-500 outline-none transition-all"
+                >
+                  <option value="USDT_TRC20">USDT (TRC20 - Tron)</option>
+                  <option value="USDT_ERC20">USDT (ERC20 - Ethereum)</option>
+                  <option value="BTC">Bitcoin (BTC)</option>
+                  <option value="MPESA">M-Pesa Express</option>
+                  <option value="BANK">Bank Wire Transfer</option>
+                </select>
+              </div>
+
+              {/* Transaction Ref / Receipt */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                  Transaction Reference / Receipt ID <span className="text-slate-400 font-normal">(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={transactionRef}
+                  onChange={e => setTransactionRef(e.target.value)}
+                  placeholder="e.g. TxHash or M-Pesa Reference Code"
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 bg-slate-50 focus:bg-white focus:border-blue-500 outline-none transition-all"
+                />
+              </div>
+
+              {/* Submit Buttons */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPackage(null)}
+                  className="flex-1 py-3 text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmApplication}
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl disabled:bg-slate-300 transition-all shadow-md flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" /> Submitting...
+                    </>
+                  ) : (
+                    'Confirm & Apply Slot'
+                  )}
                 </button>
               </div>
             </div>
@@ -923,7 +1119,62 @@ export function PoolTradingDashboard() {
       </Modal>
 
       {/* ── WITHDRAWAL MODAL ──────────────────────────────────────── */}
-      <WithdrawModal inv={withdrawInv} open={!!withdrawInv} onClose={() => setWithdrawInv(null)} onSubmit={handleWithdrawSubmit} />
+      <WithdrawModal
+        inv={withdrawInv}
+        open={!!withdrawInv}
+        onClose={() => setWithdrawInv(null)}
+        onSubmit={handleWithdrawSubmit}
+        isSubmitting={isWithdrawing}
+      />
+
+      {/* ── VIP SYNDICATE REQUEST MODAL ────────────────────────────── */}
+      <Modal
+        open={showVipModal}
+        onClose={() => setShowVipModal(false)}
+        title="Institutional VIP Syndicate"
+        maxW="max-w-lg"
+      >
+        <div className="space-y-4">
+          <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 text-purple-900">
+            <div className="flex items-center gap-2 mb-1">
+              <Sparkles className="w-5 h-5 text-purple-600" />
+              <h3 className="font-extrabold text-base text-purple-900">Custom Institutional Allocation</h3>
+            </div>
+            <p className="text-xs text-purple-700 leading-relaxed">
+              For high-net-worth accounts investing above £25,000. Benefit from bespoke liquidity allocation, 1-on-1 institutional desk support, and custom maturity cycles.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+              Investment Notes / Desired Allocation
+            </label>
+            <textarea
+              rows={3}
+              value={vipNotes}
+              onChange={e => setVipNotes(e.target.value)}
+              placeholder="Specify your capital size (e.g. £50,000) and custom syndicate timeline..."
+              className="w-full border border-slate-200 rounded-xl p-3 text-sm text-slate-900 bg-slate-50 focus:bg-white focus:border-purple-500 outline-none transition-all"
+            />
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowVipModal(false)}
+              className="flex-1 py-3 text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
+            >
+              Close
+            </button>
+            <button
+              onClick={handleVipSubmit}
+              disabled={isSubmittingVip}
+              className="flex-1 py-3 text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+            >
+              {isSubmittingVip ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Request VIP Allocation'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -5,6 +5,10 @@ CREATE TABLE IF NOT EXISTS pool_trading_applications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     package_id UUID NOT NULL REFERENCES pool_trading_packages(id) ON DELETE RESTRICT,
+    amount DECIMAL(18, 2) NOT NULL DEFAULT 0,
+    payment_method VARCHAR(50) DEFAULT 'Crypto',
+    transaction_reference TEXT,
+    notes TEXT,
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
     -- status values: 'pending', 'approved', 'rejected'
     
@@ -21,6 +25,12 @@ CREATE TABLE IF NOT EXISTS pool_trading_applications (
     reviewed_at TIMESTAMP WITH TIME ZONE,
     reviewed_by UUID REFERENCES auth.users(id)     -- admin who reviewed
 );
+
+-- Ensure columns exist if table was already created
+ALTER TABLE pool_trading_applications ADD COLUMN IF NOT EXISTS amount DECIMAL(18, 2) NOT NULL DEFAULT 0;
+ALTER TABLE pool_trading_applications ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50) DEFAULT 'Crypto';
+ALTER TABLE pool_trading_applications ADD COLUMN IF NOT EXISTS transaction_reference TEXT;
+ALTER TABLE pool_trading_applications ADD COLUMN IF NOT EXISTS notes TEXT;
 
 -- Partial index: only one pending application per user per package
 CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_pending_application 

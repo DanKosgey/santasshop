@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Mail, Phone, ShieldCheck, ShieldAlert, Edit3,
   Send, CheckCircle2, X, MessageCircle,
-  TrendingUp, DollarSign, Activity, Trash2, AlertTriangle
+  Trash2, AlertTriangle
 } from 'lucide-react';
 import { ADMIN_WHATSAPP, ADMIN_TELEGRAM_URL, ADMIN_TELEGRAM_USERNAME } from '../lib/constants';
 import { supabase } from '../lib/supabase';
@@ -17,15 +17,9 @@ export interface UserProfile {
   email_verified: boolean;
   vip_status: 'none' | 'pending' | 'active' | 'revoked';
   vip_group_url?: string;
-  active_pool_trades_count: number;
-  total_invested: number;
-  total_withdrawn: number;
   account_tier: string;
   last_login: string;
 }
-
-const fmt = (n: number) =>
-  n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function getInitials(name: string) {
   return name
@@ -85,21 +79,6 @@ function Toast({ msg, type = 'success' }: { msg: string; type?: 'success' | 'err
   );
 }
 
-/* ─── Stat Card ──────────────────────────────────────────────────── */
-function StatCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: any; color: string }) {
-  return (
-    <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
-        <Icon className="w-5 h-5" />
-      </div>
-      <div>
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
-        <p className="text-lg font-bold text-slate-900 tabular-nums">{value}</p>
-      </div>
-    </div>
-  );
-}
-
 /* ═══════════════════════════════════════════════════════════════════════════
    MAIN COMPONENT
 ═══════════════════════════════════════════════════════════════════════════ */
@@ -133,7 +112,7 @@ export function AccountManagementPage({ currentUser, onProfileUpdated }: Account
       setLoading(true);
 
       // 1. Get current authenticated user
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       const authUser = session?.user;
 
       if (!authUser) {
@@ -146,9 +125,6 @@ export function AccountManagementPage({ currentUser, onProfileUpdated }: Account
             email_verified: true,
             vip_status: 'none',
             vip_group_url: ADMIN_TELEGRAM_URL,
-            active_pool_trades_count: 0,
-            total_invested: 0,
-            total_withdrawn: 0,
             account_tier: formatTierDisplay(currentUser.subscriptionTier, currentUser.role),
             last_login: new Date().toLocaleString(),
           });
@@ -170,33 +146,7 @@ export function AccountManagementPage({ currentUser, onProfileUpdated }: Account
         console.warn('Profile fetch warning:', profileErr.message);
       }
 
-      // 3. Fetch user pool trading investments for real stats
-      const { data: investments } = await supabase
-        .from('pool_trading_investments')
-        .select('invested_amount, status')
-        .eq('user_id', authUser.id);
-
-      const userInvestments = investments || [];
-      const activeTradesCount = userInvestments.filter(
-        i => i.status === 'active' || i.status === 'matured' || i.status === 'withdrawal_pending'
-      ).length;
-
-      const totalInvested = userInvestments
-        .filter(i => i.status !== 'cancelled' && i.status !== 'rejected')
-        .reduce((sum, i) => sum + (Number(i.invested_amount) || 0), 0);
-
-      // 4. Fetch user withdrawal requests for total withdrawn
-      const { data: withdrawals } = await supabase
-        .from('withdrawal_requests')
-        .select('amount, status')
-        .eq('user_id', authUser.id);
-
-      const userWithdrawals = withdrawals || [];
-      const totalWithdrawn = userWithdrawals
-        .filter(w => w.status === 'completed')
-        .reduce((sum, w) => sum + (Number(w.amount) || 0), 0);
-
-      // 5. Compute formatted user profile values
+      // 3. Compute formatted user profile values
       const metaName = authUser.user_metadata?.full_name || authUser.user_metadata?.name;
       const resolvedName = dbProfile?.full_name || metaName || currentUser?.name || authUser.email?.split('@')[0] || 'User';
       const resolvedEmail = authUser.email || dbProfile?.email || currentUser?.email || '';
@@ -219,9 +169,6 @@ export function AccountManagementPage({ currentUser, onProfileUpdated }: Account
         email_verified: isEmailVerified,
         vip_status: dbProfile?.vip_status || 'none',
         vip_group_url: ADMIN_TELEGRAM_URL,
-        active_pool_trades_count: activeTradesCount,
-        total_invested: totalInvested,
-        total_withdrawn: totalWithdrawn,
         account_tier: formattedTier,
         last_login: lastLoginFormatted,
       };
@@ -408,16 +355,6 @@ export function AccountManagementPage({ currentUser, onProfileUpdated }: Account
               <Edit3 className="w-4 h-4" /> Edit Profile
             </button>
           </div>
-        </div>
-
-        {/* ── STATS STRIP ───────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <StatCard label="Active Trades" value={`${profile.active_pool_trades_count}`}
-            icon={Activity} color="bg-blue-50 text-blue-600" />
-          <StatCard label="Total Invested" value={`$${fmt(profile.total_invested)}`}
-            icon={TrendingUp} color="bg-emerald-50 text-emerald-600" />
-          <StatCard label="Total Withdrawn" value={`$${fmt(profile.total_withdrawn)}`}
-            icon={DollarSign} color="bg-purple-50 text-purple-600" />
         </div>
 
         {/* ── SUPPORT CONTACT ───────────────────────────────────────────── */}
