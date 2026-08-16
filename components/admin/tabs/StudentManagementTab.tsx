@@ -66,11 +66,14 @@ const StudentManagementTab: React.FC = () => {
   };
 
   const filteredStudents = useMemo(() => {
-    return students.filter(student =>
-      (student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.email.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (filterTier === 'all' || student.tier === filterTier)
-    );
+    const q = (searchTerm || '').toLowerCase();
+    return students.filter(student => {
+      const name = (student.name || '').toLowerCase();
+      const email = (student.email || '').toLowerCase();
+      const matchesSearch = name.includes(q) || email.includes(q);
+      const matchesTier = filterTier === 'all' || student.tier === filterTier;
+      return matchesSearch && matchesTier;
+    });
   }, [students, searchTerm, filterTier]);
 
   const handleEditClick = (student: StudentProfile) => {
@@ -102,7 +105,7 @@ const StudentManagementTab: React.FC = () => {
   };
 
   const handleDeleteStudent = async (studentId: string, studentName: string) => {
-    if (!window.confirm(`Are you sure you want to delete ${studentName}'s profile?`)) return;
+    if (!window.confirm(`Are you sure you want to delete ${studentName || 'this student'}'s profile?`)) return;
 
     try {
       setLoading(true);
@@ -126,10 +129,10 @@ const StudentManagementTab: React.FC = () => {
       const updates = {
         botAccess: true,
         botPurchaseStatus: 'completed' as const,
-        tier: (student.tier === 'free' || student.tier.includes('-pending')) ? 'foundation' : student.tier
+        tier: (student.tier === 'free' || (student.tier && student.tier.includes('-pending'))) ? 'foundation' : student.tier
       };
       await updateStudentProfile(student.id, updates);
-      setSuccess(`Quick Granted bot access to ${student.name}!`);
+      setSuccess(`Quick Granted bot access to ${student.name || 'Student'}!`);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       console.error('Quick Grant error:', err);
@@ -145,7 +148,7 @@ const StudentManagementTab: React.FC = () => {
   };
 
   const getTierBadge = (tier: string) => {
-    switch (tier.toLowerCase()) {
+    switch ((tier || '').toLowerCase()) {
       case 'elite':        return 'badge badge-purple';
       case 'professional': return 'badge badge-primary';
       case 'foundation':   return 'badge badge-success';
@@ -154,7 +157,7 @@ const StudentManagementTab: React.FC = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch ((status || '').toLowerCase()) {
       case 'active':   return 'badge badge-success';
       case 'at-risk':  return 'badge badge-danger';
       case 'inactive': return 'badge badge-gray';

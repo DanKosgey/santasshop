@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { User, CourseModule, TradeEntry } from '../types';
 import { PlayCircle, Award, TrendingUp, Clock, CalendarPlus, CheckCircle, AlertTriangle, Activity, DollarSign, TrendingDown, Percent, BookOpen, Cpu as Bot, ArrowRight } from 'lucide-react';
 import {
@@ -338,8 +338,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, courses, onContinueCourse }
                 </h3>
                 <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">All Time</span>
               </div>
-              <div className="h-52 md:h-72 px-2 pb-4 md:px-6" style={{ minHeight: '180px' }}>
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+              <div className="w-full px-2 pb-4 md:px-6" style={{ height: 260 }}>
+                <ResponsiveContainer width="100%" height={260}>
                   <AreaChart data={stats.equityCurveData}>
                     <defs>
                       <linearGradient id="colorEquity" x1="0" y1="0" x2="0" y2="1">
@@ -403,8 +403,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, courses, onContinueCourse }
               {/* Recent Trades P&L — full-bleed on mobile */}
               <div className="bg-white md:rounded-xl border-y md:border border-slate-200 shadow-card">
                 <h3 className="font-semibold text-xs text-slate-400 px-4 pt-4 pb-2 md:p-6 md:pb-4 uppercase tracking-wider">Recent Trades P&L</h3>
-                <div className="h-40 px-2 pb-4 md:px-6" style={{ minHeight: '150px' }}>
-                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                <div className="w-full px-2 pb-4 md:px-6" style={{ height: 160 }}>
+                  <ResponsiveContainer width="100%" height={160}>
                     <BarChart data={stats.equityCurveData.slice(-7)}>
                       <Bar dataKey="pnl" radius={[4, 4, 4, 4]}>
                         {stats.equityCurveData.slice(-7).map((entry, index) => (

@@ -45,12 +45,15 @@ const DirectoryTab: React.FC = () => {
     recentTrades: student.recentTrades || []
   }));
 
-  const filteredStudents = tableData.filter(student =>
-    (student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.tier.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (filter === 'all' || student.status === filter)
-  );
+  const filteredStudents = tableData.filter(student => {
+    const q = (searchTerm || '').toLowerCase();
+    const name = (student.name || '').toLowerCase();
+    const email = (student.email || '').toLowerCase();
+    const tier = (student.tier || '').toLowerCase();
+    const matchesSearch = name.includes(q) || email.includes(q) || tier.includes(q);
+    const matchesFilter = filter === 'all' || student.status === filter;
+    return matchesSearch && matchesFilter;
+  });
 
   // Recent Join Events
   const recentActivities = useMemo(() => {
@@ -75,7 +78,7 @@ const DirectoryTab: React.FC = () => {
   }, [students]);
 
   const getStatusBadge = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch ((status || '').toLowerCase()) {
       case 'active':   return 'badge badge-success';
       case 'at risk':
       case 'at-risk':  return 'badge badge-danger';
@@ -85,7 +88,7 @@ const DirectoryTab: React.FC = () => {
   };
 
   const getTierBadge = (tier: string) => {
-    switch (tier.toLowerCase()) {
+    switch ((tier || '').toLowerCase()) {
       case 'elite':        return 'badge badge-purple';
       case 'professional': return 'badge badge-primary';
       case 'foundation':   return 'badge badge-success';

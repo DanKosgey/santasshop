@@ -209,15 +209,15 @@ async function main() {
     .filter(f => f.endsWith('.sql'))
     .sort();
 
-  // Only run the 10 new Pool Trading migrations
-  const newMigrations = files.filter(f => f.startsWith('20260809'));
+  // Run ALL pool trading migrations (any date prefix starting with 2026)
+  const newMigrations = files.filter(f => /^2026\d{10}/.test(f));
 
   if (newMigrations.length === 0) {
-    console.log('✅ No new Pool Trading migrations to apply.');
+    console.log('✅ No Pool Trading migrations found.');
     process.exit(0);
   }
 
-  console.log(`📦 Found ${newMigrations.length} new migration files to apply:\n`);
+  console.log(`📦 Found ${newMigrations.length} migration files to apply:\n`);
   newMigrations.forEach(f => console.log(`   • ${f}`));
   console.log('');
 
