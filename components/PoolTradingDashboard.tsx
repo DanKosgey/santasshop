@@ -110,9 +110,6 @@ function PackageCard({ pkg, onSelect }: { pkg: PoolPackage; onSelect: (p: PoolPa
           {/* Top header & badges */}
           <div className="flex items-start justify-between gap-2 mb-3">
             <div>
-              <span className={`inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${r.bg} ${r.textColor} ${r.border} mb-1.5`}>
-                {r.label}
-              </span>
               <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 leading-snug">{pkg.name}</h3>
             </div>
             <div className="text-right">
@@ -982,7 +979,6 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
         maxW="max-w-lg"
       >
         {selectedPackage && (() => {
-          const r = riskCfg[selectedPackage.risk_level] || riskCfg.medium;
           const fixedProfit = (selectedPackage.min_amount * selectedPackage.roi_percentage) / 100;
           const fixedPayout = selectedPackage.min_amount + fixedProfit;
 
@@ -991,14 +987,11 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
               {/* Selected Plan Overview */}
               <div className="bg-[#FAF5EB] border border-[#E8CC9A] rounded-2xl p-4">
                 <div className="flex items-center justify-between mb-1">
-                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${r.bg} ${r.textColor} ${r.border}`}>
-                    {r.label}
-                  </span>
-                  <span className="text-xs font-bold text-slate-600">
+                  <p className="text-lg font-black text-slate-900">{selectedPackage.name}</p>
+                  <span className="text-xs font-bold text-slate-600 bg-white/80 border border-[#E8CC9A] px-2.5 py-0.5 rounded-full">
                     Duration: {selectedPackage.duration_value} {selectedPackage.duration_unit}
                   </span>
                 </div>
-                <p className="text-lg font-black text-slate-900">{selectedPackage.name}</p>
                 <p className="text-xs text-slate-500 mt-1">{selectedPackage.description}</p>
               </div>
 
@@ -1018,38 +1011,6 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
                 </div>
               </div>
 
-              {/* Payment Method Selector */}
-              <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-                  Payment Method
-                </label>
-                <select
-                  value={paymentMethod}
-                  onChange={e => setPaymentMethod(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-800 bg-slate-50 focus:bg-white focus:border-blue-500 outline-none transition-all"
-                >
-                  <option value="USDT_TRC20">USDT (TRC20 - Tron)</option>
-                  <option value="USDT_ERC20">USDT (ERC20 - Ethereum)</option>
-                  <option value="BTC">Bitcoin (BTC)</option>
-                  <option value="MPESA">M-Pesa Express</option>
-                  <option value="BANK">Bank Wire Transfer</option>
-                </select>
-              </div>
-
-              {/* Transaction Ref / Receipt */}
-              <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-                  Transaction Reference / Receipt ID <span className="text-slate-400 font-normal">(Optional)</span>
-                </label>
-                <input
-                  type="text"
-                  value={transactionRef}
-                  onChange={e => setTransactionRef(e.target.value)}
-                  placeholder="e.g. TxHash or M-Pesa Reference Code"
-                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 bg-slate-50 focus:bg-white focus:border-blue-500 outline-none transition-all"
-                />
-              </div>
-
               {/* Submit Buttons */}
               <div className="flex gap-3 pt-2">
                 <button
@@ -1063,7 +1024,7 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
                   type="button"
                   onClick={handleConfirmApplication}
                   disabled={isSubmitting}
-                  className="flex-1 py-3 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl disabled:bg-slate-300 transition-all shadow-md flex items-center justify-center gap-2"
+                  className="flex-1 py-3 text-sm font-bold text-[#111111] bg-[#D4A24C] hover:bg-[#B8862E] rounded-xl disabled:bg-slate-300 transition-all shadow-md flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (
                     <>

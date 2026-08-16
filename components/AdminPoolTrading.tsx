@@ -765,7 +765,7 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200">
-                      {['Package Name', 'Duration', 'ROI %', 'Fixed Deposit', 'Risk Tier', 'Recommended', 'Live Active', 'Actions'].map(h => (
+                      {['Package Name', 'Duration', 'ROI %', 'Fixed Deposit', 'Recommended', 'Live Active', 'Actions'].map(h => (
                         <th key={h} className="text-left px-5 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wide whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
@@ -773,7 +773,7 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                   <tbody className="divide-y divide-slate-100">
                     {packages.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="py-12 text-center text-slate-400">
+                        <td colSpan={7} className="py-12 text-center text-slate-400">
                           <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-2 text-blue-600">
                             <Plus className="w-6 h-6" />
                           </div>
@@ -782,9 +782,7 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                         </td>
                       </tr>
                     ) : (
-                      packages.map(pkg => {
-                      const r = riskCfg[pkg.risk_level] || riskCfg.medium;
-                      return (
+                      packages.map(pkg => (
                         <tr key={pkg.id} className="hover:bg-slate-50 transition-colors">
                           <td className="px-5 py-4">
                             <p className="font-extrabold text-slate-900 text-sm">{pkg.name}</p>
@@ -798,11 +796,6 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                           </td>
                           <td className="px-5 py-4 tabular-nums font-extrabold text-slate-900 whitespace-nowrap">
                             ${fmt(pkg.min_amount)}
-                          </td>
-                          <td className="px-5 py-4 whitespace-nowrap">
-                            <span className={`text-xs font-bold border px-2.5 py-0.5 rounded-full ${r.bg} ${r.text} ${r.border}`}>
-                              {r.label}
-                            </span>
                           </td>
                           <td className="px-5 py-4 whitespace-nowrap">
                             {pkg.recommended ? (
@@ -839,8 +832,8 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                             </div>
                           </td>
                         </tr>
-                      );
-                    }))}
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -1109,7 +1102,7 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
               />
             </div>
 
-            <div>
+            <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Fixed / Min Amount ($) *</label>
               <input
                 type="number"
@@ -1118,19 +1111,6 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                 className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-slate-900 bg-slate-50 focus:bg-white focus:border-blue-500 outline-none"
                 placeholder="500"
               />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Risk Level</label>
-              <select
-                value={pkgForm.risk_level || 'low'}
-                onChange={e => setPkgForm(f => ({ ...f, risk_level: e.target.value as any }))}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-slate-900 bg-slate-50 focus:border-blue-500 outline-none"
-              >
-                <option value="low">Low Risk</option>
-                <option value="medium">Medium Risk</option>
-                <option value="high">High Risk</option>
-              </select>
             </div>
           </div>
 
