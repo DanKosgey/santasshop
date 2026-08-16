@@ -1224,7 +1224,7 @@ const TradeJournal: React.FC<TradeJournalProps> = ({ user }) => {
 
               </div>
 
-              <div className="p-6 border-t border-gray-700 flex justify-end gap-3 bg-gray-800/50 rounded-b-2xl">
+              <div className="p-6 pb-[calc(1.5rem+60px)] sm:pb-6 border-t border-gray-700 flex justify-end gap-3 bg-gray-800/50 rounded-b-2xl">
                 <button
                   type="button"
                   onClick={handleCloseModal}

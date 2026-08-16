@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   TrendingUp, CheckCircle2, XCircle, Search, Plus, Edit2, Trash2,
   X, ChevronDown, MoreVertical, Users, Clock, DollarSign,
@@ -52,16 +52,17 @@ function Modal({ open, onClose, title, children, maxW = 'max-w-lg' }: {
 }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/40 backdrop-blur-sm">
-      <div className={`bg-white w-full ${maxW} rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto`}
-        style={{ animation: 'modalIn 0.18s ease' }}>
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/40 backdrop-blur-sm">
+      <div className={`bg-white w-full ${maxW} rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-y-auto`}
+        style={{ animation: 'modalIn 0.18s ease', maxHeight: 'calc(90vh - env(safe-area-inset-bottom, 0px))' }}>
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100 sticky top-0 bg-white z-10">
           <h2 className="text-base font-bold text-slate-900">{title}</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all">
+          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center">
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="px-6 py-5">{children}</div>
+        {/* Extra bottom padding on mobile so content clears the fixed bottom nav bar */}
+        <div className="px-6 py-5 pb-[calc(1.25rem+60px)] sm:pb-5">{children}</div>
       </div>
     </div>
   );

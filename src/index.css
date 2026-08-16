@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -312,8 +312,8 @@ input, select, textarea { font-size: 16px; }
   .table-container { border-radius: 0; }
   .data-table th   { padding: 10px 12px; font-size: 10px; }
   .data-table td   { padding: 12px 12px; font-size: 12px; }
-  .modal-overlay { align-items: flex-end; padding: 0; }
-  .modal-panel { border-radius: 24px 24px 0 0 !important; max-height: 93vh; width: 100%; padding-bottom: env(safe-area-inset-bottom, 12px); overflow-y: auto; }
+  .modal-overlay { align-items: flex-end; padding: 0; z-index: 60; }
+  .modal-panel { border-radius: 24px 24px 0 0 !important; max-height: calc(92vh - env(safe-area-inset-bottom, 0px)); width: 100%; padding-bottom: calc(32px + env(safe-area-inset-bottom, 16px)); overflow-y: auto; }
   button:not(.btn):active, [role="button"]:active { opacity: 0.75; transition: opacity 0.08s ease; }
   .mobile-divider { height: 8px; background: var(--bg-page); border-top: 1px solid var(--gray-200); border-bottom: 1px solid var(--gray-200); }
   .mobile-card-strip { background: white; border-top: 1px solid var(--gray-200); border-bottom: 1px solid var(--gray-200); overflow: hidden; }
