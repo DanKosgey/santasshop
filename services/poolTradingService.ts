@@ -103,20 +103,8 @@ export interface VipRequest {
   user_email?: string;
 }
 
-/* ─── Default Fallback Packages ──────────────────────────────────────────── */
-export const DEFAULT_PACKAGES: PoolPackage[] = [
-  { id: 'a0000000-0000-0000-0000-000000000001', name: '24H · £500 Plan', description: 'Quick 24-hour institutional pool. Invest £500 and receive £4,200 profit within 24 hours.', duration_value: 24, duration_unit: 'hours', min_amount: 500, max_amount: 500, roi_percentage: 840, risk_level: 'low', recommended: false, is_active: true, sort_order: 1 },
-  { id: 'a0000000-0000-0000-0000-000000000002', name: '24H · £600 Plan', description: 'Quick 24-hour institutional pool. Invest £600 and receive £5,000 profit within 24 hours.', duration_value: 24, duration_unit: 'hours', min_amount: 600, max_amount: 600, roi_percentage: 833.33, risk_level: 'low', recommended: false, is_active: true, sort_order: 2 },
-  { id: 'a0000000-0000-0000-0000-000000000003', name: '24H · £700 Plan', description: 'Quick 24-hour institutional pool. Invest £700 and receive £6,100 profit within 24 hours.', duration_value: 24, duration_unit: 'hours', min_amount: 700, max_amount: 700, roi_percentage: 871.43, risk_level: 'low', recommended: false, is_active: true, sort_order: 3 },
-  { id: 'a0000000-0000-0000-0000-000000000004', name: '24H · £800 Plan', description: 'Quick 24-hour institutional pool. Invest £800 and receive £7,000 profit within 24 hours.', duration_value: 24, duration_unit: 'hours', min_amount: 800, max_amount: 800, roi_percentage: 875, risk_level: 'low', recommended: true, is_active: true, sort_order: 4 },
-  { id: 'a0000000-0000-0000-0000-000000000005', name: '2-Day · £900 Plan', description: 'Two-day compounded pool. Invest £900 and receive £8,000 profit at maturity.', duration_value: 2, duration_unit: 'days', min_amount: 900, max_amount: 900, roi_percentage: 888.89, risk_level: 'medium', recommended: false, is_active: true, sort_order: 5 },
-  { id: 'a0000000-0000-0000-0000-000000000006', name: '2-Day · £1,000 Plan', description: 'Two-day compounded pool. Invest £1,000 and receive £9,000 profit at maturity.', duration_value: 2, duration_unit: 'days', min_amount: 1000, max_amount: 1000, roi_percentage: 900, risk_level: 'medium', recommended: true, is_active: true, sort_order: 6 },
-  { id: 'a0000000-0000-0000-0000-000000000007', name: '2-Day · £1,500 Plan', description: 'Two-day compounded pool. Invest £1,500 and receive £12,000 profit at maturity.', duration_value: 2, duration_unit: 'days', min_amount: 1500, max_amount: 1500, roi_percentage: 800, risk_level: 'medium', recommended: false, is_active: true, sort_order: 7 },
-  { id: 'a0000000-0000-0000-0000-000000000008', name: 'Weekly · £2,000 Plan', description: 'Weekly institutional syndicate. Invest £2,000 and receive £16,000 profit after 7 days.', duration_value: 7, duration_unit: 'days', min_amount: 2000, max_amount: 2000, roi_percentage: 800, risk_level: 'high', recommended: false, is_active: true, sort_order: 8 },
-  { id: 'a0000000-0000-0000-0000-000000000009', name: 'Weekly · £3,000 Plan', description: 'Weekly institutional syndicate. Invest £3,000 and receive £20,000 profit after 7 days.', duration_value: 7, duration_unit: 'days', min_amount: 3000, max_amount: 3000, roi_percentage: 666.67, risk_level: 'high', recommended: false, is_active: true, sort_order: 9 },
-  { id: 'a0000000-0000-0000-0000-000000000010', name: 'Weekly · £5,000 Plan', description: 'Weekly institutional syndicate. Invest £5,000 and receive £30,000 profit after 7 days.', duration_value: 7, duration_unit: 'days', min_amount: 5000, max_amount: 5000, roi_percentage: 600, risk_level: 'high', recommended: true, is_active: true, sort_order: 10 },
-  { id: 'a0000000-0000-0000-0000-000000000011', name: 'Weekly · £10,000 Plan', description: 'Weekly high-tier institutional syndicate. Invest £10,000 and receive £60,000 profit after 7 days.', duration_value: 7, duration_unit: 'days', min_amount: 10000, max_amount: 10000, roi_percentage: 600, risk_level: 'high', recommended: false, is_active: true, sort_order: 11 }
-];
+/* ─── Default Packages (Clean Slate for Admin) ──────────────────────────── */
+export const DEFAULT_PACKAGES: PoolPackage[] = [];
 
 /* ─── Service Methods ────────────────────────────────────────────────────── */
 
@@ -137,12 +125,12 @@ export const poolTradingService = {
         .order('created_at', { ascending: true });
 
       if (error) {
-        console.warn('Error fetching packages from DB, using defaults:', error.message);
-        return DEFAULT_PACKAGES;
+        console.warn('Error fetching packages from DB:', error.message);
+        return [];
       }
 
       if (!data || data.length === 0) {
-        return DEFAULT_PACKAGES;
+        return [];
       }
 
       return data.map(p => ({

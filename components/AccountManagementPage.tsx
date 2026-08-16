@@ -5,7 +5,7 @@ import {
   Trash2, AlertTriangle
 } from 'lucide-react';
 import { ADMIN_WHATSAPP, ADMIN_TELEGRAM_URL, ADMIN_TELEGRAM_USERNAME } from '../lib/constants';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../supabase/client';
 import { User } from '../types';
 
 export interface UserProfile {

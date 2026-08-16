@@ -180,7 +180,7 @@ CREATE POLICY "Admins can manage settings"
 CREATE POLICY "Users can view own activity log or admin all"
     ON investment_activity_log FOR SELECT
     USING (
-        auth.uid() = user_id 
+        EXISTS (SELECT 1 FROM pool_trading_investments WHERE id = investment_activity_log.investment_id AND user_id = auth.uid())
         OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
         OR auth.role() = 'service_role'
     );
@@ -238,18 +238,3 @@ EXCEPTION
     WHEN OTHERS THEN NULL;
 END $$;
 
--- 5. Seed default institutional pool trading packages if table is empty
-INSERT INTO pool_trading_packages (id, name, description, duration_value, duration_unit, min_amount, max_amount, roi_percentage, risk_level, recommended, is_active, sort_order)
-VALUES
-    ('a0000000-0000-0000-0000-000000000001', '24H · £500 Plan', 'Quick 24-hour institutional pool. Invest £500 and receive £4,200 profit within 24 hours.', 24, 'hours', 500.00, 500.00, 840.00, 'low', false, true, 1),
-    ('a0000000-0000-0000-0000-000000000002', '24H · £600 Plan', 'Quick 24-hour institutional pool. Invest £600 and receive £5,000 profit within 24 hours.', 24, 'hours', 600.00, 600.00, 833.33, 'low', false, true, 2),
-    ('a0000000-0000-0000-0000-000000000003', '24H · £700 Plan', 'Quick 24-hour institutional pool. Invest £700 and receive £6,100 profit within 24 hours.', 24, 'hours', 700.00, 700.00, 871.43, 'low', false, true, 3),
-    ('a0000000-0000-0000-0000-000000000004', '24H · £800 Plan', 'Quick 24-hour institutional pool. Invest £800 and receive £7,000 profit within 24 hours.', 24, 'hours', 800.00, 800.00, 875.00, 'low', true, true, 4),
-    ('a0000000-0000-0000-0000-000000000005', '2-Day · £900 Plan', 'Two-day compounded pool. Invest £900 and receive £8,000 profit at maturity.', 2, 'days', 900.00, 900.00, 888.89, 'medium', false, true, 5),
-    ('a0000000-0000-0000-0000-000000000006', '2-Day · £1,000 Plan', 'Two-day compounded pool. Invest £1,000 and receive £9,000 profit at maturity.', 2, 'days', 1000.00, 1000.00, 900.00, 'medium', true, true, 6),
-    ('a0000000-0000-0000-0000-000000000007', '2-Day · £1,500 Plan', 'Two-day compounded pool. Invest £1,500 and receive £12,000 profit at maturity.', 2, 'days', 1500.00, 1500.00, 800.00, 'medium', false, true, 7),
-    ('a0000000-0000-0000-0000-000000000008', 'Weekly · £2,000 Plan', 'Weekly institutional syndicate. Invest £2,000 and receive £16,000 profit after 7 days.', 7, 'days', 2000.00, 2000.00, 800.00, 'high', false, true, 8),
-    ('a0000000-0000-0000-0000-000000000009', 'Weekly · £3,000 Plan', 'Weekly institutional syndicate. Invest £3,000 and receive £20,000 profit after 7 days.', 7, 'days', 3000.00, 3000.00, 666.67, 'high', false, true, 9),
-    ('a0000000-0000-0000-0000-000000000010', 'Weekly · £5,000 Plan', 'Weekly institutional syndicate. Invest £5,000 and receive £30,000 profit after 7 days.', 7, 'days', 5000.00, 5000.00, 600.00, 'high', true, true, 10),
-    ('a0000000-0000-0000-0000-000000000011', 'Weekly · £10,000 Plan', 'Weekly high-tier institutional syndicate. Invest £10,000 and receive £60,000 profit after 7 days.', 7, 'days', 10000.00, 10000.00, 600.00, 'high', false, true, 11)
-ON CONFLICT (id) DO NOTHING;

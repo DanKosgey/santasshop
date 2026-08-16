@@ -770,7 +770,18 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {packages.map(pkg => {
+                    {packages.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="py-12 text-center text-slate-400">
+                          <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-2 text-blue-600">
+                            <Plus className="w-6 h-6" />
+                          </div>
+                          <p className="text-sm font-bold text-slate-700">No packages created yet</p>
+                          <p className="text-xs text-slate-400 mt-1">Click "Create New Package" above to add your first pool trading plan for clients.</p>
+                        </td>
+                      </tr>
+                    ) : (
+                      packages.map(pkg => {
                       const r = riskCfg[pkg.risk_level] || riskCfg.medium;
                       return (
                         <tr key={pkg.id} className="hover:bg-slate-50 transition-colors">
@@ -828,7 +839,7 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                           </td>
                         </tr>
                       );
-                    })}
+                    }))}
                   </tbody>
                 </table>
               </div>

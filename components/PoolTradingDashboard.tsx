@@ -844,33 +844,54 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
                 ))}
               </div>
 
-              {/* Desktop Grid */}
-              <div className="hidden sm:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-                {filteredPackages.map(p => (
-                  <PackageCard key={p.id} pkg={p} onSelect={setSelectedPackage} />
-                ))}
-              </div>
-
-              {/* Mobile Horizontal Scroll with Swipe Hint */}
-              <div className="sm:hidden relative">
-                {showSwipeHint && filteredPackages.length > 1 && (
-                  <div
-                    className={`swipe-hint${swipeHintHiding ? ' hiding' : ''} pointer-events-none absolute bottom-6 right-4 z-20 flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-sm text-white text-xs font-bold px-3.5 py-2 rounded-full shadow-lg`}
-                  >
-                    <span className="swipe-hand text-base">👆</span>
-                    <span>Swipe to explore plans</span>
-                    <ChevronRight className="w-4 h-4 text-white/70" />
+              {/* Packages View */}
+              {filteredPackages.length === 0 ? (
+                <div className="bg-white border border-slate-200 rounded-2xl p-10 sm:p-14 text-center w-full shadow-card">
+                  <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-3 text-blue-600">
+                    <TrendingUp className="w-7 h-7" />
                   </div>
-                )}
-
-                <div ref={mobileScrollRef} className="scroll-snap-x -mx-3.5">
-                  {filteredPackages.map(p => (
-                    <div key={p.id} className="snap-card" style={{ width: '88vw' }}>
-                      <PackageCard pkg={p} onSelect={setSelectedPackage} />
-                    </div>
-                  ))}
+                  <h3 className="text-base sm:text-lg font-black text-slate-800">No Packages Active Currently</h3>
+                  <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-md mx-auto">
+                    New institutional pool allocations are being scheduled by the administration. Check back shortly or request custom VIP syndicate allocation.
+                  </p>
+                  <button
+                    onClick={() => setShowVipModal(true)}
+                    className="mt-5 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-md inline-flex items-center gap-2"
+                  >
+                    <Sparkles className="w-4 h-4" /> Request VIP Syndicate Allocation
+                  </button>
                 </div>
-              </div>
+              ) : (
+                <>
+                  {/* Desktop Grid */}
+                  <div className="hidden sm:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+                    {filteredPackages.map(p => (
+                      <PackageCard key={p.id} pkg={p} onSelect={setSelectedPackage} />
+                    ))}
+                  </div>
+
+                  {/* Mobile Horizontal Scroll with Swipe Hint */}
+                  <div className="sm:hidden relative">
+                    {showSwipeHint && filteredPackages.length > 1 && (
+                      <div
+                        className={`swipe-hint${swipeHintHiding ? ' hiding' : ''} pointer-events-none absolute bottom-6 right-4 z-20 flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-sm text-white text-xs font-bold px-3.5 py-2 rounded-full shadow-lg`}
+                      >
+                        <span className="swipe-hand text-base">👆</span>
+                        <span>Swipe to explore plans</span>
+                        <ChevronRight className="w-4 h-4 text-white/70" />
+                      </div>
+                    )}
+
+                    <div ref={mobileScrollRef} className="scroll-snap-x -mx-3.5">
+                      {filteredPackages.map(p => (
+                        <div key={p.id} className="snap-card" style={{ width: '88vw' }}>
+                          <PackageCard pkg={p} onSelect={setSelectedPackage} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )
         )}
