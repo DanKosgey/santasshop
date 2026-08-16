@@ -3,7 +3,8 @@ import {
   TrendingUp, CheckCircle2, XCircle, Search, Plus, Edit2, Trash2,
   X, ChevronDown, MoreVertical, Users, Clock, DollarSign,
   ShieldCheck, ShieldAlert, Layers, AlertTriangle, Check,
-  RefreshCw, Wallet, ArrowUpRight, CheckSquare, Sparkles, Filter
+  RefreshCw, Wallet, ArrowUpRight, CheckSquare, Sparkles, Filter,
+  Bell, Send, Key, Lock, Eye, EyeOff
 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import {
@@ -13,6 +14,7 @@ import {
   PoolInvestment,
   WithdrawalRequest,
   VipRequest,
+  AdminNotificationSettings,
   DEFAULT_PACKAGES
 } from '../services/poolTradingService';
 import { User } from '../types';
@@ -165,12 +167,25 @@ function AppCard({ app, onApprove, onReject }: {
    MAIN ADMIN COMPONENT
 ═══════════════════════════════════════════════════════════════════════════ */
 export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
-  const [activeTab, setActiveTab] = useState<'applications' | 'investments' | 'packages' | 'withdrawals'>('applications');
+  const [activeTab, setActiveTab] = useState<'applications' | 'investments' | 'packages' | 'withdrawals' | 'telegram'>('applications');
   const [apps, setApps] = useState<PoolApplication[]>([]);
   const [investments, setInvestments] = useState<PoolInvestment[]>([]);
   const [packages, setPackages] = useState<PoolPackage[]>(DEFAULT_PACKAGES);
   const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Telegram settings state
+  const [telegramSettings, setTelegramSettings] = useState<AdminNotificationSettings>({
+    telegram_bot_token: '',
+    telegram_chat_id: '',
+    notify_pool_application: true,
+    notify_withdrawal_request: true,
+    notify_vip_request: true,
+  });
+  const [showToken, setShowToken] = useState(false);
+  const [savingTelegram, setSavingTelegram] = useState(false);
+  const [testingTelegram, setTestingTelegram] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; msg: string } | null>(null);
 
   // Search & Filters
   const [search, setSearch] = useState('');
@@ -215,23 +230,66 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
   const loadAdminData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [pkgs, allApps, allInvs, allWds] = await Promise.all([
+      const [pkgs, allApps, allInvs, allWds, tgSettings] = await Promise.all([
         poolTradingService.getPackages(),
         poolTradingService.getApplications(),
         poolTradingService.getInvestments(),
         poolTradingService.getWithdrawalRequests(),
+        poolTradingService.getNotificationSettings(),
       ]);
 
       setPackages(pkgs.length > 0 ? pkgs : DEFAULT_PACKAGES);
       setApps(allApps.filter(a => a.status === 'pending'));
       setInvestments(allInvs);
       setWithdrawals(allWds);
+      if (tgSettings) setTelegramSettings(tgSettings);
     } catch (err: any) {
       console.error('Error loading admin pool trading data:', err);
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  // Telegram handlers
+  const handleSaveTelegramSettings = async () => {
+    try {
+      setSavingTelegram(true);
+      const updated = await poolTradingService.updateNotificationSettings(telegramSettings);
+      setTelegramSettings(updated);
+      showToast('Telegram notification settings saved successfully!');
+    } catch (err: any) {
+      showToast('Failed to save settings: ' + (err.message || 'Unknown error'), 'error');
+    } finally {
+      setSavingTelegram(false);
+    }
+  };
+
+  const handleTestTelegram = async () => {
+    if (!telegramSettings.telegram_bot_token || !telegramSettings.telegram_chat_id) {
+      showToast('Please enter Bot Token and Chat ID first.', 'error');
+      return;
+    }
+    try {
+      setTestingTelegram(true);
+      setTestResult(null);
+      const res = await poolTradingService.testTelegramConnection(
+        telegramSettings.telegram_bot_token,
+        telegramSettings.telegram_chat_id
+      );
+      if (res.success) {
+        setTestResult({ success: true, msg: 'Test message sent! Check your Telegram chat.' });
+        showToast('Telegram test message delivered successfully!');
+      } else {
+        setTestResult({ success: false, msg: res.error || 'Failed to send test message' });
+        showToast('Telegram test failed: ' + (res.error || 'API error'), 'error');
+      }
+    } catch (err: any) {
+      setTestResult({ success: false, msg: err.message || 'Network error' });
+      showToast('Test failed: ' + err.message, 'error');
+    } finally {
+      setTestingTelegram(false);
+    }
+  };
 
   // Subscriptions
   useEffect(() => {
@@ -475,6 +533,7 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
     { id: 'investments', label: 'Active Pools', count: activeCount },
     { id: 'packages', label: 'Package Manager', count: packages.length },
     { id: 'withdrawals', label: 'Withdrawals Queue', count: pendingWithdrawalCount },
+    { id: 'telegram', label: 'Telegram Bot Alerts', count: undefined },
   ] as const;
 
   return (
@@ -499,13 +558,32 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
             </p>
           </div>
 
-          <button
-            onClick={loadAdminData}
-            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white text-slate-700 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-blue-600' : ''}`} />
-            <span>Sync Live</span>
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setActiveTab('telegram')}
+              className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 ${
+                telegramSettings.telegram_bot_token && telegramSettings.telegram_chat_id
+                  ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                  : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+              }`}
+              title="Configure Telegram Bot Notification Alerts"
+            >
+              <Bell className="w-3.5 h-3.5" />
+              <span>
+                {telegramSettings.telegram_bot_token && telegramSettings.telegram_chat_id
+                  ? 'Telegram Active'
+                  : 'Setup Telegram'}
+              </span>
+            </button>
+
+            <button
+              onClick={loadAdminData}
+              className="px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white text-slate-700 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-blue-600' : ''}`} />
+              <span>Sync Live</span>
+            </button>
+          </div>
         </div>
 
         {/* ── TAB BAR ────────────────────────────────────────────────── */}
@@ -923,6 +1001,270 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
               </div>
             </div>
           </>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════
+            TAB 5: TELEGRAM NOTIFICATION SETTINGS
+        ══════════════════════════════════════════════════════════ */}
+        {activeTab === 'telegram' && (
+          <div className="space-y-6">
+            {/* Header banner */}
+            <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <span className="bg-blue-500/20 text-blue-300 text-[11px] font-bold px-3 py-1 rounded-full border border-blue-400/30 flex items-center gap-1.5">
+                      <Send className="w-3.5 h-3.5" /> Telegram Bot Automation
+                    </span>
+                    <span className={`text-[11px] font-bold px-3 py-1 rounded-full border ${
+                      telegramSettings.telegram_bot_token && telegramSettings.telegram_chat_id
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
+                        : 'bg-amber-500/20 text-amber-300 border-amber-400/30'
+                    }`}>
+                      {telegramSettings.telegram_bot_token && telegramSettings.telegram_chat_id
+                        ? '● Connected & Active'
+                        : '○ Configuration Needed'}
+                    </span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-black tracking-tight">
+                    Real-Time Telegram Alerts
+                  </h2>
+                  <p className="text-sm text-slate-300 max-w-2xl mt-1">
+                    Receive instant notifications in your Telegram chat whenever a user applies for a Pool Trading Package, submits a deposit, or requests a payout.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={handleTestTelegram}
+                    disabled={testingTelegram || !telegramSettings.telegram_bot_token || !telegramSettings.telegram_chat_id}
+                    className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  >
+                    {testingTelegram ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4 text-blue-300" />
+                    )}
+                    <span>{testingTelegram ? 'Sending Test...' : 'Send Test Alert'}</span>
+                  </button>
+
+                  <button
+                    onClick={handleSaveTelegramSettings}
+                    disabled={savingTelegram}
+                    className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all flex items-center gap-2 shadow-lg hover:shadow-blue-500/25"
+                  >
+                    {savingTelegram ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Check className="w-4 h-4" />
+                    )}
+                    <span>{savingTelegram ? 'Saving...' : 'Save Settings'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {testResult && (
+                <div className={`mt-4 p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                  testResult.success
+                    ? 'bg-emerald-500/20 text-emerald-200 border border-emerald-500/30'
+                    : 'bg-red-500/20 text-red-200 border border-red-500/30'
+                }`}>
+                  {testResult.success ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertTriangle className="w-4 h-4 flex-shrink-0" />}
+                  <span>{testResult.msg}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Two-column layout: Form & Preview / Guide */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left Column: Form & Toggles */}
+              <div className="lg:col-span-7 space-y-6">
+                {/* Bot Credentials Card */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-card space-y-5">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                        <Key className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-black text-slate-900">Bot Credentials</h3>
+                        <p className="text-xs text-slate-400">Telegram Bot Token & Destination Chat/Channel ID</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Telegram Bot Token <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showToken ? 'text' : 'password'}
+                        value={telegramSettings.telegram_bot_token || ''}
+                        onChange={e => setTelegramSettings(prev => ({ ...prev, telegram_bot_token: e.target.value }))}
+                        placeholder="e.g. 7123456789:AAHKs... (from @BotFather)"
+                        className="w-full border border-slate-200 rounded-xl pl-4 pr-11 py-2.5 text-sm font-mono text-slate-900 bg-slate-50 focus:bg-white focus:border-blue-500 outline-none transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowToken(!showToken)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
+                      >
+                        {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Obtained from <strong>@BotFather</strong> on Telegram via the <code>/newbot</code> command.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Telegram Chat ID / Channel ID <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={telegramSettings.telegram_chat_id || ''}
+                      onChange={e => setTelegramSettings(prev => ({ ...prev, telegram_chat_id: e.target.value }))}
+                      placeholder="e.g. 123456789 (user) or -100123456789 (channel/group)"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono text-slate-900 bg-slate-50 focus:bg-white focus:border-blue-500 outline-none transition-all"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Your personal numeric Chat ID (from <strong>@userinfobot</strong>) or Group/Channel ID (e.g. <code>-100...</code>).
+                    </p>
+                  </div>
+                </div>
+
+                {/* Event Notification Toggles */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-card space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                        <Bell className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-black text-slate-900">Notification Triggers</h3>
+                        <p className="text-xs text-slate-400">Choose which events dispatch instant Telegram messages</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="divide-y divide-slate-100">
+                    <div className="py-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-slate-800">Pool Package Applications</p>
+                        <p className="text-[11px] text-slate-400">Receive alert when a user submits an investment application</p>
+                      </div>
+                      <Toggle
+                        checked={telegramSettings.notify_pool_application}
+                        onChange={v => setTelegramSettings(prev => ({ ...prev, notify_pool_application: v }))}
+                      />
+                    </div>
+
+                    <div className="py-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-slate-800">Withdrawal Requests</p>
+                        <p className="text-[11px] text-slate-400">Receive alert when an investor requests payout of matured funds</p>
+                      </div>
+                      <Toggle
+                        checked={telegramSettings.notify_withdrawal_request}
+                        onChange={v => setTelegramSettings(prev => ({ ...prev, notify_withdrawal_request: v }))}
+                      />
+                    </div>
+
+                    <div className="py-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-slate-800">VIP Syndicate Inquiries</p>
+                        <p className="text-[11px] text-slate-400">Receive alert when a user applies for VIP syndicate status</p>
+                      </div>
+                      <Toggle
+                        checked={telegramSettings.notify_vip_request}
+                        onChange={v => setTelegramSettings(prev => ({ ...prev, notify_vip_request: v }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      onClick={handleSaveTelegramSettings}
+                      disabled={savingTelegram}
+                      className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2"
+                    >
+                      {savingTelegram ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                      <span>Save & Apply Settings</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Telegram Live Preview Mockup & Setup Guide */}
+              <div className="lg:col-span-5 space-y-6">
+                {/* Telegram Message Preview Card */}
+                <div className="bg-[#17212B] text-white rounded-2xl p-5 shadow-xl border border-slate-800">
+                  <div className="flex items-center gap-2.5 pb-3 mb-3 border-b border-slate-700/60">
+                    <div className="w-7 h-7 rounded-full bg-[#2481CC] flex items-center justify-center text-white text-xs font-bold">
+                      <Send className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-[#64B5F6]">Forex Royal Alert Bot</p>
+                      <p className="text-[10px] text-slate-400">Live Telegram Alert Format</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#242F3D] rounded-xl p-4 text-xs font-sans space-y-2.5 text-slate-200 border border-slate-700/40">
+                    <p className="font-bold text-white text-sm">🏊 NEW POOL TRADING APPLICATION</p>
+                    <p className="text-[11px] text-slate-400">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</p>
+                    <div>
+                      <p className="font-bold text-blue-300">📦 PACKAGE DETAILS</p>
+                      <p className="pl-2">• Plan: <strong>7-Day VIP Liquidity Pool</strong></p>
+                      <p className="pl-2">• Target ROI: <strong className="text-emerald-400">+800%</strong></p>
+                      <p className="pl-2">• Duration: <strong>7 days</strong></p>
+                    </div>
+                    <div>
+                      <p className="font-bold text-emerald-300">💰 FINANCIAL BREAKDOWN</p>
+                      <p className="pl-2">• Invested Capital: <strong>$1,000.00</strong></p>
+                      <p className="pl-2">• Est. Profit: <strong className="text-emerald-400">+$8,000.00</strong></p>
+                      <p className="pl-2">• Total Return: <strong>$9,000.00</strong></p>
+                      <p className="pl-2">• Method: <strong>Crypto (USDT TRC20)</strong></p>
+                      <p className="pl-2 font-mono text-[10px] text-slate-400">• Tx Ref: 0x9f83...a42</p>
+                    </div>
+                    <div>
+                      <p className="font-bold text-amber-300">👤 INVESTOR INFORMATION</p>
+                      <p className="pl-2">• Name: <strong>Trader John</strong></p>
+                      <p className="pl-2 font-mono text-[10px] text-slate-300">• Email: john@example.com</p>
+                    </div>
+                    <p className="text-[11px] text-slate-400">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</p>
+                    <p className="text-[11px] text-blue-200 font-bold">⚡ ACTION: Review & approve in Admin Command Center.</p>
+                  </div>
+                </div>
+
+                {/* Setup Steps Guide */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-card space-y-3">
+                  <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                    Quick Bot Setup:
+                  </h4>
+                  <ol className="text-xs text-slate-600 space-y-2.5 list-decimal pl-4">
+                    <li>
+                      Open Telegram and search for <strong>@BotFather</strong>.
+                    </li>
+                    <li>
+                      Send <code>/newbot</code>, give your bot a name and username, then copy the <strong>Bot Token</strong>.
+                    </li>
+                    <li>
+                      Search for <strong>@userinfobot</strong> on Telegram and send <code>/start</code> to view your numeric <strong>Id</strong>.
+                    </li>
+                    <li>
+                      Open your new bot and click <strong>/start</strong> so it has permission to message you.
+                    </li>
+                    <li>
+                      Paste your token and ID into the fields on the left and click <strong>Send Test Alert</strong>.
+                    </li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 

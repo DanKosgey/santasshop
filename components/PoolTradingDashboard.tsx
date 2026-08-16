@@ -90,7 +90,7 @@ function Modal({ open, onClose, title, children, maxW = 'max-w-md' }: {
 /* ═══════════════════════════════════════════════════════════════════════════
    PACKAGE CARD
 ═══════════════════════════════════════════════════════════════════════════ */
-function PackageCard({ pkg, onSelect }: { pkg: PoolPackage; onSelect: (p: PoolPackage) => void }) {
+function PackageCard({ pkg, onSelect }: { pkg: PoolPackage; onSelect: (p: PoolPackage) => void; key?: React.Key }) {
   const r = riskCfg[pkg.risk_level] || riskCfg.medium;
   const fixedProfit = (pkg.min_amount * pkg.roi_percentage) / 100;
   const fixedPayout = pkg.min_amount + fixedProfit;
@@ -166,7 +166,7 @@ function PackageCard({ pkg, onSelect }: { pkg: PoolPackage; onSelect: (p: PoolPa
    INVESTMENT VAULT CARD
 ═══════════════════════════════════════════════════════════════════════════ */
 function InvestmentCard({ inv, now, onWithdraw }: {
-  inv: PoolInvestment; now: number; onWithdraw: (i: PoolInvestment) => void;
+  inv: PoolInvestment; now: number; onWithdraw: (i: PoolInvestment) => void; key?: React.Key;
 }) {
   const maturityMs = new Date(inv.maturity_date).getTime();
   const remaining = maturityMs - now;
@@ -631,6 +631,13 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
         paymentMethod,
         transactionReference: transactionRef,
         notes: appNotes,
+        userName,
+        userEmail,
+        userPhone: (currentUser as any)?.phone || '',
+        packageName: selectedPackage.name,
+        roiPercentage: selectedPackage.roi_percentage,
+        durationValue: selectedPackage.duration_value,
+        durationUnit: selectedPackage.duration_unit,
       });
 
       setSubmissionSuccess({
@@ -664,6 +671,7 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
         amount: withdrawInv.total_payout,
         paymentMethod: method,
         walletAddress: address,
+        packageName: withdrawInv.package_name,
       });
 
       // Update local state

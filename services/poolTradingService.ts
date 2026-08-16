@@ -1,4 +1,10 @@
 import { supabase } from '../supabase/client';
+import {
+  sendPoolApplicationNotification,
+  sendPoolWithdrawalNotification,
+  sendPoolVipRequestNotification,
+  sendTestTelegramMessage,
+} from '../telegram/telegram-notifier';
 
 /* ─── Types & Interfaces ─────────────────────────────────────────────────── */
 
@@ -101,6 +107,17 @@ export interface VipRequest {
   created_at: string;
   user_name?: string;
   user_email?: string;
+}
+
+export interface AdminNotificationSettings {
+  id?: string;
+  telegram_bot_token?: string;
+  telegram_chat_id?: string;
+  notify_pool_application: boolean;
+  notify_withdrawal_request: boolean;
+  notify_vip_request: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 /* ─── Default Packages (Clean Slate for Admin) ──────────────────────────── */
@@ -446,6 +463,13 @@ export const poolTradingService = {
     paymentMethod?: string;
     transactionReference?: string;
     notes?: string;
+    userName?: string;
+    userEmail?: string;
+    userPhone?: string;
+    packageName?: string;
+    roiPercentage?: number;
+    durationValue?: number;
+    durationUnit?: 'hours' | 'days';
   }): Promise<PoolApplication> {
     const record = {
       user_id: params.userId,
@@ -468,7 +492,7 @@ export const poolTradingService = {
       throw error;
     }
 
-    return {
+    const application: PoolApplication = {
       id: data.id,
       user_id: data.user_id,
       package_id: data.package_id,
@@ -478,7 +502,97 @@ export const poolTradingService = {
       notes: data.notes,
       status: data.status,
       created_at: data.created_at,
+      user_name: params.userName,
+      user_email: params.userEmail,
+      user_phone: params.userPhone,
+      package_name: params.packageName,
     };
+
+    // 1. In-app admin notification feed entry
+    try {
+      await supabase.from('admin_notifications').insert({
+        type: 'pool_application',
+        title: `New Pool Application: ${params.userName || 'Investor'}`,
+        message: `${params.userName || 'A user'} applied for ${params.packageName || 'Pool Trading Package'} with $${Number(data.amount).toLocaleString('en-US')}.`,
+        reference_type: 'pool_application',
+        reference_id: data.id,
+        action_url: '/admin',
+        is_read: false,
+      });
+    } catch (notifErr) {
+      console.warn('In-app admin notification entry skipped or failed:', notifErr);
+    }
+
+    // 2. Dispatch Telegram notification asynchronously
+    (async () => {
+      try {
+        let uName = params.userName;
+        let uEmail = params.userEmail;
+        let uPhone = params.userPhone;
+        let pName = params.packageName;
+        let pRoi = params.roiPercentage;
+        let pDurVal = params.durationValue;
+        let pDurUnit = params.durationUnit;
+
+        // If user profile info not supplied, fetch from DB
+        if (!uName || !uEmail) {
+          const { data: prof } = await supabase
+            .from('profiles')
+            .select('full_name, email, phone')
+            .eq('id', params.userId)
+            .maybeSingle();
+
+          if (prof) {
+            uName = uName || prof.full_name;
+            uEmail = uEmail || prof.email;
+            uPhone = uPhone || prof.phone;
+          }
+        }
+
+        // If package info not supplied, fetch from DB
+        if (!pName || pRoi === undefined) {
+          const { data: pkg } = await supabase
+            .from('pool_trading_packages')
+            .select('name, roi_percentage, duration_value, duration_unit')
+            .eq('id', params.packageId)
+            .maybeSingle();
+
+          if (pkg) {
+            pName = pName || pkg.name;
+            pRoi = pRoi !== undefined ? pRoi : Number(pkg.roi_percentage);
+            pDurVal = pDurVal !== undefined ? pDurVal : Number(pkg.duration_value);
+            pDurUnit = pDurUnit || (pkg.duration_unit as 'hours' | 'days');
+          }
+        }
+
+        const expReturn = pRoi !== undefined ? (params.amount * pRoi) / 100 : undefined;
+        const totalPay = expReturn !== undefined ? params.amount + expReturn : undefined;
+
+        await sendPoolApplicationNotification({
+          applicationId: data.id,
+          userId: params.userId,
+          userName: uName || 'Anonymous Trader',
+          userEmail: uEmail || 'student@platform.com',
+          userPhone: uPhone,
+          packageId: params.packageId,
+          packageName: pName || 'Pool Trading Package',
+          amount: Number(data.amount),
+          expectedReturn: expReturn,
+          totalPayout: totalPay,
+          durationValue: pDurVal,
+          durationUnit: pDurUnit,
+          roiPercentage: pRoi,
+          paymentMethod: data.payment_method,
+          transactionReference: data.transaction_reference,
+          notes: data.notes,
+          timestamp: data.created_at,
+        });
+      } catch (tgErr) {
+        console.error('Failed to trigger Telegram pool application notification:', tgErr);
+      }
+    })();
+
+    return application;
   },
 
   /**
@@ -561,7 +675,7 @@ export const poolTradingService = {
       package_id: inv.package_id,
       invested_amount: Number(inv.invested_amount),
       expected_return: Number(inv.expected_return),
-      total_payout: Number(inv.total_payout || totalPayout),
+      total_payout: Number(inv.total_payout || (params.amount + expectedReturn)),
       start_date: inv.start_date,
       maturity_date: inv.maturity_date,
       status: 'active',
@@ -849,6 +963,7 @@ export const poolTradingService = {
     amount: number;
     paymentMethod: string;
     walletAddress: string;
+    packageName?: string;
   }): Promise<WithdrawalRequest> {
     const record = {
       user_id: params.userId,
@@ -872,6 +987,41 @@ export const poolTradingService = {
 
     // Update investment status to withdrawal_pending
     await this.updateInvestmentStatus(params.investmentId, 'withdrawal_pending');
+
+    // In-app admin notification & Telegram alert asynchronously
+    (async () => {
+      try {
+        await supabase.from('admin_notifications').insert({
+          type: 'withdrawal_request',
+          title: `Withdrawal Request: $${Number(params.amount).toLocaleString('en-US')}`,
+          message: `User requested payout of $${Number(params.amount).toLocaleString('en-US')} via ${params.paymentMethod}.`,
+          reference_type: 'withdrawal_request',
+          reference_id: data.id,
+          action_url: '/admin',
+          is_read: false,
+        });
+
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('full_name, email')
+          .eq('id', params.userId)
+          .maybeSingle();
+
+        await sendPoolWithdrawalNotification({
+          requestId: data.id,
+          userId: params.userId,
+          userName: prof?.full_name || 'Trader',
+          userEmail: prof?.email || 'student@platform.com',
+          amount: Number(data.amount),
+          paymentMethod: data.payment_method,
+          walletAddress: data.wallet_address,
+          packageName: params.packageName,
+          timestamp: data.created_at,
+        });
+      } catch (err) {
+        console.warn('Withdrawal notification dispatch error:', err);
+      }
+    })();
 
     return {
       id: data.id,
@@ -991,10 +1141,6 @@ export const poolTradingService = {
     };
   },
 
-  /* ══════════════════════════════════════════════════════════════════════════
-     VIP REQUESTS
-  ══════════════════════════════════════════════════════════════════════════ */
-
   /**
    * Submit VIP syndicate request (Student)
    */
@@ -1006,6 +1152,39 @@ export const poolTradingService = {
       .single();
 
     if (error) throw error;
+
+    // In-app notification & Telegram alert asynchronously
+    (async () => {
+      try {
+        await supabase.from('admin_notifications').insert({
+          type: 'vip_request',
+          title: `VIP Syndicate Request`,
+          message: `User applied for VIP syndicate access.`,
+          reference_type: 'vip_request',
+          reference_id: data.id,
+          action_url: '/admin',
+          is_read: false,
+        });
+
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('full_name, email')
+          .eq('id', userId)
+          .maybeSingle();
+
+        await sendPoolVipRequestNotification({
+          requestId: data.id,
+          userId: userId,
+          userName: prof?.full_name || 'VIP Applicant',
+          userEmail: prof?.email || 'student@platform.com',
+          notes: notes,
+          timestamp: data.created_at,
+        });
+      } catch (err) {
+        console.warn('VIP notification dispatch error:', err);
+      }
+    })();
+
     return {
       id: data.id,
       user_id: data.user_id,
@@ -1086,5 +1265,101 @@ export const poolTradingService = {
         })
         .eq('id', userId);
     }
+  },
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     NOTIFICATIONS & TELEGRAM SETTINGS
+  ══════════════════════════════════════════════════════════════════════════ */
+
+  /**
+   * Fetch current admin notification settings (Telegram Bot & toggles)
+   */
+  async getNotificationSettings(): Promise<AdminNotificationSettings> {
+    const defaultSettings: AdminNotificationSettings = {
+      telegram_bot_token: import.meta.env.VITE_TELEGRAM_BOT_TOKEN || '',
+      telegram_chat_id: import.meta.env.VITE_TELEGRAM_CHAT_ID || '',
+      notify_pool_application: true,
+      notify_withdrawal_request: true,
+      notify_vip_request: true,
+    };
+
+    try {
+      const { data, error } = await supabase
+        .from('admin_notification_settings')
+        .select('*')
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data) {
+        return {
+          id: data.id,
+          telegram_bot_token: data.telegram_bot_token || defaultSettings.telegram_bot_token,
+          telegram_chat_id: data.telegram_chat_id || defaultSettings.telegram_chat_id,
+          notify_pool_application: data.notify_pool_application !== false,
+          notify_withdrawal_request: data.notify_withdrawal_request !== false,
+          notify_vip_request: data.notify_vip_request !== false,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+        };
+      }
+      return defaultSettings;
+    } catch (err) {
+      console.warn('getNotificationSettings fallback to default/env:', err);
+      return defaultSettings;
+    }
+  },
+
+  /**
+   * Update admin notification settings (Telegram Bot & toggles)
+   */
+  async updateNotificationSettings(settings: Partial<AdminNotificationSettings>): Promise<AdminNotificationSettings> {
+    try {
+      const { data: existing } = await supabase
+        .from('admin_notification_settings')
+        .select('id')
+        .limit(1)
+        .maybeSingle();
+
+      const payload = {
+        telegram_bot_token: settings.telegram_bot_token,
+        telegram_chat_id: settings.telegram_chat_id,
+        notify_pool_application: settings.notify_pool_application !== false,
+        notify_withdrawal_request: settings.notify_withdrawal_request !== false,
+        notify_vip_request: settings.notify_vip_request !== false,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (existing?.id) {
+        const { data, error } = await supabase
+          .from('admin_notification_settings')
+          .update(payload)
+          .eq('id', existing.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      } else {
+        const { data, error } = await supabase
+          .from('admin_notification_settings')
+          .insert(payload)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      }
+    } catch (err) {
+      console.error('Failed to update admin notification settings:', err);
+      throw err;
+    }
+  },
+
+  /**
+   * Dispatch a test notification message to verify Telegram bot credentials
+   */
+  async testTelegramConnection(botToken: string, chatId: string): Promise<{ success: boolean; error?: string }> {
+    return sendTestTelegramMessage(botToken, chatId);
   }
 };
