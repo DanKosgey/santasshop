@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   TrendingUp, CheckCircle2, XCircle, Search, Plus, Edit2, Trash2,
   X, ChevronDown, MoreVertical, Users, Clock, DollarSign,
@@ -140,7 +140,7 @@ function AppCard({ app, onApprove, onReject }: {
           </div>
           <div className="text-right">
             <span className="text-[10px] text-slate-400 block uppercase font-bold">Applied Amount</span>
-            <p className="text-base sm:text-lg font-black text-slate-900 tabular-nums">£{fmt(app.amount)}</p>
+            <p className="text-base sm:text-lg font-black text-slate-900 tabular-nums">${fmt(app.amount)}</p>
           </div>
         </div>
 
@@ -540,7 +540,7 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
             <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5">
               <StatChip label="Pending Applications" value={pendingCount} color="bg-amber-50 border-amber-200 text-amber-700" />
               <StatChip label="Active Pools" value={activeCount} color="bg-emerald-50 border-emerald-200 text-emerald-700" />
-              <StatChip label="Total Managed FUM" value={`£${fmt(totalFUM)}`} color="bg-blue-50 border-blue-200 text-blue-700" />
+              <StatChip label="Total Managed FUM" value={`$${fmt(totalFUM)}`} color="bg-blue-50 border-blue-200 text-blue-700" />
             </div>
 
             {/* Search Bar */}
@@ -590,7 +590,7 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase">Active FUM</p>
-                  <p className="text-sm sm:text-xl font-black text-slate-900 tabular-nums">£{fmt(totalFUM)}</p>
+                  <p className="text-sm sm:text-xl font-black text-slate-900 tabular-nums">${fmt(totalFUM)}</p>
                 </div>
               </div>
               <div className="bg-white rounded-2xl border border-slate-200 shadow-card p-3 sm:p-5 flex items-center gap-3">
@@ -679,13 +679,13 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                               </span>
                             </td>
                             <td className="px-5 py-4 font-extrabold text-slate-900 tabular-nums whitespace-nowrap">
-                              £{fmt(inv.invested_amount)}
+                              ${fmt(inv.invested_amount)}
                             </td>
                             <td className="px-5 py-4 font-bold text-emerald-600 tabular-nums whitespace-nowrap">
-                              +£{fmt(inv.expected_return)}
+                              +${fmt(inv.expected_return)}
                             </td>
                             <td className="px-5 py-4 font-black text-slate-800 tabular-nums whitespace-nowrap">
-                              £{fmt(inv.total_payout)}
+                              ${fmt(inv.total_payout)}
                             </td>
                             <td className="px-5 py-4 text-xs text-slate-600 whitespace-nowrap">
                               {new Date(inv.maturity_date).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -796,7 +796,7 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                             +{pkg.roi_percentage}%
                           </td>
                           <td className="px-5 py-4 tabular-nums font-extrabold text-slate-900 whitespace-nowrap">
-                            £{fmt(pkg.min_amount)}
+                            ${fmt(pkg.min_amount)}
                           </td>
                           <td className="px-5 py-4 whitespace-nowrap">
                             <span className={`text-xs font-bold border px-2.5 py-0.5 rounded-full ${r.bg} ${r.text} ${r.border}`}>
@@ -887,7 +887,7 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                             <p className="text-[11px] text-slate-400">{w.user_email}</p>
                           </td>
                           <td className="px-5 py-4 font-black text-emerald-600 text-base tabular-nums whitespace-nowrap">
-                            £{fmt(w.amount)}
+                            ${fmt(w.amount)}
                           </td>
                           <td className="px-5 py-4 text-xs font-bold text-slate-700 whitespace-nowrap">
                             {w.payment_method}
@@ -955,7 +955,7 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Deposit Amount (£)
+                    Deposit Amount ($)
                   </label>
                   <input
                     type="number"
@@ -980,8 +980,8 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
               {/* Calculated profit */}
               <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center">
                 <p className="text-xs font-bold text-emerald-700 uppercase tracking-wide">Calculated Return ({roiPct}%)</p>
-                <p className="text-3xl font-black text-emerald-700 tabular-nums mt-1">+£{fmt(profit)}</p>
-                <p className="text-xs text-slate-500 mt-1">Total payout at maturity: £{fmt(totalPayout)}</p>
+                <p className="text-3xl font-black text-emerald-700 tabular-nums mt-1">+${fmt(profit)}</p>
+                <p className="text-xs text-slate-500 mt-1">Total payout at maturity: ${fmt(totalPayout)}</p>
               </div>
 
               <div className="flex gap-3 pt-2">
@@ -1009,7 +1009,7 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
           <div className="space-y-4">
             <div className="p-3.5 bg-red-50 border border-red-200 rounded-2xl">
               <p className="text-sm font-bold text-red-900">Rejecting: {rejectApp.user_name}</p>
-              <p className="text-xs text-red-600">{rejectApp.package_name} · £{fmt(rejectApp.amount)}</p>
+              <p className="text-xs text-red-600">{rejectApp.package_name} · ${fmt(rejectApp.amount)}</p>
             </div>
 
             <div>
@@ -1060,7 +1060,7 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                 type="text"
                 value={pkgForm.name || ''}
                 onChange={e => setPkgForm(f => ({ ...f, name: e.target.value }))}
-                placeholder="e.g. 24H · £500 Plan"
+                placeholder="e.g. 24H · $500 Plan"
                 className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 bg-slate-50 focus:bg-white focus:border-blue-500 outline-none"
               />
             </div>
@@ -1103,18 +1103,18 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                 type="number"
                 value={pkgForm.roi_percentage || ''}
                 onChange={e => setPkgForm(f => ({ ...f, roi_percentage: Number(e.target.value) }))}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-emerald-600 bg-slate-50 focus:bg-white focus:border-blue-500 outline-none"
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm font-bold text-emerald-600 bg-slate-50 focus:bg-white focus:border-blue-500 outline-none"
                 placeholder="840"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Fixed / Min Amount (£) *</label>
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Fixed / Min Amount ($) *</label>
               <input
                 type="number"
                 value={pkgForm.min_amount || ''}
                 onChange={e => setPkgForm(f => ({ ...f, min_amount: Number(e.target.value) }))}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 bg-slate-50 focus:bg-white focus:border-blue-500 outline-none"
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-slate-900 bg-slate-50 focus:bg-white focus:border-blue-500 outline-none"
                 placeholder="500"
               />
             </div>
@@ -1124,7 +1124,7 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
               <select
                 value={pkgForm.risk_level || 'low'}
                 onChange={e => setPkgForm(f => ({ ...f, risk_level: e.target.value as any }))}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 bg-slate-50 focus:border-blue-500 outline-none"
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-slate-900 bg-slate-50 focus:border-blue-500 outline-none"
               >
                 <option value="low">Low Risk</option>
                 <option value="medium">Medium Risk</option>
@@ -1157,13 +1157,13 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
           <div className="flex gap-3 pt-2">
             <button
               onClick={() => setPkgModal(null)}
-              className="flex-1 py-3 text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
+              className="flex-1 py-3 min-h-[44px] text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
             >
               Cancel
             </button>
             <button
               onClick={handleSavePackage}
-              className="flex-1 py-3 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-md"
+              className="flex-1 py-3 min-h-[44px] text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-md"
             >
               Save Package
             </button>
@@ -1185,7 +1185,7 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                 type="number"
                 value={extendDays}
                 onChange={e => setExtendDays(Number(e.target.value))}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-900 bg-slate-50 focus:bg-white outline-none"
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm font-bold text-slate-900 bg-slate-50 focus:bg-white outline-none"
               />
             </div>
 
@@ -1196,20 +1196,20 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                 value={extendReason}
                 onChange={e => setExtendReason(e.target.value)}
                 placeholder="e.g. Market compounding cycle extension"
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 bg-slate-50 focus:bg-white outline-none"
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm text-slate-900 bg-slate-50 focus:bg-white outline-none"
               />
             </div>
 
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setExtendInv(null)}
-                className="flex-1 py-3 text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
+                className="flex-1 py-3 min-h-[44px] text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleExtendConfirm}
-                className="flex-1 py-3 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-md"
+                className="flex-1 py-3 min-h-[44px] text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-md"
               >
                 Confirm Extension
               </button>
@@ -1224,7 +1224,7 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
           <div className="space-y-4">
             <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200">
               <p className="text-xs font-bold text-emerald-700 uppercase">Payout to {procWd.user_name}</p>
-              <p className="text-3xl font-black text-emerald-800 mt-1">£{fmt(procWd.amount)}</p>
+              <p className="text-3xl font-black text-emerald-800 mt-1">${fmt(procWd.amount)}</p>
               <p className="text-xs text-slate-600 mt-1">
                 Method: <strong>{procWd.payment_method}</strong>
               </p>
@@ -1242,20 +1242,20 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                 value={txHash}
                 onChange={e => setTxHash(e.target.value)}
                 placeholder="e.g. 0xabc... or M-Pesa Tx Code"
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-mono text-slate-900 bg-slate-50 focus:bg-white outline-none"
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm font-mono text-slate-900 bg-slate-50 focus:bg-white outline-none"
               />
             </div>
 
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => handleProcessWithdrawal('declined')}
-                className="flex-1 py-3 text-sm font-bold text-red-600 border border-red-200 hover:bg-red-50 rounded-xl transition-all"
+                className="flex-1 py-3 min-h-[44px] text-sm font-bold text-red-600 border border-red-200 hover:bg-red-50 rounded-xl transition-all"
               >
                 Decline
               </button>
               <button
                 onClick={() => handleProcessWithdrawal('completed')}
-                className="flex-1 py-3 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-md"
+                className="flex-1 py-3 min-h-[44px] text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-md"
               >
                 Mark as Dispatched (Paid)
               </button>
@@ -1266,3 +1266,4 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
     </div>
   );
 }
+

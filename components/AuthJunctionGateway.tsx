@@ -20,13 +20,13 @@ const options = [
     statLabel: 'Signal Accuracy',
     description: 'Real-time institutional forex signals, daily chart breakdowns, and direct VIP Telegram channel access.',
     highlights: ['90%+ Historical Signal Accuracy', 'Instant Telegram & Push Alerts', '1-on-1 Trading Guidance'],
-    gradientFrom: '#10B981',
-    gradientTo: '#0D9488',
-    glowColor: 'rgba(16,185,129,0.35)',
-    hoverBorder: 'hover:border-emerald-500/60',
-    badgeBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-    iconGlow: 'shadow-[0_0_20px_rgba(16,185,129,0.4)]',
-    numberColor: 'text-emerald-400',
+    gradientFrom: '#D4A24C',
+    gradientTo: '#B8862E',
+    glowColor: 'rgba(212,162,76,0.35)',
+    hoverBorder: 'hover:border-[#D4A24C]/60',
+    badgeBg: 'bg-[#D4A24C]/20 text-[#D4A24C] border-[#D4A24C]/30',
+    iconGlow: 'shadow-[0_0_20px_rgba(212,162,76,0.4)]',
+    numberColor: 'text-[#D4A24C]',
   },
   {
     id: 'pool-trading' as GatewayTarget,
@@ -39,13 +39,13 @@ const options = [
     statLabel: 'Active Monitoring',
     description: 'Deposit into expert-managed liquidity pools and earn steady compound yields from algorithmic execution.',
     highlights: ['Transparent Yield Tracking', 'Flexible Capital Withdrawal', 'Institutional Staking Pools'],
-    gradientFrom: '#3B82F6',
-    gradientTo: '#6366F1',
-    glowColor: 'rgba(59,130,246,0.35)',
-    hoverBorder: 'hover:border-blue-500/60',
-    badgeBg: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-    iconGlow: 'shadow-[0_0_20px_rgba(59,130,246,0.4)]',
-    numberColor: 'text-blue-400',
+    gradientFrom: '#D4A24C',
+    gradientTo: '#F2E4C8',
+    glowColor: 'rgba(212,162,76,0.35)',
+    hoverBorder: 'hover:border-[#D4A24C]/60',
+    badgeBg: 'bg-[#D4A24C]/20 text-[#D4A24C] border-[#D4A24C]/30',
+    iconGlow: 'shadow-[0_0_20px_rgba(212,162,76,0.4)]',
+    numberColor: 'text-[#D4A24C]',
   },
   {
     id: 'account-management' as GatewayTarget,
@@ -58,20 +58,20 @@ const options = [
     statLabel: 'Risk-to-Reward',
     description: 'Let experienced institutional traders manage your account or pass your Prop Firm challenge with strict risk controls.',
     highlights: ['Strict Capital Preservation', 'Custom Profit Split Model', 'Real-Time Performance Dashboard'],
-    gradientFrom: '#8B5CF6',
-    gradientTo: '#EC4899',
-    glowColor: 'rgba(139,92,246,0.35)',
-    hoverBorder: 'hover:border-purple-500/60',
-    badgeBg: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-    iconGlow: 'shadow-[0_0_20px_rgba(139,92,246,0.4)]',
-    numberColor: 'text-purple-400',
+    gradientFrom: '#D4A24C',
+    gradientTo: '#B8862E',
+    glowColor: 'rgba(212,162,76,0.35)',
+    hoverBorder: 'hover:border-[#D4A24C]/60',
+    badgeBg: 'bg-[#D4A24C]/20 text-[#D4A24C] border-[#D4A24C]/30',
+    iconGlow: 'shadow-[0_0_20px_rgba(212,162,76,0.4)]',
+    numberColor: 'text-[#D4A24C]',
   },
 ];
 
 const trustBadges = [
-  { icon: ShieldCheck, label: '256-Bit SSL Encrypted',     color: 'text-emerald-400' },
-  { icon: Globe,       label: 'Global Institutional Grade', color: 'text-blue-400' },
-  { icon: Zap,         label: 'Instant Access',             color: 'text-yellow-400' },
+  { icon: ShieldCheck, label: '256-Bit SSL Encrypted',     color: 'text-[#D4A24C]' },
+  { icon: Globe,       label: 'Global Institutional Grade', color: 'text-white/60' },
+  { icon: Zap,         label: 'Instant Access',             color: 'text-[#D4A24C]' },
 ];
 
 export const AuthJunctionGateway: React.FC<AuthJunctionGatewayProps> = ({
@@ -81,55 +81,55 @@ export const AuthJunctionGateway: React.FC<AuthJunctionGatewayProps> = ({
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen bg-[#07090F] text-white flex flex-col relative font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-[#0B0B0C] text-white flex flex-col relative font-sans overflow-x-hidden">
       {/* ── Animated ambient background orbs ── */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div
-          className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full opacity-20 blur-3xl"
-          style={{ background: 'radial-gradient(circle, #3B82F6 0%, transparent 70%)' }}
+          className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full opacity-15 blur-3xl"
+          style={{ background: 'radial-gradient(circle, #D4A24C 0%, transparent 70%)' }}
         />
         <div
-          className="absolute top-1/3 -right-32 w-[400px] h-[400px] rounded-full opacity-15 blur-3xl"
-          style={{ background: 'radial-gradient(circle, #8B5CF6 0%, transparent 70%)' }}
+          className="absolute top-1/3 -right-32 w-[400px] h-[400px] rounded-full opacity-10 blur-3xl"
+          style={{ background: 'radial-gradient(circle, #B8862E 0%, transparent 70%)' }}
         />
         <div
           className="absolute bottom-0 left-1/3 w-[450px] h-[300px] rounded-full opacity-10 blur-3xl"
-          style={{ background: 'radial-gradient(circle, #10B981 0%, transparent 70%)' }}
+          style={{ background: 'radial-gradient(circle, #D4A24C 0%, transparent 70%)' }}
         />
         {/* Subtle grid overlay */}
         <div
           className="absolute inset-0 opacity-[0.04]"
           style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)`,
+            backgroundImage: `linear-gradient(rgba(212,162,76,0.15) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(212,162,76,0.15) 1px, transparent 1px)`,
             backgroundSize: '60px 60px',
           }}
         />
         {/* Top shimmer line */}
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#D4A24C]/40 to-transparent" />
       </div>
 
       {/* ── Sticky Header ── */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/[0.06] bg-[#07090F]/80">
+      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/[0.06] bg-[#0B0B0C]/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 h-14 sm:h-16 flex items-center justify-between">
           <button
             onClick={onBackToLanding}
-            className="group flex items-center gap-2 text-white/60 hover:text-white transition-all duration-200 text-xs sm:text-sm font-medium px-3 py-1.5 rounded-xl border border-white/[0.08] hover:border-white/20 hover:bg-white/[0.05]"
+            className="group flex items-center gap-2 text-white/60 hover:text-white transition-all duration-200 text-xs sm:text-sm font-medium px-3 py-1.5 rounded-xl border border-white/[0.08] hover:border-[#D4A24C]/40 hover:bg-white/[0.05]"
           >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform text-[#D4A24C]" />
             <span className="hidden sm:inline">Back to Site</span>
             <span className="sm:hidden">Back</span>
           </button>
 
           <div className="flex items-center gap-2.5">
             <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm text-white"
-              style={{ background: 'linear-gradient(135deg,#3B82F6,#6366F1)' }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm text-[#111111]"
+              style={{ background: 'linear-gradient(135deg, #D4A24C, #B8862E)' }}
             >
-              F
+              👑
             </div>
             <span className="font-extrabold text-base sm:text-lg tracking-tight text-white">
-              FOREX <span className="font-light text-white/40">ROYAL</span>
+              FOREX <span className="font-light text-[#D4A24C]">ROYAL</span>
             </span>
           </div>
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, GraduationCap, Cpu as Bot, BookOpen, Users, LogOut, Settings, ShieldAlert, Layers, PieChart as PieIcon, CheckSquare, X, Menu, Zap, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, GraduationCap, Cpu as Bot, BookOpen, Users, LogOut, Settings, ShieldAlert, Layers, PieChart as PieIcon, CheckSquare, X, Menu, Zap, ChevronRight, UserCog, Sliders } from 'lucide-react';
 import { User } from '../types';
 import NavigationButtons from './NavigationButtons';
 import { APP_DISPLAY_NAMES } from '../lib/constants';
@@ -28,13 +28,14 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
   if (user.role === 'admin') {
     menuItems = [
       { id: 'directory',          label: 'Directory',    icon: Users },
-      { id: 'student-management', label: 'Students',     icon: Settings },
+      { id: 'student-management', label: 'Students',     icon: UserCog },
       { id: 'trades',             label: 'Trade Audit',  icon: Layers },
       { id: 'analytics',          label: 'Analytics',    icon: PieIcon },
       { id: 'admin-pool-trading', label: 'Pool Trading', icon: Zap },
       { id: 'content',            label: 'Courses',      icon: GraduationCap },
-      { id: 'rules',              label: 'Rules',        icon: Settings },
+      { id: 'rules',              label: 'Rules',        icon: Sliders },
       { id: 'bot-inquiries',      label: 'Bot Orders',   icon: Bot },
+      { id: 'settings',           label: 'Settings',     icon: Settings },
     ];
   } else {
     menuItems = [
@@ -52,32 +53,33 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
   const overflowItems = menuItems.slice(5);
 
   const isAdmin = user.role === 'admin';
-  const accentBg      = isAdmin ? 'bg-purple-600'  : 'bg-blue-600';
-  const accentText    = isAdmin ? 'text-purple-600' : 'text-blue-600';
-  const accentBorder  = isAdmin ? 'border-purple-200' : 'border-blue-200';
-  const accentBgLight = isAdmin ? 'bg-purple-50'   : 'bg-blue-50';
-  const accentRing    = isAdmin ? 'ring-purple-200' : 'ring-blue-200';
+  // Gold/Black theme — consistent for all roles
+  const accentBg      = 'bg-[#D4A24C]';
+  const accentText    = 'text-[#9A6D1E]';
+  const accentBorder  = 'border-[#E8CC9A]';
+  const accentBgLight = 'bg-[#FAF5EB]';
+  const accentRing    = 'ring-[#E8CC9A]';
 
   // Find current page label for mobile header
   const currentPage = menuItems.find(m => m.id === currentView);
   const pageLabel   = currentPage?.label ?? APP_DISPLAY_NAMES.short;
 
   return (
-    <div className="flex min-h-screen bg-[#F0F2F7] text-slate-700 relative font-sans">
+    <div className="flex min-h-screen bg-[#F7F7F8] text-[#111111] relative font-sans">
 
       {/* â”€â”€â”€ Mobile Top Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-50"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-        <div className="h-14 bg-white/97 backdrop-blur-xl border-b border-slate-200/80 shadow-sm flex items-center justify-between px-4">
+        <div className="h-14 bg-[#0B0B0C] backdrop-blur-xl border-b border-black/40 shadow-sm flex items-center justify-between px-4">
           {/* Left: Brand */}
           <div className="flex items-center gap-2.5">
-            <div className={`w-1.5 h-6 rounded-full ${accentBg}`} />
+            <div className="w-1.5 h-6 rounded-full bg-[#D4A24C]" />
             <div>
-              <span className="text-slate-900 font-bold text-base tracking-tight leading-none">
+              <span className="text-white font-bold text-base tracking-tight leading-none">
                 {APP_DISPLAY_NAMES.short}
               </span>
               {currentPage && (
-                <div className={`text-[10px] font-semibold tracking-wide uppercase ${accentText} leading-none mt-0.5`}>
+                <div className="text-[10px] font-semibold tracking-wide uppercase text-[#D4A24C] leading-none mt-0.5">
                   {pageLabel}
                 </div>
               )}
@@ -87,12 +89,13 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
           {/* Right: Avatar + overflow */}
           <div className="flex items-center gap-2">
             <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${accentBg} ring-2 ${accentRing}`}>
-              {user.name.charAt(0).toUpperCase()}
+              {(user.name || user.email || 'U').charAt(0).toUpperCase()}
             </div>
             {overflowItems.length > 0 && (
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 transition"
+                aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+                className="w-10 h-10 flex items-center justify-center rounded-xl text-white hover:bg-white/10 transition min-w-[44px] min-h-[44px]"
               >
                 {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </button>
@@ -101,7 +104,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
         </div>
       </header>
 
-      {/* â”€â”€â”€ Mobile Overflow Menu â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ─── Mobile Overflow Menu ────────────────────────────────────────── */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
@@ -125,10 +128,10 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
               {/* User info */}
               <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border-b border-slate-100">
                 <div className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0 ${accentBg}`}>
-                  {user.name.charAt(0).toUpperCase()}
+                  {(user.name || user.email || 'U').charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 truncate">{user.name}</p>
+                  <p className="text-sm font-semibold text-slate-800 truncate">{user.name || 'Trader'}</p>
                   <p className="text-[11px] text-slate-400 capitalize">{user.role}</p>
                 </div>
               </div>
@@ -172,16 +175,16 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
       </AnimatePresence>
 
       {/* â”€â”€â”€ Desktop Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <aside className="hidden md:flex fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-slate-200 flex-shrink-0 flex-col shadow-sm">
+      <aside className="hidden md:flex fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-[#E5E7EB] flex-shrink-0 flex-col shadow-sm">
         {/* Logo */}
-        <div className="p-5 border-b border-slate-100">
+        <div className="p-5 border-b border-[#E5E7EB] bg-[#0B0B0C]">
           <div className="flex items-center gap-3">
-            <div className={`w-2 h-8 rounded-full ${accentBg}`} />
+            <div className="w-2 h-8 rounded-full bg-[#D4A24C]" />
             <div>
-              <h1 className="text-lg font-bold text-slate-900 tracking-tight leading-none">
+              <h1 className="text-lg font-bold text-white tracking-tight leading-none">
                 {isAdmin ? APP_DISPLAY_NAMES.adminPortal : APP_DISPLAY_NAMES.full}
               </h1>
-              <p className="text-[11px] font-semibold text-slate-400 mt-1 tracking-wider uppercase">
+              <p className="text-[11px] font-semibold text-[#D4A24C]/70 mt-1 tracking-wider uppercase">
                 {isAdmin ? 'Admin Portal' : 'Trading Platform'}
               </p>
             </div>
@@ -202,7 +205,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
                 onClick={() => handleNavClick(item.id)}
                 className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-sm font-medium relative group ${
                   isActive
-                    ? `${accentBgLight} ${accentText} font-semibold border ${accentBorder}`
+                    ? `bg-[#FAF5EB] text-[#9A6D1E] font-semibold border border-[#E8CC9A]`
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
               >
@@ -223,13 +226,13 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
         </nav>
 
         {/* User section */}
-        <div className="p-3 border-t border-slate-100">
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-50 mb-1.5 border border-slate-100">
-            <div className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0 ${accentBg}`}>
-              {user.name.charAt(0).toUpperCase()}
+        <div className="p-3 border-t border-[#E5E7EB]">
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#FAF5EB] mb-1.5 border border-[#E8CC9A]">
+            <div className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold text-[#111] flex-shrink-0 bg-[#D4A24C]">
+              {(user.name || user.email || 'U').charAt(0).toUpperCase()}
             </div>
             <div className="overflow-hidden flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-800 truncate">{user.name}</p>
+              <p className="text-sm font-semibold text-slate-800 truncate">{user.name || 'Trader'}</p>
               <p className="text-[11px] text-slate-400 truncate capitalize">{user.role} Account</p>
             </div>
           </div>
@@ -267,7 +270,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         {/* Frosted glass background */}
-        <div className="absolute inset-0 bg-white/97 backdrop-blur-2xl border-t border-slate-200/60 shadow-[0_-2px_20px_rgba(15,23,42,0.08)]" />
+        <div className="absolute inset-0 bg-white/97 backdrop-blur-2xl border-t border-[#E5E7EB]/80 shadow-[0_-2px_20px_rgba(0,0,0,0.06)]" />
 
         <nav className="relative flex items-stretch h-[60px]">
           {bottomNavItems.map((item) => {
@@ -277,7 +280,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
-                className="flex flex-col items-center justify-center flex-1 min-w-0 relative px-0.5 gap-0.5"
+                aria-label={item.label}
+                className="flex flex-col items-center justify-center flex-1 min-w-0 relative px-0.5 gap-0.5 min-h-[44px]"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {/* Active background pill */}
@@ -318,7 +322,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
           {menuItems.length <= 5 && (
             <button
               onClick={onLogout}
-              className="flex flex-col items-center justify-center flex-1 min-w-0 gap-0.5 px-0.5"
+              aria-label="Log Out"
+              className="flex flex-col items-center justify-center flex-1 min-w-0 gap-0.5 px-0.5 min-h-[44px]"
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
               <LogOut strokeWidth={1.7} className="h-[22px] w-[22px] text-slate-400" />

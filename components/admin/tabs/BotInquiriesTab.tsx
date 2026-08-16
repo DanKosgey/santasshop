@@ -51,8 +51,8 @@ const BotInquiriesTab: React.FC = () => {
   };
 
   const filteredStudents = students.filter(s =>
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (s.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (s.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getTierBadge = (tier: string) => {
@@ -128,10 +128,10 @@ const BotInquiriesTab: React.FC = () => {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="h-11 w-11 rounded-full bg-blue-50 flex items-center justify-center text-base font-bold text-blue-600 shrink-0">
-                        {student.name.charAt(0).toUpperCase()}
+                        {(student.name || student.email || 'S').charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-800 truncate">{student.name}</p>
+                        <p className="text-sm font-semibold text-slate-800 truncate">{student.name || 'Anonymous Student'}</p>
                         <p className="text-xs text-slate-400 truncate" title={student.email}>{student.email}</p>
                       </div>
                     </div>

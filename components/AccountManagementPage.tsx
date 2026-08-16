@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Mail, Phone, ShieldCheck, ShieldAlert, Edit3,
   Send, CheckCircle2, X, MessageCircle,
-  Trash2, AlertTriangle
+  AlertTriangle
 } from 'lucide-react';
 import { ADMIN_WHATSAPP, ADMIN_TELEGRAM_URL, ADMIN_TELEGRAM_USERNAME } from '../lib/constants';
 import { supabase } from '../supabase/client';
@@ -96,9 +96,6 @@ export function AccountManagementPage({ currentUser, onProfileUpdated }: Account
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
-
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [deleteInput, setDeleteInput] = useState('');
 
   const [toast, setToast] = useState<{ msg: string; type?: 'success' | 'error' } | null>(null);
 
@@ -251,33 +248,11 @@ export function AccountManagementPage({ currentUser, onProfileUpdated }: Account
     }
   };
 
-  const handleDeleteAccount = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (deleteInput !== 'DELETE') {
-      showToast('Type DELETE exactly to confirm.', 'error');
-      return;
-    }
-    try {
-      if (profile?.id) {
-        await supabase.from('profiles').delete().eq('id', profile.id).catch(() => {});
-      }
-      await supabase.auth.signOut();
-      setIsDeleteOpen(false);
-      showToast('Account scheduled for deletion. Logging out...');
-      setTimeout(() => {
-        window.location.reload();
-      }, 1200);
-    } catch (err: any) {
-      console.error('Error deleting account:', err);
-      showToast(err?.message || 'Failed to delete account', 'error');
-    }
-  };
-
   if (loading || !profile) {
     return (
-      <div className="min-h-[60vh] bg-[#F5F7FA] flex items-center justify-center font-sans">
-        <div className="flex items-center gap-3 text-blue-600 font-semibold">
-          <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-[60vh] bg-[#F7F7F8] flex items-center justify-center font-sans">
+        <div className="flex items-center gap-3 text-[#D4A24C] font-semibold">
+          <div className="w-5 h-5 border-2 border-[#D4A24C] border-t-transparent rounded-full animate-spin" />
           Loading Account Details...
         </div>
       </div>
@@ -290,16 +265,15 @@ export function AccountManagementPage({ currentUser, onProfileUpdated }: Account
   const telegramUrl = ADMIN_TELEGRAM_URL;
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] font-sans pb-16">
+    <div className="min-h-screen bg-[#F7F7F8] font-sans pb-16">
       {/* Global CSS */}
       <style>{`
-        .shadow-card { box-shadow: 0 4px 6px -1px rgba(15,23,42,0.06), 0 2px 4px -2px rgba(15,23,42,0.04); }
-        .shadow-card-hover:hover { box-shadow: 0 10px 15px -3px rgba(15,23,42,0.07), 0 4px 6px -4px rgba(15,23,42,0.05); }
-        .contact-card:hover { box-shadow: 0 10px 15px -3px rgba(15,23,42,0.09); transform: translateY(-2px); }
+        .shadow-card { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.04); }
+        .shadow-card-hover:hover { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.05); }
+        .contact-card:hover { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.09); transform: translateY(-2px); }
         .contact-card { transition: all 0.2s ease; }
         .tabular-nums { font-variant-numeric: tabular-nums; }
         input, textarea, select { outline: none; }
-        input:focus, textarea:focus, select:focus { ring: none; }
       `}</style>
 
       {toast && <Toast msg={toast.msg} type={toast.type} />}
@@ -319,9 +293,9 @@ export function AccountManagementPage({ currentUser, onProfileUpdated }: Account
             <div className="relative flex-shrink-0">
               {profile.avatar_url ? (
                 <img src={profile.avatar_url} alt={profile.name}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-blue-100" />
+                  className="w-16 h-16 rounded-full object-cover border-2 border-[#E8CC9A]" />
               ) : (
-                <div className="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xl select-none">
+                <div className="w-16 h-16 rounded-full bg-[#D4A24C] flex items-center justify-center text-[#111111] font-bold text-xl select-none">
                   {getInitials(profile.name)}
                 </div>
               )}
@@ -343,15 +317,15 @@ export function AccountManagementPage({ currentUser, onProfileUpdated }: Account
                 )}
               </div>
               <div className="mt-2 flex flex-wrap justify-center sm:justify-start gap-3 text-sm text-slate-500">
-                <span className="flex items-center gap-1.5"><Mail className="w-4 h-4 text-blue-400" />{profile.email}</span>
-                <span className="flex items-center gap-1.5"><Phone className="w-4 h-4 text-blue-400" />{profile.phone}</span>
+                <span className="flex items-center gap-1.5"><Mail className="w-4 h-4 text-[#D4A24C]" />{profile.email}</span>
+                <span className="flex items-center gap-1.5"><Phone className="w-4 h-4 text-[#D4A24C]" />{profile.phone}</span>
               </div>
               <p className="mt-1.5 text-xs text-slate-400">{profile.account_tier} · Last login: {profile.last_login}</p>
             </div>
 
             {/* Edit button */}
             <button onClick={() => setIsEditOpen(true)}
-              className="self-start flex items-center gap-2 text-sm font-semibold text-blue-600 border border-blue-200 px-4 py-2 rounded-lg hover:bg-blue-50 transition-all flex-shrink-0">
+              className="self-start flex items-center gap-2 text-sm font-semibold text-[#9A6D1E] border border-[#E8CC9A] px-4 py-2 rounded-lg hover:bg-[#FAF5EB] transition-all flex-shrink-0">
               <Edit3 className="w-4 h-4" /> Edit Profile
             </button>
           </div>
@@ -382,33 +356,19 @@ export function AccountManagementPage({ currentUser, onProfileUpdated }: Account
             {/* Telegram */}
             <a href={telegramUrl} target="_blank" rel="noopener noreferrer"
               className="contact-card bg-white rounded-xl border border-slate-200 shadow-card p-5 flex items-center gap-4 no-underline group"
-              style={{ borderLeft: '4px solid #0088CC' }}>
-              <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                <Send className="w-6 h-6 text-blue-500" />
+              style={{ borderLeft: '4px solid #D4A24C' }}>
+              <div className="w-11 h-11 rounded-xl bg-[#FAF5EB] flex items-center justify-center flex-shrink-0 border border-[#E8CC9A]">
+                <Send className="w-6 h-6 text-[#D4A24C]" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-slate-900">Message on Telegram</p>
                 <p className="text-xs text-slate-500 mt-0.5">Join our private VIP community channel.</p>
-                <p className="text-xs font-semibold text-blue-600 mt-1">@{ADMIN_TELEGRAM_USERNAME}</p>
+                <p className="text-xs font-semibold text-[#9A6D1E] mt-1">@{ADMIN_TELEGRAM_USERNAME}</p>
               </div>
-              <svg className="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-all flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4 text-slate-300 group-hover:text-[#D4A24C] transition-all flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </a>
-          </div>
-        </div>
-
-        {/* ── DANGER ZONE ───────────────────────────────────────────────── */}
-        <div className="bg-red-50 rounded-xl border border-red-200 p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-bold text-red-800">Delete Account</p>
-              <p className="text-xs text-red-600 mt-0.5">Permanently remove your account and all trading data. This action cannot be undone.</p>
-            </div>
-            <button onClick={() => setIsDeleteOpen(true)}
-              className="flex items-center gap-1.5 text-xs font-bold text-red-600 border border-red-300 px-3 py-2 rounded-lg hover:bg-red-100 transition-all flex-shrink-0">
-              <Trash2 className="w-3.5 h-3.5" /> Delete
-            </button>
           </div>
         </div>
       </div>
@@ -421,45 +381,20 @@ export function AccountManagementPage({ currentUser, onProfileUpdated }: Account
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Full Name</label>
             <input type="text" value={editName} onChange={e => setEditName(e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-900 bg-slate-50 focus:bg-white focus:border-blue-400 transition-all" required />
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-base sm:text-sm text-slate-900 bg-slate-50 focus:bg-white focus:border-[#D4A24C] transition-all" required />
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Phone Number</label>
             <input type="tel" value={editPhone} onChange={e => setEditPhone(e.target.value)}
               placeholder="+1 (555) 000-0000"
-              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-900 bg-slate-50 focus:bg-white focus:border-blue-400 transition-all" />
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-base sm:text-sm text-slate-900 bg-slate-50 focus:bg-white focus:border-[#D4A24C] transition-all" />
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={() => setIsEditOpen(false)}
-              className="flex-1 py-2.5 text-sm font-semibold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all">Cancel</button>
+              className="flex-1 py-2.5 min-h-[44px] text-sm font-semibold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all">Cancel</button>
             <button type="submit" disabled={isSaving}
-              className="flex-1 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-all">
+              className="flex-1 py-2.5 min-h-[44px] text-sm font-bold text-[#111111] bg-[#D4A24C] hover:bg-[#B8862E] rounded-lg disabled:opacity-60 transition-all">
               {isSaving ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Delete Account Modal */}
-      <Modal open={isDeleteOpen} onClose={() => setIsDeleteOpen(false)} title="Delete Account">
-        <form onSubmit={handleDeleteAccount} className="space-y-4">
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-            <p className="font-bold mb-1">⚠️ This is irreversible</p>
-            <p className="text-xs">All your trading data, investments, and profile will be permanently deleted.</p>
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-              Type <span className="text-red-600 font-mono">DELETE</span> to confirm
-            </label>
-            <input type="text" value={deleteInput} onChange={e => setDeleteInput(e.target.value)}
-              placeholder="DELETE" className="w-full border border-red-200 rounded-lg px-3 py-2.5 text-sm font-mono text-red-900 bg-red-50 focus:bg-white focus:border-red-400 transition-all" />
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={() => { setIsDeleteOpen(false); setDeleteInput(''); }}
-              className="flex-1 py-2.5 text-sm font-semibold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all">Cancel</button>
-            <button type="submit" disabled={deleteInput !== 'DELETE'}
-              className="flex-1 py-2.5 text-sm font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all">
-              Delete Account
             </button>
           </div>
         </form>

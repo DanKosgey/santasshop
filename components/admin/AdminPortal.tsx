@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { User, CourseModule } from '../../types';
 import {
   Users, Layers, PieChart as PieIcon,
-  BookOpen, Zap, DollarSign, CreditCard, BarChart3, UserCog
+  BookOpen, Zap, DollarSign, Settings, BarChart3, UserCog, Sliders
 } from 'lucide-react';
 import { useAdminPortal } from './AdminPortalContext';
 import AdminHeader from './AdminHeader';
@@ -93,10 +93,10 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ courses, initialTab = 'direct
     { id: 'trades', label: 'Trade Analysis', icon: Layers },
     { id: 'analytics', label: 'Analytics', icon: PieIcon },
     { id: 'content', label: 'Content Mgmt', icon: BookOpen },
-    { id: 'rules', label: 'Rule Engine', icon: Zap },
+    { id: 'rules', label: 'Rule Engine', icon: Sliders },
     { id: 'journal', label: 'My Trades', icon: DollarSign },
     { id: 'admin-analytics', label: 'Admin Analytics', icon: BarChart3 },
-    { id: 'settings', label: 'Settings', icon: CreditCard },
+    { id: 'settings', label: 'Settings', icon: Settings },
     { id: 'bot-inquiries', label: 'Bot Inquiries', icon: Zap },
   ];
 

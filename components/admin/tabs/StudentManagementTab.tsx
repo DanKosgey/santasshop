@@ -279,11 +279,11 @@ const StudentManagementTab: React.FC = () => {
                         <td style={{ maxWidth: 220 }}>
                           <div className="flex items-center gap-3">
                             <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center text-sm font-bold text-blue-600 shrink-0">
-                              {student.name.charAt(0).toUpperCase()}
+                              {(student.name || student.email || 'S').charAt(0).toUpperCase()}
                             </div>
                             <div className="min-w-0">
-                              <p className="font-semibold text-slate-800 truncate">{student.name}</p>
-                              <p className="text-xs text-slate-400 truncate">{student.email}</p>
+                              <p className="font-semibold text-slate-800 truncate">{student.name || 'Anonymous Student'}</p>
+                              <p className="text-xs text-slate-400 truncate">{student.email || 'No email'}</p>
                             </div>
                           </div>
                         </td>
@@ -316,7 +316,7 @@ const StudentManagementTab: React.FC = () => {
                               </button>
                             )}
                             <button onClick={() => handleEditClick(student)} className="btn btn-sm btn-secondary"><Edit2 className="h-4 w-4" /></button>
-                            <button onClick={() => handleDeleteStudent(student.id, student.name)} className="btn btn-sm btn-danger"><Trash2 className="h-4 w-4" /></button>
+                            <button onClick={() => handleDeleteStudent(student.id, student.name || 'Student')} className="btn btn-sm btn-danger"><Trash2 className="h-4 w-4" /></button>
                           </div>
                         </td>
                       </>

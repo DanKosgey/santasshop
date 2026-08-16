@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+﻿import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   TrendingUp, Lock, Unlock, CheckCircle2, AlertTriangle,
   Send, MessageCircle, X, ChevronRight, Copy, Clock,
@@ -58,26 +58,6 @@ const globalCSS = `
   @keyframes modalIn { from { opacity:0; transform:scale(0.96) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } }
   @keyframes pulse-green { 0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.4); } 50% { box-shadow: 0 0 0 8px rgba(16,185,129,0); } }
   .btn-unlock { animation: pulse-green 2s ease infinite; }
-  .scroll-snap-x { scroll-snap-type: x mandatory; overflow-x: auto; display: flex; gap: 20px; padding: 4px 16px 12px; -webkit-overflow-scrolling: touch; }
-  .scroll-snap-x::-webkit-scrollbar { display: none; }
-  .snap-card { scroll-snap-align: start; flex-shrink: 0; }
-  @keyframes swipe-nudge {
-    0%   { transform: translateX(0); opacity: 1; }
-    30%  { transform: translateX(18px); opacity: 1; }
-    60%  { transform: translateX(4px); opacity: 0.7; }
-    80%  { transform: translateX(22px); opacity: 1; }
-    100% { transform: translateX(0); opacity: 1; }
-  }
-  @keyframes hint-fade-in  { from { opacity:0; } to { opacity:1; } }
-  @keyframes hint-fade-out { from { opacity:1; } to { opacity:0; pointer-events:none; } }
-  .swipe-hint { animation: hint-fade-in 0.5s ease forwards; }
-  .swipe-hint.hiding { animation: hint-fade-out 0.4s ease forwards; }
-  .swipe-hand { animation: swipe-nudge 1.4s ease-in-out infinite; }
-  @keyframes arrow-slide {
-    0%,100% { transform: translateX(0); opacity: 0.5; }
-    50%      { transform: translateX(10px); opacity: 1; }
-  }
-  .swipe-arrow { animation: arrow-slide 1.4s ease-in-out infinite; }
 `;
 
 /* ─── Modal Wrapper ──────────────────────────────────────────────────────── */
@@ -87,15 +67,15 @@ function Modal({ open, onClose, title, children, maxW = 'max-w-md' }: {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/50 backdrop-blur-sm">
-      <div className={`bg-white w-full ${maxW} rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto`}
-        style={{ animation: 'modalIn 0.18s ease' }}>
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100 sticky top-0 bg-white z-10">
-          <h2 className="text-base font-bold text-slate-900">{title}</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all">
-            <X className="w-4 h-4" />
+      <div className={`bg-white w-full ${maxW} rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92vh] overflow-y-auto`}
+        style={{ animation: 'modalIn 0.18s ease', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+        <div className="flex items-center justify-between px-5 sm:px-6 pt-5 pb-4 border-b border-slate-100 sticky top-0 bg-white z-10">
+          <h2 className="text-base sm:text-lg font-bold text-slate-900">{title}</h2>
+          <button onClick={onClose} aria-label="Close modal" className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center">
+            <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="px-6 py-5">{children}</div>
+        <div className="px-5 sm:px-6 py-5">{children}</div>
       </div>
     </div>
   );
@@ -114,7 +94,7 @@ function PackageCard({ pkg, onSelect }: { pkg: PoolPackage; onSelect: (p: PoolPa
       pkg.recommended ? 'border-2 border-blue-500 ring-4 ring-blue-500/10' : 'border-slate-200'
     }`}>
       {pkg.recommended && (
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[11px] font-extrabold uppercase tracking-wider py-1 px-3 text-center flex items-center justify-center gap-1.5 shadow-sm">
+        <div className="bg-gradient-to-r from-[#D4A24C] to-[#B8862E] text-[#111111] text-[11px] font-extrabold uppercase tracking-wider py-1 px-3 text-center flex items-center justify-center gap-1.5 shadow-sm">
           <Sparkles className="w-3 h-3 text-yellow-300" /> Recommended Institutional Plan
         </div>
       )}
@@ -145,7 +125,7 @@ function PackageCard({ pkg, onSelect }: { pkg: PoolPackage; onSelect: (p: PoolPa
           <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 mb-5 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-500">Deposit Amount</span>
-              <span className="text-base font-extrabold text-slate-900 tabular-nums">£{fmt(pkg.min_amount)}</span>
+              <span className="text-base font-extrabold text-slate-900 tabular-nums">${fmt(pkg.min_amount)}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-500">ROI Percentage</span>
@@ -153,11 +133,11 @@ function PackageCard({ pkg, onSelect }: { pkg: PoolPackage; onSelect: (p: PoolPa
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
               <span className="text-xs font-semibold text-slate-500">Expected Profit</span>
-              <span className="text-base font-extrabold text-emerald-600 tabular-nums">+£{fmt(fixedProfit)}</span>
+              <span className="text-base font-extrabold text-emerald-600 tabular-nums">+${fmt(fixedProfit)}</span>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-slate-200">
               <span className="text-xs font-bold text-slate-700">Total Payout at Maturity</span>
-              <span className="text-lg font-black text-blue-600 tabular-nums">£{fmt(fixedPayout)}</span>
+              <span className="text-lg font-black text-[#D4A24C] tabular-nums">${fmt(fixedPayout)}</span>
             </div>
           </div>
         </div>
@@ -167,8 +147,8 @@ function PackageCard({ pkg, onSelect }: { pkg: PoolPackage; onSelect: (p: PoolPa
           onClick={() => onSelect(pkg)}
           className={`w-full py-3.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 active:scale-[0.99] ${
             pkg.recommended
-              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/25'
-              : 'bg-slate-900 hover:bg-slate-800 text-white'
+              ? 'bg-[#D4A24C] hover:bg-[#B8862E] text-[#111111] shadow-lg shadow-[#D4A24C]/25'
+              : 'bg-[#0B0B0C] hover:bg-slate-800 text-white'
           }`}
         >
           <span>Select Plan & Apply</span>
@@ -193,7 +173,7 @@ function InvestmentCard({ inv, now, onWithdraw }: {
 
   const statusCfg: Record<string, { label: string; class: string; dot?: boolean }> = {
     active: { label: 'Active — Compounding', class: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: true },
-    matured: { label: 'Matured — Ready to Withdraw', class: 'bg-blue-50 text-blue-700 border-blue-200' },
+    matured: { label: 'Matured — Ready to Withdraw', class: 'bg-[#FAF5EB] text-[#9A6D1E] border-[#E8CC9A]' },
     withdrawal_pending: { label: 'Withdrawal Processing', class: 'bg-amber-50 text-amber-700 border-amber-200' },
     withdrawn: { label: 'Withdrawn — Paid Out', class: 'bg-slate-100 text-slate-600 border-slate-200' },
     cancelled: { label: 'Cancelled', class: 'bg-red-50 text-red-700 border-red-200' },
@@ -219,11 +199,11 @@ function InvestmentCard({ inv, now, onWithdraw }: {
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Invested Principal</p>
-            <p className="text-xl sm:text-2xl font-black text-slate-900 tabular-nums">£{fmt(inv.invested_amount)}</p>
+            <p className="text-xl sm:text-2xl font-black text-slate-900 tabular-nums">${fmt(inv.invested_amount)}</p>
           </div>
           <div className="bg-emerald-50/70 p-3 rounded-xl border border-emerald-100">
             <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wide">Expected Profit</p>
-            <p className="text-xl sm:text-2xl font-black text-emerald-600 tabular-nums">+£{fmt(inv.expected_return)}</p>
+            <p className="text-xl sm:text-2xl font-black text-emerald-600 tabular-nums">+${fmt(inv.expected_return)}</p>
           </div>
         </div>
 
@@ -233,7 +213,7 @@ function InvestmentCard({ inv, now, onWithdraw }: {
             Matures: <span className="font-bold text-slate-800">{new Date(inv.maturity_date).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
           </span>
           {isActive && remaining > 0 ? (
-            <span className="text-xs font-extrabold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md tabular-nums">
+            <span className="text-xs font-extrabold text-[#9A6D1E] bg-[#FAF5EB] px-2 py-0.5 rounded-md tabular-nums border border-[#E8CC9A]">
               ⏱ {formatCountdown(remaining)}
             </span>
           ) : (
@@ -246,15 +226,15 @@ function InvestmentCard({ inv, now, onWithdraw }: {
         {/* Dynamic Progress Bar */}
         <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden mb-4">
           <div
-            className="h-full rounded-full transition-all duration-1000 bg-gradient-to-r from-blue-500 to-indigo-600"
+            className="h-full rounded-full transition-all duration-1000 bg-gradient-to-r from-[#0B0B0C] to-[#1a1a1c]"
             style={{ width: `${pct}%` }}
           />
         </div>
 
         {/* Total Payout Summary */}
-        <div className="flex items-center justify-between p-3 rounded-xl bg-blue-50/50 border border-blue-100 mb-4">
+        <div className="flex items-center justify-between p-3 rounded-xl bg-[#FAF5EB] border border-[#E8CC9A] mb-4">
           <span className="text-xs font-bold text-slate-700">Total Guaranteed Payout</span>
-          <span className="text-lg font-black text-blue-700 tabular-nums">£{fmt(inv.total_payout)}</span>
+          <span className="text-lg font-black text-[#D4A24C] tabular-nums">${fmt(inv.total_payout)}</span>
         </div>
 
         {/* Action Button */}
@@ -262,10 +242,10 @@ function InvestmentCard({ inv, now, onWithdraw }: {
           isUnlocked ? (
             <button
               onClick={() => onWithdraw(inv)}
-              className="btn-unlock w-full py-3.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] transition-all shadow-lg shadow-emerald-600/20"
+              className="btn-unlock w-full py-3.5 rounded-xl text-sm font-bold text-[#111111] flex items-center justify-center gap-2 bg-[#D4A24C] hover:bg-[#B8862E] active:scale-[0.99] transition-all shadow-lg shadow-[#D4A24C]/20"
             >
               <Unlock className="w-4 h-4" />
-              <span>Withdraw £{fmt(inv.total_payout)} Now</span>
+              <span>Withdraw ${fmt(inv.total_payout)} Now</span>
             </button>
           ) : (
             <button disabled
@@ -355,11 +335,11 @@ function WithdrawModal({ inv, open, onClose, onSubmit, isSubmitting }: {
     <Modal open={open} onClose={onClose} title="Withdraw Payout Funds" maxW="max-w-lg">
       <div className="space-y-4">
         {/* Payout Amount Banner */}
-        <div className="text-center py-4 bg-emerald-50 rounded-2xl border border-emerald-200">
-          <p className="text-xs font-bold text-emerald-600 uppercase tracking-wide">Total Available Payout</p>
-          <p className="text-3xl sm:text-4xl font-black text-emerald-700 tabular-nums mt-1">£{fmt(inv.total_payout)}</p>
+        <div className="text-center py-4 bg-[#FAF5EB] rounded-2xl border border-[#E8CC9A]">
+          <p className="text-xs font-bold text-[#9A6D1E] uppercase tracking-wide">Total Available Payout</p>
+          <p className="text-3xl sm:text-4xl font-black text-[#9A6D1E] tabular-nums mt-1">${fmt(inv.total_payout)}</p>
           <p className="text-xs text-slate-500 mt-1">
-            £{fmt(inv.invested_amount)} principal + £{fmt(inv.expected_return)} profit
+            ${fmt(inv.invested_amount)} principal + ${fmt(inv.expected_return)} profit
           </p>
         </div>
 
@@ -371,7 +351,7 @@ function WithdrawModal({ inv, open, onClose, onSubmit, isSubmitting }: {
           <select
             value={network}
             onChange={e => handleNetworkChange(e.target.value)}
-            className="w-full border border-slate-200 rounded-xl px-3.5 py-3 text-sm font-semibold text-slate-800 bg-slate-50 focus:bg-white focus:border-blue-500 outline-none transition-all"
+            className="w-full border border-slate-200 rounded-xl px-3.5 py-3 text-sm font-semibold text-slate-800 bg-slate-50 focus:bg-white focus:border-[#D4A24C] outline-none transition-all"
           >
             {NETWORKS.map(n => (
               <option key={n.id} value={n.id}>{n.label}</option>
@@ -392,13 +372,13 @@ function WithdrawModal({ inv, open, onClose, onSubmit, isSubmitting }: {
               onChange={e => handleAddressChange(e.target.value)}
               placeholder={NETWORKS.find(n => n.id === network)?.placeholder}
               className={`w-full border rounded-xl px-3.5 py-3 pr-10 text-sm font-mono text-slate-900 bg-slate-50 focus:bg-white outline-none transition-all ${
-                error ? 'border-red-400 bg-red-50/50' : 'border-slate-200 focus:border-blue-500'
+                error ? 'border-red-400 bg-red-50/50' : 'border-slate-200 focus:border-[#D4A24C]'
               }`}
             />
             <button
               type="button"
               onClick={() => navigator.clipboard.readText?.().then(t => handleAddressChange(t))}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-all p-1"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#D4A24C] transition-all p-1"
               title="Paste from clipboard"
             >
               <Copy className="w-4 h-4" />
@@ -428,7 +408,7 @@ function WithdrawModal({ inv, open, onClose, onSubmit, isSubmitting }: {
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting || !address.trim()}
-            className="flex-1 py-3 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl disabled:bg-slate-300 disabled:cursor-not-allowed transition-all shadow-md flex items-center justify-center gap-2"
+            className="flex-1 py-3 text-sm font-bold text-[#111111] bg-[#D4A24C] hover:bg-[#B8862E] rounded-xl disabled:bg-slate-300 disabled:cursor-not-allowed transition-all shadow-md flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>
@@ -467,16 +447,16 @@ function SuccessState({ sub, onDismiss, whatsappUrl }: { sub: any; onDismiss: ()
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-slate-400 uppercase">Deposit Amount</span>
-          <span className="text-base font-extrabold text-slate-900 tabular-nums">£{fmt(sub.amount)}</span>
+          <span className="text-base font-extrabold text-slate-900 tabular-nums">${fmt(sub.amount)}</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-slate-400 uppercase">Expected Return</span>
-          <span className="text-base font-extrabold text-emerald-600 tabular-nums">+£{fmt(sub.expected_return)}</span>
+          <span className="text-base font-extrabold text-emerald-600 tabular-nums">+${fmt(sub.expected_return)}</span>
         </div>
         {sub.transaction_reference && (
           <div className="flex items-center justify-between pt-2 border-t border-slate-100">
             <span className="text-xs font-bold text-slate-400 uppercase">Payment Ref</span>
-            <span className="text-xs font-mono font-bold text-blue-600">{sub.transaction_reference}</span>
+            <span className="text-xs font-mono font-bold text-[#D4A24C]">{sub.transaction_reference}</span>
           </div>
         )}
         <div className="flex items-center justify-between pt-2 border-t border-slate-100">
@@ -501,7 +481,7 @@ function SuccessState({ sub, onDismiss, whatsappUrl }: { sub: any; onDismiss: ()
           href={ADMIN_TELEGRAM_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-md"
+          className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm text-[#111111] bg-[#D4A24C] hover:bg-[#B8862E] transition-all shadow-md"
         >
           <Send className="w-4 h-4" /> Open Telegram Support
         </a>
@@ -547,11 +527,9 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
 
   // Filter state
   const [investFilter, setInvestFilter] = useState<'all' | 'active' | 'matured' | 'withdrawn'>('all');
+  // Package Filter
   type PkgFilter = 'all' | '24h' | '2day' | 'weekly';
   const [pkgFilter, setPkgFilter] = useState<PkgFilter>('all');
-  const [showSwipeHint, setShowSwipeHint] = useState(true);
-  const [swipeHintHiding, setSwipeHintHiding] = useState(false);
-  const mobileScrollRef = useRef<HTMLDivElement>(null);
   const [nowTime, setNowTime] = useState(Date.now());
 
   // Derive active user ID
@@ -634,27 +612,6 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
     if (pkgFilter === 'weekly')return packages.filter(p => p.duration_unit === 'days'  && p.duration_value === 7);
     return packages;
   }, [packages, pkgFilter]);
-
-  // Dismiss mobile swipe hint
-  const dismissSwipeHint = useCallback(() => {
-    if (!showSwipeHint || swipeHintHiding) return;
-    setSwipeHintHiding(true);
-    setTimeout(() => setShowSwipeHint(false), 400);
-  }, [showSwipeHint, swipeHintHiding]);
-
-  useEffect(() => {
-    const el = mobileScrollRef.current;
-    if (!el) return;
-    const onScroll = () => dismissSwipeHint();
-    el.addEventListener('scroll', onScroll, { passive: true, once: true });
-    return () => el.removeEventListener('scroll', onScroll);
-  }, [dismissSwipeHint]);
-
-  useEffect(() => {
-    if (!showSwipeHint) return;
-    const t = setTimeout(() => dismissSwipeHint(), 4000);
-    return () => clearTimeout(t);
-  }, [showSwipeHint, dismissSwipeHint]);
 
   // Application Submission Handler
   const handleConfirmApplication = async () => {
@@ -765,13 +722,13 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
 
       <div className="w-full max-w-[1400px] mx-auto px-3.5 sm:px-8 py-4 sm:py-6">
         {/* ── PAGE HEADER ────────────────────────────────────────────── */}
-        <div className="mb-5 sm:mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="mb-5 sm:mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
           <div>
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                <TrendingUp className="w-6 h-6 text-blue-600 flex-shrink-0" /> Institutional Pool Trading
+                <TrendingUp className="w-6 h-6 text-[#D4A24C] flex-shrink-0" /> Institutional Pool Trading
               </h1>
-              <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live Realtime Sync
               </span>
             </div>
@@ -780,32 +737,33 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             <button
               onClick={() => setShowVipModal(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 transition-all"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 transition-all active:scale-[0.98]"
             >
-              <Sparkles className="w-3.5 h-3.5" /> VIP Syndicate Access
+              <Sparkles className="w-4 h-4" /> VIP Syndicate Access
             </button>
             <button
               onClick={loadData}
-              className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 transition-all"
+              className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 transition-all active:scale-[0.98]"
               title="Refresh Data"
+              aria-label="Refresh Data"
             >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-blue-600' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-[#D4A24C]' : ''}`} />
             </button>
           </div>
         </div>
 
         {/* ── TAB BAR ────────────────────────────────────────────────── */}
-        <div className="flex gap-1.5 bg-white border border-slate-200 rounded-xl p-1.5 mb-5 shadow-sm overflow-x-auto scrollbar-none flex-nowrap">
+        <div className="flex gap-1.5 bg-white border border-slate-200 rounded-xl p-1.5 mb-5 shadow-sm overflow-x-auto scrollbar-none flex-nowrap -mx-1 px-2.5 sm:mx-0 sm:px-1.5">
           {TABS.map(t => (
             <button
               key={t.id}
               onClick={() => { setActiveTab(t.id); setSubmissionSuccess(null); }}
-              className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0 ${
+              className={`px-3.5 sm:px-4 py-2.5 min-h-[44px] rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex-shrink-0 flex items-center justify-center ${
                 activeTab === t.id
-                  ? 'bg-blue-600 text-white shadow-sm'
+                  ? 'bg-[#0B0B0C] text-white shadow-sm'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
@@ -823,15 +781,15 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
           ) : (
             <>
               {/* Duration Filter Pills */}
-              <div className="flex gap-2 mb-5 overflow-x-auto scrollbar-none flex-nowrap pb-1">
+              <div className="flex gap-2 mb-5 overflow-x-auto scrollbar-none flex-nowrap pb-1 -mx-1 px-1">
                 {PKG_FILTERS.map(f => (
                   <button
                     key={f.id}
-                    onClick={() => { setPkgFilter(f.id); setShowSwipeHint(true); setSwipeHintHiding(false); }}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap flex-shrink-0 transition-all border ${
+                    onClick={() => setPkgFilter(f.id)}
+                    className={`flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-full text-xs sm:text-sm font-bold whitespace-nowrap flex-shrink-0 transition-all border ${
                       pkgFilter === f.id
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-md scale-105'
-                        : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-600'
+                        ? 'bg-[#0B0B0C] text-white border-[#0B0B0C] shadow-md scale-102'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-[#D4A24C] hover:text-[#D4A24C]'
                     }`}
                   >
                     <span>{f.emoji}</span> {f.label}
@@ -844,10 +802,10 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
                 ))}
               </div>
 
-              {/* Packages View */}
+              {/* Packages View: Vertical Scroll Down on Mobile & Responsive Grid on Desktop */}
               {filteredPackages.length === 0 ? (
-                <div className="bg-white border border-slate-200 rounded-2xl p-10 sm:p-14 text-center w-full shadow-card">
-                  <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-3 text-blue-600">
+                <div className="bg-white border border-slate-200 rounded-2xl p-8 sm:p-14 text-center w-full shadow-card">
+                  <div className="w-14 h-14 rounded-full bg-[#FAF5EB] flex items-center justify-center mx-auto mb-3 text-[#D4A24C]">
                     <TrendingUp className="w-7 h-7" />
                   </div>
                   <h3 className="text-base sm:text-lg font-black text-slate-800">No Packages Active Currently</h3>
@@ -856,41 +814,17 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
                   </p>
                   <button
                     onClick={() => setShowVipModal(true)}
-                    className="mt-5 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-md inline-flex items-center gap-2"
+                    className="mt-5 px-6 py-3 min-h-[44px] bg-[#0B0B0C] hover:bg-[#1f1f21] text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-md inline-flex items-center justify-center gap-2"
                   >
-                    <Sparkles className="w-4 h-4" /> Request VIP Syndicate Allocation
+                    <Sparkles className="w-4 h-4 text-[#D4A24C]" /> Request VIP Syndicate Allocation
                   </button>
                 </div>
               ) : (
-                <>
-                  {/* Desktop Grid */}
-                  <div className="hidden sm:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-                    {filteredPackages.map(p => (
-                      <PackageCard key={p.id} pkg={p} onSelect={setSelectedPackage} />
-                    ))}
-                  </div>
-
-                  {/* Mobile Horizontal Scroll with Swipe Hint */}
-                  <div className="sm:hidden relative">
-                    {showSwipeHint && filteredPackages.length > 1 && (
-                      <div
-                        className={`swipe-hint${swipeHintHiding ? ' hiding' : ''} pointer-events-none absolute bottom-6 right-4 z-20 flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-sm text-white text-xs font-bold px-3.5 py-2 rounded-full shadow-lg`}
-                      >
-                        <span className="swipe-hand text-base">👆</span>
-                        <span>Swipe to explore plans</span>
-                        <ChevronRight className="w-4 h-4 text-white/70" />
-                      </div>
-                    )}
-
-                    <div ref={mobileScrollRef} className="scroll-snap-x -mx-3.5">
-                      {filteredPackages.map(p => (
-                        <div key={p.id} className="snap-card" style={{ width: '88vw' }}>
-                          <PackageCard pkg={p} onSelect={setSelectedPackage} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
+                  {filteredPackages.map(p => (
+                    <PackageCard key={p.id} pkg={p} onSelect={setSelectedPackage} />
+                  ))}
+                </div>
               )}
             </>
           )
@@ -909,7 +843,7 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
                   onClick={() => setInvestFilter(f)}
                   className={`px-4 py-2 rounded-xl text-xs font-bold capitalize transition-all whitespace-nowrap flex-shrink-0 ${
                     investFilter === f
-                      ? 'bg-blue-600 text-white shadow-sm'
+                      ? 'bg-[#0B0B0C] text-white shadow-sm'
                       : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >
@@ -920,8 +854,8 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
 
             {filteredInvestments.length === 0 ? (
               <div className="bg-white border border-slate-200 rounded-2xl p-8 sm:p-12 text-center w-full shadow-card">
-                <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-3">
-                  <DollarSign className="w-7 h-7 text-blue-500" />
+                <div className="w-14 h-14 rounded-full bg-[#FAF5EB] flex items-center justify-center mx-auto mb-3 text-[#D4A24C]">
+                  <DollarSign className="w-7 h-7" />
                 </div>
                 <p className="text-base sm:text-lg font-bold text-slate-800">No active investments in this view</p>
                 <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-md mx-auto">
@@ -929,7 +863,7 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
                 </p>
                 <button
                   onClick={() => setActiveTab('packages')}
-                  className="mt-5 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-blue-700 transition-all shadow-md"
+                  className="mt-5 px-6 py-2.5 bg-[#0B0B0C] text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-[#1f1f21] transition-all shadow-md"
                 >
                   Browse Pool Packages
                 </button>
@@ -984,7 +918,7 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
                             {app.package_name}
                           </td>
                           <td className="px-6 py-4 text-right font-black text-slate-900 tabular-nums whitespace-nowrap">
-                            £{fmt(app.amount)}
+                            ${fmt(app.amount)}
                           </td>
                           <td className="px-6 py-4 text-slate-600 text-xs whitespace-nowrap">
                             {app.payment_method || 'Crypto'} {app.transaction_reference && `(${app.transaction_reference})`}
@@ -1015,7 +949,7 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
                       </div>
                       <div className="flex items-center justify-between text-xs text-slate-500">
                         <span>{new Date(app.created_at).toLocaleDateString()}</span>
-                        <span className="font-extrabold text-slate-900 text-sm">£{fmt(app.amount)}</span>
+                        <span className="font-extrabold text-slate-900 text-sm">${fmt(app.amount)}</span>
                       </div>
                       {app.transaction_reference && (
                         <p className="text-[11px] text-slate-400 font-mono">Ref: {app.transaction_reference}</p>
@@ -1049,7 +983,7 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
           return (
             <div className="space-y-4">
               {/* Selected Plan Overview */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-4">
+              <div className="bg-[#FAF5EB] border border-[#E8CC9A] rounded-2xl p-4">
                 <div className="flex items-center justify-between mb-1">
                   <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${r.bg} ${r.textColor} ${r.border}`}>
                     {r.label}
@@ -1066,15 +1000,15 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2">
                 <div className="flex items-center justify-between text-xs text-slate-600 font-semibold">
                   <span>Required Deposit</span>
-                  <span className="text-base font-black text-slate-900 tabular-nums">£{fmt(selectedPackage.min_amount)}</span>
+                  <span className="text-base font-black text-slate-900 tabular-nums">${fmt(selectedPackage.min_amount)}</span>
                 </div>
                 <div className="flex items-center justify-between text-xs text-slate-600 font-semibold">
                   <span>Guaranteed Profit ({selectedPackage.roi_percentage}%)</span>
-                  <span className="text-base font-black text-emerald-600 tabular-nums">+£{fmt(fixedProfit)}</span>
+                  <span className="text-base font-black text-emerald-600 tabular-nums">+${fmt(fixedProfit)}</span>
                 </div>
                 <div className="flex items-center justify-between pt-2 border-t border-slate-200">
                   <span className="text-xs font-bold text-slate-800">Total Payout at Maturity</span>
-                  <span className="text-lg font-black text-blue-600 tabular-nums">£{fmt(fixedPayout)}</span>
+                  <span className="text-lg font-black text-[#D4A24C] tabular-nums">${fmt(fixedPayout)}</span>
                 </div>
               </div>
 
@@ -1162,7 +1096,7 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
               <h3 className="font-extrabold text-base text-purple-900">Custom Institutional Allocation</h3>
             </div>
             <p className="text-xs text-purple-700 leading-relaxed">
-              For high-net-worth accounts investing above £25,000. Benefit from bespoke liquidity allocation, 1-on-1 institutional desk support, and custom maturity cycles.
+              For high-net-worth accounts investing above $25,000. Benefit from bespoke liquidity allocation, 1-on-1 institutional desk support, and custom maturity cycles.
             </p>
           </div>
 
@@ -1174,7 +1108,7 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
               rows={3}
               value={vipNotes}
               onChange={e => setVipNotes(e.target.value)}
-              placeholder="Specify your capital size (e.g. £50,000) and custom syndicate timeline..."
+              placeholder="Specify your capital size (e.g. $50,000) and custom syndicate timeline..."
               className="w-full border border-slate-200 rounded-xl p-3 text-sm text-slate-900 bg-slate-50 focus:bg-white focus:border-purple-500 outline-none transition-all"
             />
           </div>
@@ -1199,3 +1133,4 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
     </div>
   );
 }
+

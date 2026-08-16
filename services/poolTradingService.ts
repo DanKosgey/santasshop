@@ -510,16 +510,16 @@ export const poolTradingService = {
     }
 
     const expectedReturn = (params.amount * params.roiPercentage) / 100;
-    const totalPayout = params.amount + expectedReturn;
 
     // 1. Create active investment record
+    // NOTE: total_payout is a generated column (invested_amount + expected_return),
+    // so it must NOT be included in the insert payload.
     const investmentRecord = {
       user_id: params.userId,
       application_id: params.applicationId,
       package_id: params.packageId,
       invested_amount: params.amount,
       expected_return: expectedReturn,
-      total_payout: totalPayout,
       start_date: startDate.toISOString(),
       maturity_date: maturityDate.toISOString(),
       original_maturity_date: maturityDate.toISOString(),

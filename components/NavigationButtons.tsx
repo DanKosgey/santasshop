@@ -27,9 +27,9 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
       {showBack && onBack && (
         <button
           onClick={onBack}
-          className="flex items-center gap-2 px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-lg transition text-sm border border-gray-700"
+          className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-gray-50 text-[#111111] hover:text-[#D4A24C] rounded-lg transition text-sm border border-gray-200 shadow-sm"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4 text-[#D4A24C]" />
           Back
         </button>
       )}
@@ -37,9 +37,9 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
       {showRefresh && (
         <button
           onClick={handleRefresh}
-          className="flex items-center gap-2 px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-lg transition text-sm border border-gray-700"
+          className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-gray-50 text-[#111111] hover:text-[#D4A24C] rounded-lg transition text-sm border border-gray-200 shadow-sm"
         >
-          <RefreshCw className="h-4 w-4" />
+          <RefreshCw className="h-4 w-4 text-[#D4A24C]" />
           Refresh
         </button>
       )}
