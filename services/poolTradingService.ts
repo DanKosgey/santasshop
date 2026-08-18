@@ -120,6 +120,27 @@ export interface AdminNotificationSettings {
   updated_at?: string;
 }
 
+/* ─── Strict Maturity Calculator ────────────────────────────────────────── */
+
+/**
+ * Strict Real-Time Investment Status Calculator.
+ * Status can ONLY be 'matured' when the real-time package maturity timestamp has strictly expired.
+ * If current time is prior to maturity, status is strictly 'active'.
+ * Terminal states ('withdrawn', 'cancelled', 'withdrawal_pending') remain preserved.
+ */
+export function computeStrictInvestmentStatus(
+  status: 'active' | 'matured' | 'withdrawal_pending' | 'withdrawn' | 'cancelled',
+  maturityDateStr: string
+): 'active' | 'matured' | 'withdrawal_pending' | 'withdrawn' | 'cancelled' {
+  if (status === 'cancelled' || status === 'withdrawn' || status === 'withdrawal_pending') {
+    return status;
+  }
+  const now = Date.now();
+  const maturityMs = new Date(maturityDateStr).getTime();
+  if (isNaN(maturityMs)) return status;
+  return now >= maturityMs ? 'matured' : 'active';
+}
+
 /* ─── Default Packages (Clean Slate for Admin) ──────────────────────────── */
 export const DEFAULT_PACKAGES: PoolPackage[] = [];
 
@@ -785,6 +806,21 @@ export const poolTradingService = {
         const expected = Number(i.expected_return);
         const total = Number(i.total_payout || invested + expected);
         const roi = invested > 0 ? (expected / invested) * 100 : 0;
+        const strictStatus = computeStrictInvestmentStatus(i.status, i.maturity_date);
+
+        // Auto-heal DB status in background if out of sync with strict real-time rule
+        if (
+          i.status !== strictStatus &&
+          i.status !== 'withdrawal_pending' &&
+          i.status !== 'withdrawn' &&
+          i.status !== 'cancelled'
+        ) {
+          supabase
+            .from('pool_trading_investments')
+            .update({ status: strictStatus, updated_at: new Date().toISOString() })
+            .eq('id', i.id)
+            .then(() => {});
+        }
 
         return {
           id: i.id,
@@ -797,7 +833,7 @@ export const poolTradingService = {
           start_date: i.start_date,
           maturity_date: i.maturity_date,
           original_maturity_date: i.original_maturity_date,
-          status: i.status as any,
+          status: strictStatus,
           extension_count: i.extension_count || 0,
           created_at: i.created_at,
           updated_at: i.updated_at,
@@ -857,6 +893,21 @@ export const poolTradingService = {
         const invested = Number(i.invested_amount);
         const expected = Number(i.expected_return);
         const total = Number(i.total_payout || invested + expected);
+        const strictStatus = computeStrictInvestmentStatus(i.status, i.maturity_date);
+
+        // Auto-heal DB status in background if out of sync with strict real-time rule
+        if (
+          i.status !== strictStatus &&
+          i.status !== 'withdrawal_pending' &&
+          i.status !== 'withdrawn' &&
+          i.status !== 'cancelled'
+        ) {
+          supabase
+            .from('pool_trading_investments')
+            .update({ status: strictStatus, updated_at: new Date().toISOString() })
+            .eq('id', i.id)
+            .then(() => {});
+        }
 
         return {
           id: i.id,
@@ -868,7 +919,7 @@ export const poolTradingService = {
           total_payout: total,
           start_date: i.start_date,
           maturity_date: i.maturity_date,
-          status: i.status as any,
+          status: strictStatus,
           created_at: i.created_at,
           package_name: pkg?.name || 'Pool Plan',
           roi_pct: invested > 0 ? (expected / invested) * 100 : 0,
@@ -887,7 +938,7 @@ export const poolTradingService = {
   async extendInvestment(investmentId: string, additionalDays: number, reason?: string): Promise<void> {
     const { data: inv, error: fetchErr } = await supabase
       .from('pool_trading_investments')
-      .select('maturity_date, extension_count')
+      .select('maturity_date, extension_count, status')
       .eq('id', investmentId)
       .single();
 
@@ -896,10 +947,19 @@ export const poolTradingService = {
     const currentMaturity = new Date(inv.maturity_date);
     currentMaturity.setDate(currentMaturity.getDate() + additionalDays);
 
+    // If extended maturity is now in future, status becomes strictly 'active'
+    const newStatus =
+      inv.status === 'withdrawal_pending' || inv.status === 'withdrawn' || inv.status === 'cancelled'
+        ? inv.status
+        : currentMaturity.getTime() > Date.now()
+        ? 'active'
+        : 'matured';
+
     const { error } = await supabase
       .from('pool_trading_investments')
       .update({
         maturity_date: currentMaturity.toISOString(),
+        status: newStatus,
         extension_count: (inv.extension_count || 0) + 1,
         last_extended_at: new Date().toISOString(),
         extension_reason: reason || `Extended by ${additionalDays} days`,

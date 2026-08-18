@@ -9,6 +9,7 @@ import {
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import {
   poolTradingService,
+  computeStrictInvestmentStatus,
   PoolPackage,
   PoolApplication,
   PoolInvestment,
@@ -225,6 +226,13 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
   };
 
   const adminId = currentUser?.id;
+  const [nowTime, setNowTime] = useState(Date.now());
+
+  // Live timer interval for admin view
+  useEffect(() => {
+    const t = setInterval(() => setNowTime(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   // Load all live data
   const loadAdminData = useCallback(async () => {
@@ -323,19 +331,24 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
     };
   }, [loadAdminData]);
 
-  // Derived Stats
+  // Derived Stats with strict status calculation
   const pendingCount = apps.length;
   const pendingWithdrawalCount = withdrawals.filter(w => w.status === 'pending' || w.status === 'processing').length;
-  const totalFUM = investments.filter(i => i.status === 'active').reduce((s, i) => s + i.invested_amount, 0);
-  const activeCount = investments.filter(i => i.status === 'active').length;
-  const maturedCount = investments.filter(i => i.status === 'matured' || i.status === 'withdrawal_pending').length;
+  const totalFUM = investments
+    .filter(i => computeStrictInvestmentStatus(i.status, i.maturity_date) === 'active')
+    .reduce((s, i) => s + i.invested_amount, 0);
+  const activeCount = investments.filter(i => computeStrictInvestmentStatus(i.status, i.maturity_date) === 'active').length;
+  const maturedCount = investments.filter(i => {
+    const s = computeStrictInvestmentStatus(i.status, i.maturity_date);
+    return s === 'matured' || s === 'withdrawal_pending';
+  }).length;
 
   /* ── Approve Logic ──────────────────────────────────────────────── */
   const handleOpenApprove = (app: PoolApplication) => {
     setApproveApp(app);
     setApproveAmt(String(app.amount || 500));
 
-    // Calculate default maturity date based on package
+    // Calculate default maturity date based on package preserving full time precision
     const pkg = packages.find(p => p.id === app.package_id);
     const durVal = pkg?.duration_value || 7;
     const durUnit = pkg?.duration_unit || 'days';
@@ -345,7 +358,10 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
     } else {
       d.setDate(d.getDate() + durVal);
     }
-    setApproveMaturity(d.toISOString().split('T')[0]);
+    // format as YYYY-MM-DDTHH:mm in local timezone for datetime-local
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    const localISOTime = new Date(d.getTime() - tzOffset).toISOString().slice(0, 16);
+    setApproveMaturity(localISOTime);
   };
 
   const handleConfirmApprove = async () => {
@@ -523,10 +539,15 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
         (i.package_name || '').toLowerCase().includes(search.toLowerCase());
 
       if (!matchesSearch) return false;
+      const strictStatus = computeStrictInvestmentStatus(i.status, i.maturity_date);
       if (investFilter === 'all') return true;
-      return i.status === investFilter;
+      if (investFilter === 'active') return strictStatus === 'active';
+      if (investFilter === 'matured') return strictStatus === 'matured' || strictStatus === 'withdrawal_pending';
+      if (investFilter === 'withdrawn') return strictStatus === 'withdrawn';
+      if (investFilter === 'cancelled') return strictStatus === 'cancelled';
+      return strictStatus === investFilter;
     });
-  }, [investments, search, investFilter]);
+  }, [investments, search, investFilter, nowTime]);
 
   const TABS = [
     { id: 'applications', label: 'Applications Queue', count: pendingCount },
@@ -730,12 +751,14 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                     ) : (
                       filteredInvs.map(inv => {
                         const pct = progressPct(inv.start_date, inv.maturity_date);
+                        const strictStatus = computeStrictInvestmentStatus(inv.status, inv.maturity_date);
+                        const isExpired = Date.now() >= new Date(inv.maturity_date).getTime();
                         const statusCls =
-                          inv.status === 'active'
+                          strictStatus === 'active'
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : inv.status === 'matured'
+                            : strictStatus === 'matured'
                             ? 'bg-blue-50 text-blue-700 border-blue-200'
-                            : inv.status === 'withdrawal_pending'
+                            : strictStatus === 'withdrawal_pending'
                             ? 'bg-amber-50 text-amber-700 border-amber-200'
                             : 'bg-slate-100 text-slate-600 border-slate-200';
 
@@ -777,7 +800,7 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                             </td>
                             <td className="px-5 py-4 whitespace-nowrap">
                               <span className={`text-xs font-bold border px-2.5 py-0.5 rounded-full capitalize ${statusCls}`}>
-                                {inv.status}
+                                {strictStatus}
                               </span>
                             </td>
                             <td className="px-5 py-4 relative whitespace-nowrap">
@@ -789,7 +812,20 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                                 >
                                   Extend
                                 </button>
-                                {inv.status === 'active' && (
+                                {strictStatus === 'active' && !isExpired && (
+                                  <button
+                                    onClick={() => {
+                                      if (window.confirm(`Package has not reached its full expiry (${new Date(inv.maturity_date).toLocaleString()}). Are you sure you want to early-mature this investment?`)) {
+                                        handleStatusChange(inv.id, 'matured');
+                                      }
+                                    }}
+                                    className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-700 transition-all"
+                                    title="Admin early maturity override"
+                                  >
+                                    Early Mature
+                                  </button>
+                                )}
+                                {strictStatus === 'active' && isExpired && (
                                   <button
                                     onClick={() => handleStatusChange(inv.id, 'matured')}
                                     className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 transition-all"
@@ -1302,10 +1338,10 @@ export function AdminPoolTrading({ currentUser }: { currentUser?: User }) {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Maturity Date
+                    Maturity Date & Time
                   </label>
                   <input
-                    type="date"
+                    type="datetime-local"
                     value={approveMaturity}
                     onChange={e => setApproveMaturity(e.target.value)}
                     className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 bg-slate-50 focus:bg-white focus:border-blue-500 outline-none"

@@ -9,6 +9,7 @@ import { ADMIN_WHATSAPP, ADMIN_TELEGRAM_URL } from '../lib/constants';
 import { supabase } from '../supabase/client';
 import {
   poolTradingService,
+  computeStrictInvestmentStatus,
   PoolPackage,
   PoolInvestment,
   PoolApplication,
@@ -171,8 +172,9 @@ function InvestmentCard({ inv, now, onWithdraw }: {
   const maturityMs = new Date(inv.maturity_date).getTime();
   const remaining = maturityMs - now;
   const pct = progressPct(inv.start_date, inv.maturity_date);
-  const isUnlocked = now >= maturityMs && (inv.status === 'active' || inv.status === 'matured');
-  const isActive = inv.status === 'active' || inv.status === 'matured';
+  const strictStatus = computeStrictInvestmentStatus(inv.status, inv.maturity_date);
+  const isUnlocked = now >= maturityMs && (strictStatus === 'matured' || inv.status === 'active' || inv.status === 'matured') && inv.status !== 'withdrawn' && inv.status !== 'cancelled';
+  const isActive = (strictStatus === 'active' || strictStatus === 'matured') && inv.status !== 'withdrawn' && inv.status !== 'cancelled';
 
   const statusCfg: Record<string, { label: string; class: string; dot?: boolean }> = {
     active: { label: 'Active — Compounding', class: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: true },
@@ -181,7 +183,7 @@ function InvestmentCard({ inv, now, onWithdraw }: {
     withdrawn: { label: 'Withdrawn — Paid Out', class: 'bg-slate-100 text-slate-600 border-slate-200' },
     cancelled: { label: 'Cancelled', class: 'bg-red-50 text-red-700 border-red-200' },
   };
-  const sc = statusCfg[inv.status] || { label: inv.status, class: 'bg-slate-100 text-slate-700 border-slate-200' };
+  const sc = statusCfg[strictStatus] || { label: strictStatus, class: 'bg-slate-100 text-slate-700 border-slate-200' };
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-card overflow-hidden transition-all hover:border-slate-300">
@@ -703,16 +705,24 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
     }
   };
 
-  // Filtered investments
+  // Filtered investments with strict status evaluation
   const filteredInvestments = useMemo(() => {
     return investments.filter(i => {
+      const strictStatus = computeStrictInvestmentStatus(i.status, i.maturity_date);
       if (investFilter === 'all') return true;
-      if (investFilter === 'active') return i.status === 'active';
-      if (investFilter === 'matured') return i.status === 'matured' || i.status === 'withdrawal_pending';
-      if (investFilter === 'withdrawn') return i.status === 'withdrawn';
+      if (investFilter === 'active') return strictStatus === 'active';
+      if (investFilter === 'matured') return strictStatus === 'matured' || strictStatus === 'withdrawal_pending';
+      if (investFilter === 'withdrawn') return strictStatus === 'withdrawn';
       return true;
     });
-  }, [investments, investFilter]);
+  }, [investments, investFilter, nowTime]);
+
+  const activeAndMaturedCount = useMemo(() => {
+    return investments.filter(i => {
+      const s = computeStrictInvestmentStatus(i.status, i.maturity_date);
+      return s === 'active' || s === 'matured';
+    }).length;
+  }, [investments, nowTime]);
 
   const statusColor: Record<string, string> = {
     pending: 'bg-amber-50 text-amber-700 border-amber-200',
@@ -723,7 +733,7 @@ export function PoolTradingDashboard({ currentUser }: { currentUser?: User }) {
 
   const TABS = [
     { id: 'packages', label: 'Pool Packages' },
-    { id: 'my-investments', label: `My Investments (${investments.filter(i => i.status === 'active' || i.status === 'matured').length})` },
+    { id: 'my-investments', label: `My Investments (${activeAndMaturedCount})` },
     { id: 'history', label: `Application History (${applications.length})` },
   ] as const;
 
