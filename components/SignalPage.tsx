@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   RefreshCw, Target, AlertCircle, ArrowUp, ArrowDown,
-  Clock, Info, TrendingUp, TrendingDown, Zap, Shield, HelpCircle
+  Clock, Info, Zap, Shield, ChevronDown
 } from 'lucide-react';
 import { User } from '../types';
 
@@ -29,9 +29,60 @@ interface Rung {
   sell: number;
 }
 
-// ── TradingView D1 & Intraday Widget URLs for XAUUSD ───────────────────────────
-const TV_D1_URL =
-  'https://www.tradingview-widget.com/embed-widget/advanced-chart/?locale=en#%7B%22symbol%22%3A%22OANDA%3AXAUUSD%22%2C%22interval%22%3A%22D%22%2C%22timezone%22%3A%22Etc%2FUTC%22%2C%22theme%22%3A%22dark%22%2C%22style%22%3A%221%22%2C%22withdateranges%22%3Atrue%2C%22hide_side_toolbar%22%3Afalse%2C%22allow_symbol_change%22%3Afalse%2C%22save_image%22%3Afalse%2C%22details%22%3Atrue%2C%22hotlist%22%3Afalse%2C%22calendar%22%3Afalse%22%7D';
+// ── Real-Time TradingView Embed Widget Component ──────────────────────────────
+interface TradingViewWidgetProps {
+  symbol: string;
+  interval: string;
+}
+
+function TradingViewChartWidget({ symbol, interval }: TradingViewWidgetProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const containerId = `tv_chart_${Math.random().toString(36).substring(7)}`;
+
+    containerRef.current.innerHTML = `<div id="${containerId}" style="height: 100%; width: 100%;"></div>`;
+
+    const script = document.createElement('script');
+    script.src = 'https://s3.tradingview.com/tv.js';
+    script.type = 'text/javascript';
+    script.async = true;
+    script.onload = () => {
+      if (typeof (window as any).TradingView !== 'undefined') {
+        new (window as any).TradingView.widget({
+          autosize: true,
+          symbol: symbol,
+          interval: interval,
+          timezone: 'Etc/UTC',
+          theme: 'dark',
+          style: '1',
+          locale: 'en',
+          toolbar_bg: '#0E0E10',
+          enable_publishing: false,
+          allow_symbol_change: true,
+          save_image: false,
+          container_id: containerId,
+          hide_side_toolbar: false,
+          studies: [
+            'MASimple@tv-basicstudies',
+            'RSI@tv-basicstudies'
+          ],
+        });
+      }
+    };
+
+    containerRef.current.appendChild(script);
+
+    return () => {
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
+    };
+  }, [symbol, interval]);
+
+  return <div ref={containerRef} className="w-full h-full min-h-[500px]" />;
+}
 
 interface SignalPageProps {
   currentUser?: User;
@@ -42,9 +93,11 @@ export function SignalPage({ currentUser }: SignalPageProps) {
   const [dailyOpen, setDailyOpen] = useState<number | null>(null);
   const [prevCloseStr, setPrevCloseStr] = useState<string>('2900.00');
   const [dailyOpenStr, setDailyOpenStr] = useState<string>('2902.50');
-  const [loading, setLoading] = useState<boolean>(false);
-  const [fetchNotice, setFetchNotice] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  // Chart settings
+  const [selectedSymbol, setSelectedSymbol] = useState<string>('OANDA:XAUUSD');
+  const [selectedInterval, setSelectedInterval] = useState<string>('D');
 
   // Initialize with default sensible values
   useEffect(() => {
@@ -95,13 +148,13 @@ export function SignalPage({ currentUser }: SignalPageProps) {
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4A24C]/15 border border-[#D4A24C]/30 text-[#D4A24C] text-xs font-bold uppercase tracking-wider mb-3">
               <Zap className="w-3.5 h-3.5" />
-              XAUUSD Institutional Signal Engine
+              XAUUSD (GOLD / USD) Institutional Signal Engine
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Laddered Breakout Basket Signals
+              XAUUSD Laddered Breakout Basket
             </h1>
             <p className="text-sm text-slate-400 max-w-2xl mt-1.5 leading-relaxed">
-              Derived mathematically from previous day close anchor. Symmetric stop ladder (+/-0.5% to +/-0.9%) targeting <span className="text-[#D4A24C] font-semibold">1.0% Net TP</span> with daily open shared invalidation SL.
+              Derived from XAUUSD daily close. Symmetric stop ladder (+/-0.5% to +/-0.9%) targeting <span className="text-[#D4A24C] font-semibold">1.0% Net TP</span> with daily open shared invalidation SL.
             </p>
           </div>
 
@@ -119,24 +172,62 @@ export function SignalPage({ currentUser }: SignalPageProps) {
 
       {/* ── TradingView Live Chart Embed ── */}
       <div className="rounded-3xl border border-slate-800 bg-[#0E0E10] overflow-hidden shadow-xl">
-        <div className="p-4 bg-[#141417] border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="p-4 bg-[#141417] border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
             <div className="w-2.5 h-2.5 rounded-full bg-[#D4A24C] animate-pulse" />
             <span className="text-xs sm:text-sm font-bold text-white tracking-wide">
-              XAUUSD (GOLD / USD) · D1 Live Price Chart
+              {selectedSymbol} · {selectedInterval === 'D' ? 'Daily (D1)' : `${selectedInterval} Interval`} Chart
             </span>
           </div>
-          <span className="text-[11px] font-medium text-slate-400">
-            Check Previous Day Close &amp; Today's Open below
-          </span>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Symbol Switcher */}
+            <div className="flex items-center rounded-xl bg-slate-900 border border-slate-800 p-1">
+              {[
+                { label: 'OANDA XAUUSD', val: 'OANDA:XAUUSD' },
+                { label: 'FOREX.COM XAUUSD', val: 'FOREXCOM:XAUUSD' },
+                { label: 'TVC GOLD', val: 'TVC:GOLD' },
+              ].map((s) => (
+                <button
+                  key={s.val}
+                  onClick={() => setSelectedSymbol(s.val)}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition ${
+                    selectedSymbol === s.val
+                      ? 'bg-[#D4A24C] text-[#0B0B0C]'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Interval Switcher */}
+            <div className="flex items-center rounded-xl bg-slate-900 border border-slate-800 p-1">
+              {[
+                { label: 'D1', val: 'D' },
+                { label: '4H', val: '240' },
+                { label: '1H', val: '60' },
+                { label: '15M', val: '15' },
+              ].map((t) => (
+                <button
+                  key={t.val}
+                  onClick={() => setSelectedInterval(t.val)}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition ${
+                    selectedInterval === t.val
+                      ? 'bg-[#D4A24C] text-[#0B0B0C]'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-        <div className="w-full h-[480px] bg-[#0E0E10]">
-          <iframe
-            src={TV_D1_URL}
-            title="XAUUSD TradingView Chart"
-            className="w-full h-full border-0"
-            allowFullScreen
-          />
+
+        <div className="w-full h-[520px] bg-[#0E0E10]">
+          <TradingViewChartWidget symbol={selectedSymbol} interval={selectedInterval} />
         </div>
       </div>
 
@@ -209,7 +300,7 @@ export function SignalPage({ currentUser }: SignalPageProps) {
           {/* Quick Guide Card */}
           <div className="p-4 rounded-2xl bg-[#18181D] border border-slate-800 text-xs space-y-2 text-slate-300">
             <div className="font-bold text-[#D4A24C] flex items-center gap-1.5">
-              <Info className="w-3.5 h-3.5" /> Strategy Rules Summary
+              <Info className="w-3.5 h-3.5" /> XAUUSD Strategy Rules Summary
             </div>
             <ul className="space-y-1.5 text-[11px] text-slate-400 list-disc pl-4">
               <li><strong className="text-slate-200">First Rung:</strong> Triggers at +/-0.5% net change from prev close.</li>
