@@ -21,6 +21,7 @@ import SignupPage from './components/SignupPage';
 import BotDownloadPage from './components/BotDownloadPage';
 import BotStore from './components/BotStore';
 import TradingBotPurchasePage from './telegram/TradingBotPurchasePage';
+import SignalPage from './components/SignalPage';
 
 // --- MOCK DATA ---
 
@@ -715,6 +716,8 @@ const App: React.FC = () => {
                 initialTab={portalView === 'admin-dashboard' || portalView === 'dashboard' ? 'overview' : portalView}
               />
             );
+          case 'signals':
+            return <SignalPage currentUser={user} />;
           case 'rules':
             return (
               <div className="h-full">
@@ -776,6 +779,8 @@ const App: React.FC = () => {
 
       // --- STUDENT VIEWS ---
       switch (portalView) {
+        case 'signals':
+          return <SignalPage currentUser={user} />;
         case 'dashboard':
           // Check if user is under review
           if (user.subscriptionTier.includes('-pending')) {
