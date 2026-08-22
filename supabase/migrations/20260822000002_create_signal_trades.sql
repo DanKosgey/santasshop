@@ -2,6 +2,15 @@
 -- Description: Stores individual trades that students log against the daily signal.
 --              Linked to a signal_session for the correct anchor levels.
 
+-- ── Ensure trigger function exists ──────────────────────────────────────────
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TABLE IF NOT EXISTS signal_trades (
     id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     session_id        UUID REFERENCES signal_sessions(id) ON DELETE SET NULL,
@@ -43,24 +52,28 @@ CREATE INDEX IF NOT EXISTS idx_signal_trades_result ON signal_trades(trade_resul
 ALTER TABLE signal_trades ENABLE ROW LEVEL SECURITY;
 
 -- Users can read their own trades
+DROP POLICY IF EXISTS "Users can read their own signal trades" ON signal_trades;
 CREATE POLICY "Users can read their own signal trades"
   ON signal_trades
   FOR SELECT
   USING (auth.uid() = user_id);
 
 -- Users can insert their own trades
+DROP POLICY IF EXISTS "Users can log their own signal trades" ON signal_trades;
 CREATE POLICY "Users can log their own signal trades"
   ON signal_trades
   FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
 -- Users can update their own open/cancelled trades (e.g. close out a trade)
+DROP POLICY IF EXISTS "Users can update their own signal trades" ON signal_trades;
 CREATE POLICY "Users can update their own signal trades"
   ON signal_trades
   FOR UPDATE
   USING (auth.uid() = user_id);
 
 -- Admins can read all trades
+DROP POLICY IF EXISTS "Admins can read all signal trades" ON signal_trades;
 CREATE POLICY "Admins can read all signal trades"
   ON signal_trades
   FOR SELECT
@@ -73,6 +86,7 @@ CREATE POLICY "Admins can read all signal trades"
   );
 
 -- ── Auto-update updated_at ─────────────────────────────────────────────────────
-CREATE OR REPLACE TRIGGER set_signal_trades_updated_at
+DROP TRIGGER IF EXISTS set_signal_trades_updated_at ON signal_trades;
+CREATE TRIGGER set_signal_trades_updated_at
   BEFORE UPDATE ON signal_trades
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

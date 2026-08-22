@@ -3,6 +3,15 @@
 --              fetched automatically from TradingView/Yahoo Finance.
 --              One row per (session_date, symbol) — admin can override prices manually.
 
+-- ── Ensure trigger function exists ──────────────────────────────────────────
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TABLE IF NOT EXISTS signal_sessions (
     id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     session_date      DATE NOT NULL,
@@ -42,12 +51,14 @@ WHERE is_published = TRUE;
 ALTER TABLE signal_sessions ENABLE ROW LEVEL SECURITY;
 
 -- Authenticated users can read published sessions
+DROP POLICY IF EXISTS "Authenticated users can read published signal sessions" ON signal_sessions;
 CREATE POLICY "Authenticated users can read published signal sessions"
   ON signal_sessions
   FOR SELECT
   USING (auth.role() = 'authenticated' AND is_published = TRUE);
 
 -- Admins can do everything (admin = role in profiles table)
+DROP POLICY IF EXISTS "Admins can manage all signal sessions" ON signal_sessions;
 CREATE POLICY "Admins can manage all signal sessions"
   ON signal_sessions
   FOR ALL
@@ -60,6 +71,7 @@ CREATE POLICY "Admins can manage all signal sessions"
   );
 
 -- ── Auto-update updated_at on change ─────────────────────────────────────────
-CREATE OR REPLACE TRIGGER set_signal_sessions_updated_at
+DROP TRIGGER IF EXISTS set_signal_sessions_updated_at ON signal_sessions;
+CREATE TRIGGER set_signal_sessions_updated_at
   BEFORE UPDATE ON signal_sessions
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
