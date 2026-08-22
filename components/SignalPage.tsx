@@ -138,7 +138,8 @@ function LogTradeModal({
     setSaving(true);
     setError(null);
     try {
-      const { error: dbError } = await supabase.from('signal_trades').insert({
+      // 1. Write to signal_trades for signal session tracking
+      await supabase.from('signal_trades').insert({
         session_id: sessionId,
         user_id: userId,
         symbol: 'XAUUSD',
@@ -152,7 +153,29 @@ function LogTradeModal({
         session_date: sessionDate,
         trade_result: 'open',
       });
-      if (dbError) throw dbError;
+
+      // 2. Dual-write to journal_entries so it flows into Student Journal, Dashboard stats, and Admin Analytics
+      const { error: journalError } = await supabase.from('journal_entries').insert({
+        user_id: userId,
+        pair: 'XAUUSD',
+        type: direction, // 'buy' | 'sell'
+        entry_price: entryNum,
+        stop_loss: isNaN(slNum) ? null : slNum,
+        take_profit: isNaN(tpNum) ? null : tpNum,
+        status: 'pending',
+        validation_result: 'approved',
+        notes: notes.trim() || 'XAUUSD 0.5% Daily Breakout Trade',
+        date: sessionDate || new Date().toISOString().split('T')[0],
+        strategy: 'XAUUSD Breakout (0.5%)',
+        time_frame: 'D1',
+        position_size: lot,
+        trade_source: 'live',
+      });
+
+      if (journalError) {
+        console.warn('Journal sync notice:', journalError.message);
+      }
+
       setSaved(true);
       setTimeout(() => {
         setSaved(false);
