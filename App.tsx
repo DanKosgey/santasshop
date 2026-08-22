@@ -11,7 +11,6 @@ import EliteApplicationForm from './components/EliteApplicationForm';
 import RuleBuilder from './components/RuleBuilder';
 import CourseManagementSystem from './components/enhanced/CourseManagementSystem';
 import { ShieldAlert, Settings, Cpu as Bot, BarChart, CheckSquare, PlayCircle, ArrowRight, Lock } from 'lucide-react';
-import { AccountManagementPage } from './components/AccountManagementPage';
 import TradeJournal from './components/TradeJournal';
 import CommunityHub from './components/CommunityHub';
 import QuizPlayer from './components/QuizPlayer';
@@ -483,9 +482,6 @@ const App: React.FC = () => {
       if (savedIntent === 'vip-signals') {
         handleViewChange('telegram-bot-purchase');
         return;
-      } else if (savedIntent === 'account-management') {
-        handleViewChange('account-management');
-        return;
       } else if (savedIntent === 'bot-store') {
         handleViewChange('bot-store');
         return;
@@ -780,15 +776,6 @@ const App: React.FC = () => {
 
       // --- STUDENT VIEWS ---
       switch (portalView) {
-        case 'account':
-          return (
-            <AccountManagementPage
-              currentUser={user}
-              onProfileUpdated={(updated) => {
-                setUser(prev => prev ? { ...prev, name: updated.name } : prev);
-              }}
-            />
-          );
         case 'dashboard':
           // Check if user is under review
           if (user.subscriptionTier.includes('-pending')) {

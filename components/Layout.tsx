@@ -39,7 +39,6 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
   } else {
     menuItems = [
       { id: 'dashboard',   label: 'Home',               icon: LayoutDashboard },
-      { id: 'account',     label: 'Account Management', icon: Settings },
       { id: 'courses',     label: 'Courses',            icon: GraduationCap },
       { id: 'journal',     label: 'Journal',            icon: BookOpen },
       { id: 'todos',       label: 'Tasks',              icon: CheckSquare },

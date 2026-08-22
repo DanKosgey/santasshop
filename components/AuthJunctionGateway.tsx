@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Send, TrendingUp, Users, ArrowRight, ArrowLeft, CheckCircle2, ShieldCheck, Zap, Star, Globe } from 'lucide-react';
 
-export type GatewayTarget = 'vip-signals' | 'account-management' | 'dashboard' | 'bot-store';
+export type GatewayTarget = 'vip-signals' | 'dashboard' | 'bot-store';
 
 interface AuthJunctionGatewayProps {
   onSelectOption: (target: GatewayTarget, mode: 'login' | 'signup') => void;
@@ -20,25 +20,6 @@ const options = [
     statLabel: 'Signal Accuracy',
     description: 'Real-time institutional forex signals, daily chart breakdowns, and direct VIP Telegram channel access.',
     highlights: ['90%+ Historical Signal Accuracy', 'Instant Telegram & Push Alerts', '1-on-1 Trading Guidance'],
-    gradientFrom: '#D4A24C',
-    gradientTo: '#B8862E',
-    glowColor: 'rgba(212,162,76,0.35)',
-    hoverBorder: 'hover:border-[#D4A24C]/60',
-    badgeBg: 'bg-[#D4A24C]/20 text-[#D4A24C] border-[#D4A24C]/30',
-    iconGlow: 'shadow-[0_0_20px_rgba(212,162,76,0.4)]',
-    numberColor: 'text-[#D4A24C]',
-  },
-  {
-    id: 'account-management' as GatewayTarget,
-    number: '02',
-    title: 'Account Management',
-    subtitle: 'Professional Capital Management',
-    badge: 'High Yield',
-    icon: Users,
-    stat: '1:3+',
-    statLabel: 'Risk-to-Reward',
-    description: 'Let experienced institutional traders manage your account or pass your Prop Firm challenge with strict risk controls.',
-    highlights: ['Strict Capital Preservation', 'Custom Profit Split Model', 'Real-Time Performance Dashboard'],
     gradientFrom: '#D4A24C',
     gradientTo: '#B8862E',
     glowColor: 'rgba(212,162,76,0.35)',
@@ -124,7 +105,7 @@ export const AuthJunctionGateway: React.FC<AuthJunctionGatewayProps> = ({
 
 
         {/* ── Cards Grid ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 max-w-4xl mx-auto w-full">
+        <div className="grid grid-cols-1 gap-5 sm:gap-6 max-w-lg mx-auto w-full">
           {options.map((opt) => {
             const IconComp = opt.icon;
             const isHovered = hoveredId === opt.id;

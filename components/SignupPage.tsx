@@ -214,7 +214,6 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess, onSwit
   const targetIntent = typeof window !== 'undefined' ? sessionStorage.getItem('maichez_target_intent') : null;
   const intentLabels: Record<string, string> = {
     'vip-signals': 'VIP Signals & Telegram Community',
-    'account-management': 'Account Management & Prop Firm',
     'bot-store': 'Automated Trading Bots',
     'dashboard': 'Trading Portal Hub'
   };
