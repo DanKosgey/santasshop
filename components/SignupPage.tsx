@@ -215,7 +215,6 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onSignupSuccess, onSwit
   const intentLabels: Record<string, string> = {
     'vip-signals': 'VIP Signals & Telegram Community',
     'account-management': 'Account Management & Prop Firm',
-    'pool-trading': 'Pool Trading Investment',
     'bot-store': 'Automated Trading Bots',
     'dashboard': 'Trading Portal Hub'
   };

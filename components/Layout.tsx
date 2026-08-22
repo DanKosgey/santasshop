@@ -31,7 +31,6 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
       { id: 'student-management', label: 'Students',     icon: UserCog },
       { id: 'trades',             label: 'Trade Audit',  icon: Layers },
       { id: 'analytics',          label: 'Analytics',    icon: PieIcon },
-      { id: 'admin-pool-trading', label: 'Pool Trading', icon: Zap },
       { id: 'content',            label: 'Courses',      icon: GraduationCap },
       { id: 'rules',              label: 'Rules',        icon: Sliders },
       { id: 'bot-inquiries',      label: 'Bot Orders',   icon: Bot },
@@ -41,7 +40,6 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
     menuItems = [
       { id: 'dashboard',   label: 'Home',               icon: LayoutDashboard },
       { id: 'account',     label: 'Account Management', icon: Settings },
-      { id: 'pool-trading',label: 'Pool Trading',       icon: Zap },
       { id: 'courses',     label: 'Courses',            icon: GraduationCap },
       { id: 'journal',     label: 'Journal',            icon: BookOpen },
       { id: 'todos',       label: 'Tasks',              icon: CheckSquare },

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Send, TrendingUp, Users, ArrowRight, ArrowLeft, CheckCircle2, ShieldCheck, Zap, Star, Globe } from 'lucide-react';
 
-export type GatewayTarget = 'vip-signals' | 'pool-trading' | 'account-management' | 'dashboard' | 'bot-store';
+export type GatewayTarget = 'vip-signals' | 'account-management' | 'dashboard' | 'bot-store';
 
 interface AuthJunctionGatewayProps {
   onSelectOption: (target: GatewayTarget, mode: 'login' | 'signup') => void;
@@ -29,27 +29,8 @@ const options = [
     numberColor: 'text-[#D4A24C]',
   },
   {
-    id: 'pool-trading' as GatewayTarget,
-    number: '02',
-    title: 'Pool Trading Investment',
-    subtitle: 'Automated Managed Yield Pools',
-    badge: 'Passive Income',
-    icon: TrendingUp,
-    stat: '24/7',
-    statLabel: 'Active Monitoring',
-    description: 'Deposit into expert-managed liquidity pools and earn steady compound yields from algorithmic execution.',
-    highlights: ['Transparent Yield Tracking', 'Flexible Capital Withdrawal', 'Institutional Staking Pools'],
-    gradientFrom: '#D4A24C',
-    gradientTo: '#F2E4C8',
-    glowColor: 'rgba(212,162,76,0.35)',
-    hoverBorder: 'hover:border-[#D4A24C]/60',
-    badgeBg: 'bg-[#D4A24C]/20 text-[#D4A24C] border-[#D4A24C]/30',
-    iconGlow: 'shadow-[0_0_20px_rgba(212,162,76,0.4)]',
-    numberColor: 'text-[#D4A24C]',
-  },
-  {
     id: 'account-management' as GatewayTarget,
-    number: '03',
+    number: '02',
     title: 'Account Management',
     subtitle: 'Professional Capital Management',
     badge: 'High Yield',
@@ -143,7 +124,7 @@ export const AuthJunctionGateway: React.FC<AuthJunctionGatewayProps> = ({
 
 
         {/* ── Cards Grid ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 max-w-4xl mx-auto w-full">
           {options.map((opt) => {
             const IconComp = opt.icon;
             const isHovered = hoveredId === opt.id;

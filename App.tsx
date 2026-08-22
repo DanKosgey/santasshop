@@ -12,8 +12,6 @@ import RuleBuilder from './components/RuleBuilder';
 import CourseManagementSystem from './components/enhanced/CourseManagementSystem';
 import { ShieldAlert, Settings, Cpu as Bot, BarChart, CheckSquare, PlayCircle, ArrowRight, Lock } from 'lucide-react';
 import { AccountManagementPage } from './components/AccountManagementPage';
-import { PoolTradingDashboard } from './components/PoolTradingDashboard';
-import { AdminPoolTrading } from './components/AdminPoolTrading';
 import TradeJournal from './components/TradeJournal';
 import CommunityHub from './components/CommunityHub';
 import QuizPlayer from './components/QuizPlayer';
@@ -488,9 +486,6 @@ const App: React.FC = () => {
       } else if (savedIntent === 'account-management') {
         handleViewChange('account-management');
         return;
-      } else if (savedIntent === 'pool-trading') {
-        handleViewChange('pool-trading');
-        return;
       } else if (savedIntent === 'bot-store') {
         handleViewChange('bot-store');
         return;
@@ -724,8 +719,6 @@ const App: React.FC = () => {
                 initialTab={portalView === 'admin-dashboard' || portalView === 'dashboard' ? 'overview' : portalView}
               />
             );
-          case 'admin-pool-trading':
-            return <AdminPoolTrading currentUser={user} />;
           case 'rules':
             return (
               <div className="h-full">
@@ -796,8 +789,6 @@ const App: React.FC = () => {
               }}
             />
           );
-        case 'pool-trading':
-          return <PoolTradingDashboard currentUser={user} />;
         case 'dashboard':
           // Check if user is under review
           if (user.subscriptionTier.includes('-pending')) {
