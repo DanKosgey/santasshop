@@ -29,7 +29,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
     menuItems = [
       { id: 'directory',          label: 'Directory',    icon: Users },
       { id: 'student-management', label: 'Students',     icon: UserCog },
-      { id: 'signals',            label: 'Signals',      icon: Zap },
+      { id: 'signals',            label: 'Trade',        icon: Zap },
       { id: 'trades',             label: 'Trade Audit',  icon: Layers },
       { id: 'analytics',          label: 'Analytics',    icon: PieIcon },
       { id: 'content',            label: 'Courses',      icon: GraduationCap },
@@ -40,7 +40,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
   } else {
     menuItems = [
       { id: 'dashboard',   label: 'Home',               icon: LayoutDashboard },
-      { id: 'signals',     label: 'XAUUSD Signals',     icon: Zap },
+      { id: 'signals',     label: 'Trade',              icon: Zap },
       { id: 'courses',     label: 'Courses',            icon: GraduationCap },
       { id: 'journal',     label: 'Journal',            icon: BookOpen },
       { id: 'todos',       label: 'Tasks',              icon: CheckSquare },

@@ -577,7 +577,7 @@ export function SignalPage({ currentUser }: SignalPageProps) {
               <Zap className="w-3.5 h-3.5 animate-pulse" /> XAUUSD · 1 Trade A Day Strategy
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight">
-              Daily 0.5% Breakout Signal
+              Daily 0.5% Breakout Trade Setup
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
               <span className="text-[#D4A24C] font-extrabold">{todayLabel}</span>
@@ -655,7 +655,7 @@ export function SignalPage({ currentUser }: SignalPageProps) {
       {/* ── Navigation Tabs ── */}
       <div className="flex items-center gap-1.5 p-1 bg-[#121217] rounded-2xl border border-white/[0.06] w-fit">
         {[
-          { id: 'signal',  label: '🎯 Today\'s Signal (1-Trade)', icon: Target },
+          { id: 'signal',  label: '🎯 Today\'s Trade Setup',      icon: Target },
           { id: 'chart',   label: '📊 TradingView Chart',        icon: BarChart2 },
           { id: 'journal', label: `📓 Logged Trades (${todayTrades.length})`, icon: History },
         ].map((t) => (
