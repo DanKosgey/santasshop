@@ -310,34 +310,34 @@ const App: React.FC = () => {
     if (!user?.id || user?.role === 'admin') return;
 
     const interval = setInterval(async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('bot_access, bot_purchase_status, subscription_tier, role')
-        .eq('id', user.id)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('subscription_tier, role, bot_access, bot_purchase_status')
+          .eq('id', user.id)
+          .maybeSingle();
 
-      if (data) {
-        setUser(prev => {
-          if (!prev) return prev;
-          // Only update if there's an actual change to avoid unnecessary re-renders
-          if (
-            prev.botAccess === data.bot_access &&
-            prev.botPurchaseStatus === data.bot_purchase_status &&
-            prev.subscriptionTier === data.subscription_tier &&
-            prev.role === data.role
-          ) return prev;
+        if (!error && data) {
+          setUser(prev => {
+            if (!prev) return prev;
+            if (
+              prev.botAccess === (data.bot_access ?? false) &&
+              prev.botPurchaseStatus === (data.bot_purchase_status ?? 'none') &&
+              prev.subscriptionTier === data.subscription_tier &&
+              prev.role === data.role
+            ) return prev;
 
-          console.log('Profile polled and updated:', data);
-          return {
-            ...prev,
-            botAccess: data.bot_access ?? prev.botAccess,
-            botPurchaseStatus: data.bot_purchase_status ?? prev.botPurchaseStatus,
-            subscriptionTier: data.subscription_tier ?? prev.subscriptionTier,
-            role: data.role ?? prev.role,
-          };
-        });
-      }
-    }, 10000); // reduced to 10 seconds for a "live" feel
+            return {
+              ...prev,
+              botAccess: data.bot_access ?? prev.botAccess,
+              botPurchaseStatus: data.bot_purchase_status ?? prev.botPurchaseStatus,
+              subscriptionTier: data.subscription_tier ?? prev.subscriptionTier,
+              role: data.role ?? prev.role,
+            };
+          });
+        }
+      } catch {}
+    }, 15000);
 
     return () => clearInterval(interval);
   }, [user?.id, user?.role]);

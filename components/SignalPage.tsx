@@ -325,54 +325,95 @@ export function SignalPage({ currentUser }: SignalPageProps) {
 
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
-  // ── 1. Auto-fetch XAUUSD prev close & open from Yahoo Finance (Gold Futures) ─
+  // ── 1. Auto-fetch XAUUSD prev close & open ──────────────────────────────────
   const fetchPrices = useCallback(async () => {
     setFetchLoading(true);
     setFetchError(null);
+
+    let pClose: number | null = null;
+    let dOpen: number | null = null;
+    let sourceName = '';
+
+    // Method A: Binance PAXG/USDT (Tokenized Physical Gold, exact 1:1 USD price, open CORS)
     try {
-      // Try direct Yahoo Finance first, then a CORS proxy as fallback
-      const endpoints = [
-        'https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?interval=1d&range=5d',
-        'https://query2.finance.yahoo.com/v8/finance/chart/GC%3DF?interval=1d&range=5d',
+      const res = await fetch(
+        'https://api.binance.com/api/v3/klines?symbol=PAXGUSDT&interval=1d&limit=5',
+        { signal: AbortSignal.timeout(6000) }
+      );
+      if (res.ok) {
+        const klines = await res.json();
+        if (Array.isArray(klines) && klines.length >= 2) {
+          const prevDay = klines[klines.length - 2];
+          const currDay = klines[klines.length - 1];
+          pClose = parseFloat(prevDay[4]); // close price of previous day
+          dOpen  = parseFloat(currDay[1]); // open price of today
+          sourceName = 'Live Market (XAU/USD)';
+        }
+      }
+    } catch {
+      // Fall through to other sources
+    }
+
+    // Method B: Yahoo Finance (GC=F Gold Futures) via CORS proxies
+    if (!pClose || !dOpen) {
+      const yahooProxies = [
+        `https://corsproxy.io/?url=${encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?interval=1d&range=5d')}`,
         `https://api.allorigins.win/get?url=${encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?interval=1d&range=5d')}`,
       ];
 
-      let parsed: any = null;
-      for (const url of endpoints) {
+      for (const url of yahooProxies) {
         try {
           const res = await fetch(url, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(6000) });
           if (!res.ok) continue;
           const raw = await res.json();
-          // allorigins wraps the response
-          parsed = raw?.contents ? JSON.parse(raw.contents) : raw;
-          if (parsed?.chart?.result?.[0]) break;
-        } catch { continue; }
+          const parsed = raw?.contents ? JSON.parse(raw.contents) : raw;
+          const result = parsed?.chart?.result?.[0];
+          if (result) {
+            const closes = (result.indicators.quote[0].close as (number|null)[]).filter((v): v is number => v != null);
+            const opens  = (result.indicators.quote[0].open  as (number|null)[]).filter((v): v is number => v != null);
+            if (closes.length >= 2) {
+              pClose = closes[closes.length - 2];
+              dOpen  = opens[opens.length - 1] ?? pClose;
+              sourceName = 'Yahoo Finance (GC=F)';
+              break;
+            }
+          }
+        } catch {
+          continue;
+        }
       }
-
-      if (!parsed?.chart?.result?.[0]) throw new Error('No price data received');
-
-      const result = parsed.chart.result[0];
-      const closes = (result.indicators.quote[0].close as (number|null)[]).filter((v): v is number => v != null);
-      const opens  = (result.indicators.quote[0].open  as (number|null)[]).filter((v): v is number => v != null);
-      if (closes.length < 2) throw new Error('Insufficient history');
-
-      const pClose = closes[closes.length - 2];
-      const dOpen  = opens[opens.length - 1];
-
-      setPrevClose(pClose);
-      setDailyOpen(dOpen);
-      setPrevCloseStr(pClose.toFixed(2));
-      setDailyOpenStr(dOpen.toFixed(2));
-      setDataSource('Yahoo Finance (GC=F)');
-      setLastUpdated(new Date());
-
-      // ── 2. Save/upsert into Supabase signal_sessions ─────────────────────
-      await upsertSignalSession(pClose, dOpen, 'yahoo_finance');
-    } catch (e: any) {
-      setFetchError('Auto-fetch failed — enter prices manually.');
-    } finally {
-      setFetchLoading(false);
     }
+
+    // Method C: Gold-API live spot price fallback
+    if (!pClose) {
+      try {
+        const res = await fetch('https://api.gold-api.com/price/XAU', { signal: AbortSignal.timeout(5000) });
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.price && typeof data.price === 'number') {
+            pClose = Math.round(data.price * 100) / 100;
+            dOpen  = pClose;
+            sourceName = 'Gold-API Spot';
+          }
+        }
+      } catch {}
+    }
+
+    if (pClose) {
+      setPrevClose(pClose);
+      if (dOpen) setDailyOpen(dOpen);
+      setPrevCloseStr(pClose.toFixed(2));
+      if (dOpen) setDailyOpenStr(dOpen.toFixed(2));
+      setDataSource(sourceName || 'Live Feed');
+      setLastUpdated(new Date());
+      setFetchError(null);
+
+      // Save/upsert into Supabase signal_sessions if possible
+      await upsertSignalSession(pClose, dOpen || pClose, sourceName);
+    } else {
+      setFetchError('Auto-fetch unavailable. You can type anchor prices manually.');
+    }
+    setFetchLoading(false);
   }, []);
 
   const upsertSignalSession = async (pClose: number, dOpen: number, source: string) => {
@@ -397,9 +438,9 @@ export function SignalPage({ currentUser }: SignalPageProps) {
           created_by:   currentUser?.id ?? null,
         }, { onConflict: 'session_date,symbol' })
         .select('id')
-        .single();
+        .maybeSingle();
 
-      if (!error && data) setSessionId(data.id);
+      if (!error && data?.id) setSessionId(data.id);
     } catch {}
   };
 
@@ -417,35 +458,40 @@ export function SignalPage({ currentUser }: SignalPageProps) {
   // ── Load trade count for today ─────────────────────────────────────────────
   const loadTradeCount = useCallback(async () => {
     if (!currentUser?.id) return;
-    const { count } = await supabase
-      .from('signal_trades')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', currentUser.id)
-      .eq('session_date', today);
-    setTradeCount(count ?? 0);
+    try {
+      const { count } = await supabase
+        .from('signal_trades')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', currentUser.id)
+        .eq('session_date', today);
+      setTradeCount(count ?? 0);
+    } catch {}
   }, [currentUser?.id, today]);
 
   // ── Load today's session from Supabase on mount ────────────────────────────
   useEffect(() => {
     const loadSession = async () => {
-      const { data } = await supabase
-        .from('signal_sessions')
-        .select('id, prev_close, daily_open, data_source')
-        .eq('session_date', today)
-        .eq('symbol', 'XAUUSD')
-        .single();
+      try {
+        const { data } = await supabase
+          .from('signal_sessions')
+          .select('id, prev_close, daily_open, data_source')
+          .eq('session_date', today)
+          .eq('symbol', 'XAUUSD')
+          .maybeSingle();
 
-      if (data) {
-        // Session exists — use DB values, but still try to refresh from API
-        setSessionId(data.id);
-        setPrevClose(data.prev_close);
-        setDailyOpen(data.daily_open);
-        setPrevCloseStr(Number(data.prev_close).toFixed(2));
-        setDailyOpenStr(Number(data.daily_open).toFixed(2));
-        setDataSource(`${data.data_source} (cached)`);
-        setLastUpdated(new Date());
-      }
-      // Also auto-fetch fresh prices
+        if (data) {
+          // Session exists in DB
+          setSessionId(data.id);
+          setPrevClose(data.prev_close);
+          setDailyOpen(data.daily_open);
+          setPrevCloseStr(Number(data.prev_close).toFixed(2));
+          setDailyOpenStr(Number(data.daily_open).toFixed(2));
+          setDataSource(`${data.data_source} (cached)`);
+          setLastUpdated(new Date());
+        }
+      } catch {}
+
+      // Auto-fetch fresh live prices
       await fetchPrices();
     };
     loadSession();

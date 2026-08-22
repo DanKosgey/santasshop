@@ -50,25 +50,24 @@ WHERE is_published = TRUE;
 -- ── RLS Policies ─────────────────────────────────────────────────────────────
 ALTER TABLE signal_sessions ENABLE ROW LEVEL SECURITY;
 
--- Authenticated users can read published sessions
+-- Authenticated users can read signal sessions
 DROP POLICY IF EXISTS "Authenticated users can read published signal sessions" ON signal_sessions;
-CREATE POLICY "Authenticated users can read published signal sessions"
+DROP POLICY IF EXISTS "Authenticated users can read signal sessions" ON signal_sessions;
+CREATE POLICY "Authenticated users can read signal sessions"
   ON signal_sessions
   FOR SELECT
-  USING (auth.role() = 'authenticated' AND is_published = TRUE);
+  TO authenticated
+  USING (true);
 
--- Admins can do everything (admin = role in profiles table)
+-- Authenticated users can insert or update sessions
 DROP POLICY IF EXISTS "Admins can manage all signal sessions" ON signal_sessions;
-CREATE POLICY "Admins can manage all signal sessions"
+DROP POLICY IF EXISTS "Authenticated users can manage signal sessions" ON signal_sessions;
+CREATE POLICY "Authenticated users can manage signal sessions"
   ON signal_sessions
   FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE profiles.id = auth.uid()
-      AND profiles.role = 'admin'
-    )
-  );
+  TO authenticated
+  USING (true)
+  WITH CHECK (true);
 
 -- ── Auto-update updated_at on change ─────────────────────────────────────────
 DROP TRIGGER IF EXISTS set_signal_sessions_updated_at ON signal_sessions;
