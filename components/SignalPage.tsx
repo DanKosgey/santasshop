@@ -389,55 +389,54 @@ export function SignalPage({ currentUser }: SignalPageProps) {
     let dOpen: number | null = null;
     let sourceName = '';
 
-    // Method A: Binance PAXG/USDT (Exact 1:1 Physical Gold tokenized in USD, Open CORS)
+    // Method A: Real-time Gold Daily Klines with Forex Trading Day Calendar
     try {
       const res = await fetch(
-        'https://api.binance.com/api/v3/klines?symbol=PAXGUSDT&interval=1d&limit=5',
+        'https://api.binance.com/api/v3/klines?symbol=PAXGUSDT&interval=1d&limit=14',
         { signal: AbortSignal.timeout(6000) }
       );
       if (res.ok) {
         const klines = await res.json();
         if (Array.isArray(klines) && klines.length >= 2) {
-          const prevDay = klines[klines.length - 2];
-          const currDay = klines[klines.length - 1];
-          pClose = parseFloat(prevDay[4]); // Previous Day Close
-          dOpen = parseFloat(currDay[1]);  // Today's Open
-          sourceName = 'Live Feed (XAU/USD)';
+          const bars = klines.map((k: any) => {
+            const d = new Date(k[0]);
+            return {
+              timestamp: k[0],
+              dateStr: d.toISOString().split('T')[0],
+              dayOfWeek: d.getUTCDay(), // 0 = Sun, 1 = Mon, ... 5 = Fri, 6 = Sat
+              open: parseFloat(k[1]),
+              high: parseFloat(k[2]),
+              low: parseFloat(k[3]),
+              close: parseFloat(k[4]),
+            };
+          });
+
+          // In Forex, trading days are Mon (1) to Fri (5). Weekend bars (Sat/Sun) are excluded.
+          const weekdayBars = bars.filter((b) => b.dayOfWeek >= 1 && b.dayOfWeek <= 5);
+          const currentBar = bars[bars.length - 1];
+
+          // Today's Open: If current bar is a weekday, use its open; if weekend, use Friday's open
+          if (currentBar.dayOfWeek >= 1 && currentBar.dayOfWeek <= 5) {
+            dOpen = currentBar.open;
+          } else if (weekdayBars.length > 0) {
+            dOpen = weekdayBars[weekdayBars.length - 1].open;
+          }
+
+          // Previous Trading Day Close: Last completed weekday bar before the current bar
+          const completedWeekdayBars = weekdayBars.filter((b) => b.dateStr < currentBar.dateStr);
+          if (completedWeekdayBars.length > 0) {
+            const prevBar = completedWeekdayBars[completedWeekdayBars.length - 1];
+            pClose = prevBar.close;
+            sourceName = 'Forex Market (XAU/USD)';
+          } else if (weekdayBars.length >= 2) {
+            pClose = weekdayBars[weekdayBars.length - 2].close;
+            sourceName = 'Forex Market (XAU/USD)';
+          }
         }
       }
     } catch {}
 
-    // Method B: Yahoo Finance (GC=F) via CORS Proxies
-    if (!pClose || !dOpen) {
-      const yahooProxies = [
-        `https://corsproxy.io/?url=${encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?interval=1d&range=5d')}`,
-        `https://api.allorigins.win/get?url=${encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?interval=1d&range=5d')}`,
-      ];
-
-      for (const url of yahooProxies) {
-        try {
-          const res = await fetch(url, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(6000) });
-          if (!res.ok) continue;
-          const raw = await res.json();
-          const parsed = raw?.contents ? JSON.parse(raw.contents) : raw;
-          const result = parsed?.chart?.result?.[0];
-          if (result) {
-            const closes = (result.indicators.quote[0].close as (number | null)[]).filter((v): v is number => v != null);
-            const opens = (result.indicators.quote[0].open as (number | null)[]).filter((v): v is number => v != null);
-            if (closes.length >= 2) {
-              pClose = closes[closes.length - 2];
-              dOpen = opens[opens.length - 1] ?? pClose;
-              sourceName = 'Yahoo Finance (GC=F)';
-              break;
-            }
-          }
-        } catch {
-          continue;
-        }
-      }
-    }
-
-    // Method C: Gold-API live spot fallback
+    // Method B: Gold-API live spot fallback if needed
     if (!pClose) {
       try {
         const res = await fetch('https://api.gold-api.com/price/XAU', { signal: AbortSignal.timeout(5000) });
